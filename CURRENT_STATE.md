@@ -32,14 +32,53 @@ resolves a supported landing and closes the map on success.
 - **Bloom Grove Court** is a promoted production voxel transcription of
   Reference 10.
 - **Fallen Colossus** is a promoted production precinct for Reference 12. Its
-  author-supplied head and legs GLBs are cleaned, assigned Petalfell stone and
-  outline materials, placed on site-owned foundations and given collision. The
-  legs use the approved 1.5× imported review scale.
+  head and legs are now from-scratch stepped stone GLBs built in Blender from
+  authored anatomical profiles. They use 2,872 and 1,922 triangles respectively,
+  Petalfell materials, partial stone courses and coherent moss. Their 17.513-unit
+  head and 31.2-unit leg heights retain the preceding monument scale at the same
+  site anchors. Static collision uses the actual mesh, including the open foot
+  gap, instead of three oversized boxes. The original GLBs remain historical
+  assets; production loads only the `fallen-colossus-authored-*` replacements.
 - **Shallows Gate and Causeway** is measured/planned from Reference 1 but is not
   yet promoted as a finished production transcription.
+- **Tidekeeper’s Landing**, at 6484,7528, is an original production shore worksite.
+  Three connected stairs descend from the cut working yard through 31/29/27/25
+  landings to the existing sea. A broken gauge wall, hollow catchment trough,
+  capstan remnant, moorings and fallen masonry explain the former use. Four edge
+  losses preserve the original ground and the remaining paving has authored
+  reclamation patches. Its plan places 16 jars, coils, boards and fragments.
+- **Split Witness**, at 4424,1928, is an original production northern outcrop.
+  Two unequal fractured blades rise from the actual sloping ridge, with a fallen
+  flake, broken wind shelter, small waymark and seven fine remnants. It performs
+  no terrain surface writes; stone roots follow the existing column heights.
+
+These original sites have explicit topology domains, design JSON, ground plans
+and separate voxel blueprints. Their small shared prop meshes use the existing
+palette, lighting and weathering path; pottery has exact surface collision.
+No original site is compared against an unrelated reference image.
 
 The terrain foundation is accepted; the completed visual fidelity of individual
 sites is not.
+
+## September 6 worldbuilding validation
+
+The original destinations and replacement Colossus were exported to the Linux
+package. Their three 23-view galleries under `shots/worldbuilding-2026-09-06/`
+were inspected across locked day/night, five clock phases and four distances at
+four quarter rotations. Selected close/day/golden frames were also inspected at
+full size. Full reference parity and author acceptance remain open.
+
+`verify-worldbuilding` passes for 23 props / 2,752 triangles with closed outward
+surfaces, actual production ground anchors and jar collision. `verify-sculpture`
+passes for 4,794 matching visible/collision triangles, continuous outward hull
+normals and a player capsule traversing the open foot gap. `verify-look-rendering`
+also passes its geometry, clock, reflection and bounded-detail checks.
+
+Both new addresses pass deterministic repeat and neighbouring-window overlap
+checks. Real-controller land probes moved 33.65 blocks across Y25..31 at the
+landing and 29.27 blocks across Y120..134 on the northern approach. These are
+bounded automated routes, not exhaustive exploration. The package audit now
+reports five domains/five sites; four sites run in production.
 
 ## Shared rendering revision
 
@@ -51,6 +90,8 @@ The bevels stay inside authored voxels. Empty concave-ink meshes are disposed
 immediately. Terrain topology, collision, site layouts
 and tree anchors remain unchanged. Imported sculpture outlines expand by 0.50
 framebuffer pixels so their width does not grow with the monument scale.
+The from-scratch sculptures additionally carry continuous hull directions in
+UV2 so split flat lighting normals do not tear that outline at shared corners.
 Fine mineral relief also uses the generated
 `assets/materials/mineral-detail.png` data texture at two scales; its prompt is
 preserved alongside it. Sculpture uses a blended triplanar sample, snow has cool

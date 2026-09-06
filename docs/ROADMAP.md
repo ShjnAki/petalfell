@@ -21,7 +21,17 @@
 
 The current visual target is [the author's September image set](LOOK_TARGET.md).
 The shared rendering pass is in place; reference parity and author review remain
-open alongside the site work below.
+open. The September 6 request expands active work to original man-made/natural
+sites, more props, rendering/outline refinement and from-scratch replacement
+colossus sculpture. These now take priority over the older allocation deferral.
+
+### Worldbuilding review
+
+- author review of the replacement Colossus and the original Tidekeeper’s
+  Landing / Split Witness galleries; only the author can accept visual fidelity;
+- extend traversal beyond the verified shore and northern approach probes;
+- evaluate further destinations against the new original-site workflow;
+- refine additional outline or dressing defects when identified in real views.
 
 ### 1. Repository and documentation cleanup
 
@@ -68,8 +78,8 @@ open alongside the site work below.
 
 ### 6. Content and gameplay
 
-Allocate further sites and narrative routes only after the first three reference
-families establish a reliable transcription vocabulary. Later product scope
+The September 6 request authorizes further sites and narrative routes now,
+using explicit authored plans and the established terrain system. Later product scope
 includes newly designed inventory/loadout, pet, flora and fauna systems; their
 old fixture implementations are not production specifications.
 

@@ -12,6 +12,8 @@ public static class ReferenceSiteBuilder
 	public static ReferenceSiteStatistics Build(AtlasSectorWindow window,
 		ReferenceSiteDefinition site, int verticalOffset = 0) => site.BuilderId switch
 	{
+		TidekeepersLanding.BuilderId => TidekeepersLanding.Build(window, site, verticalOffset),
+		SplitWitness.BuilderId => SplitWitness.Build(window, site, verticalOffset),
 		Reference10GroveCourt.BuilderId => Reference10GroveCourt.Build(window, site,
 			verticalOffset),
 		Reference12FallenColossus.BuilderId => Reference12FallenColossus.Build(window,

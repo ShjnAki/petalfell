@@ -18,11 +18,13 @@ public sealed class ReferenceSiteGroundPlan
 	public int Version { get; set; }
 	public string SiteId { get; set; } = "";
 	public string ReferencePath { get; set; } = "";
+	public string DesignSourcePath { get; set; } = "";
 	public string Basis { get; set; } = "";
 	public ReferenceGroundPlanCoordinateContract CoordinateContract { get; set; } = new();
 	public List<ReferenceGroundPlanTerrain> Terrain { get; set; } = new();
 	public List<ReferenceGroundPlanSurfacePatch> SurfacePatches { get; set; } = new();
 	public List<ReferenceGroundPlanStructure> Structures { get; set; } = new();
+	public List<AuthoredSiteProp> Props { get; set; } = new();
 	public List<List<int>> SurroundingTrees { get; set; } = new();
 	public ReferenceGroundPlanAcceptanceRules AcceptanceRules { get; set; } = new();
 
@@ -99,7 +101,10 @@ public sealed class ReferenceSiteGroundPlan
 		if (string.IsNullOrWhiteSpace(SiteId)) errors.Add("siteId is required");
 		else if (!string.Equals(SiteId, site.SiteId, StringComparison.Ordinal))
 			errors.Add($"siteId '{SiteId}' does not match owning reference site '{site.SiteId}'");
-		if (string.IsNullOrWhiteSpace(ReferencePath)) errors.Add("referencePath is required");
+		if (site.IsOriginalDesign && (DesignSourcePath != site.DesignSourcePath ||
+		    string.IsNullOrWhiteSpace(DesignSourcePath)))
+			errors.Add("original ground plan must name its owning design source");
+		if (string.IsNullOrWhiteSpace(ReferencePath) && !site.IsOriginalDesign) errors.Add("referencePath is required");
 		else if (!string.Equals(ReferencePath, site.ReferencePath, StringComparison.Ordinal))
 			errors.Add($"referencePath '{ReferencePath}' does not match owning reference site '{site.ReferencePath}'");
 
@@ -204,6 +209,10 @@ public sealed class ReferenceSiteGroundPlan
 				errors.Add($"structure '{structure.Id}' kind is required");
 				continue;
 			}
+			if (site.IsOriginalDesign && structure.Kind != "stair" &&
+			    string.IsNullOrEmpty(structure.SupportTerrain) &&
+			    structure.TerrainFit != "measured-natural-foundation")
+				errors.Add($"original structure '{structure.Id}' must name supportTerrain or a measured-natural-foundation");
 
 			if (string.Equals(structure.Kind, "stair", StringComparison.Ordinal))
 				AuditStair(structure, terrainById, visibleTerrainCells, site, errors);
@@ -217,6 +226,18 @@ public sealed class ReferenceSiteGroundPlan
 
 		for (int i = 0; i < (SurroundingTrees?.Count ?? 0); i++)
 			AuditPoint(SurroundingTrees[i], $"surroundingTrees[{i}]", site, errors);
+		if (Props.Count > 64) errors.Add("A site may attach at most 64 fine props");
+		foreach (var prop in Props)
+		{
+			AuditId(prop.Id, "prop", allIds, errors);
+			if (!site.IsOriginalDesign || prop.Kind is not ("jar" or "broken-jar" or "rope-coil" or "plank" or "stone-shard" or "pottery-shard"))
+				errors.Add($"prop '{prop.Id}' needs an original site and a registered prop kind");
+			if (!float.IsFinite(prop.X) || !float.IsFinite(prop.Z) || !float.IsFinite(prop.YawDegrees) ||
+			    !float.IsFinite(prop.Scale) || prop.Scale < .25f || prop.Scale > 2f ||
+			    prop.X-3 < site.FootprintMin.X || prop.X+3 > site.FootprintMax.X ||
+			    prop.Z-3 < site.FootprintMin.Z || prop.Z+3 > site.FootprintMax.Z)
+				errors.Add($"prop '{prop.Id}' exceeds the finite scale/footprint bounds");
+		}
 
 		if (AcceptanceRules != null)
 		{
@@ -764,6 +785,7 @@ public sealed class ReferenceGroundPlanStructure
 	public string FromTerrain { get; set; } = "";
 	public string ToTerrain { get; set; } = "";
 	public string SupportTerrain { get; set; } = "";
+	public string TerrainFit { get; set; } = "";
 	public List<ReferenceGroundPlanTread> Treads { get; set; } = new();
 	public List<int> FromLanding { get; set; } = new();
 	public List<int> ToLanding { get; set; } = new();
@@ -807,3 +829,13 @@ public sealed class ReferenceGroundPlanAcceptanceRules
 }
 
 public readonly record struct ReferenceGroundPlanCell(int X, int Z);
+
+public sealed class AuthoredSiteProp
+{
+	public string Id { get; set; } = "";
+	public string Kind { get; set; } = "";
+	public float X { get; set; }
+	public float Z { get; set; }
+	public float Scale { get; set; } = 1f;
+	public float YawDegrees { get; set; }
+}

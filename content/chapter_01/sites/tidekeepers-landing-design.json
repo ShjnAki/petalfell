@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "siteId": "tidekeepers-landing",
+  "title": "Tidekeeper's Landing",
+  "authorship": "Original site authored for the September 6 worldbuilding request; not an image transcription.",
+  "terrainReason": "A surveyed southern peninsula descends from a 31-35-block shelf through 29/27/25-block shore courses into the existing sea at 24. The landing follows that descent; it does not create a new coastline or basin.",
+  "history": "A tidekeeper once recorded safe departure levels here. The gauge wall and hauling stone survived after the timber machinery and outer quay failed. A dry catchment trough, abandoned containers and broken moorings explain the work without signs or exposition.",
+  "approach": "Arrive across the rough northern shelf, pass the empty trough and capstan, then descend the narrow stairs to the broken water landing. The tall gauge stands to the east of this route, never across it.",
+  "composition": "An asymmetric gauge wall, a low working yard, three descending stair runs, a shallow broken quay toe, a dry trough and sparse mooring stones. Rubble belongs below the failed eastern wall and at the pier break.",
+  "survey": { "focus": [6484,7528], "naturalTop": 29, "sea": 24, "northShelf": [31,35], "southWaterBeginsNearZ": 7560, "sampleStride": 4 },
+  "limits": "The surrounding islands, shore slopes, rivers and vegetation remain production terrain. All major structure and prop placement is permanent and explicitly authored. No operational machinery, new quest or NPC is implied."
+}

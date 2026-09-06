@@ -2,7 +2,7 @@
   "version": 2,
   "siteId": "fallen-colossus",
   "referencePath": "res://world-new/reference-12.png",
-  "basis": "Reference 12 reconstruction using the author's Meshy head and legs. The sculptures remain close at the centre while the ruin occupies a broad, old precinct: separated irregular terrain slabs, worn paving fields, coherent moss seams, scattered stair connections, continuous broken foundations and fixed 2x2 pillars. Ordinary Bloom terrain remains visible in the channels and outside the authored slabs.",
+  "basis": "Reference 12 reconstruction. The September 6 request replaces the supplied head and legs with from-scratch stepped carvings owned by tools/build_fallen_colossus.py at the same site anchors. The sculptures remain close at the centre while the ruin occupies a broad, old precinct: separated irregular terrain slabs, worn paving fields, coherent moss seams, scattered stair connections, continuous broken foundations and fixed 2x2 pillars. Ordinary Bloom terrain remains visible in the channels and outside the authored slabs.",
   "coordinateContract": {
     "origin": { "x": 0, "z": 0 },
     "playerSpawn": { "x": -25, "z": 22 },

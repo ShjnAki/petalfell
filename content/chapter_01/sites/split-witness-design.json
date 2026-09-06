@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "siteId": "split-witness",
+  "title": "Split Witness",
+  "authorship": "Original site, explicitly authored for the September worldbuilding expansion.",
+  "terrainReason": "Survey at 4424,1928: origin top 144; the north shoulder rises to 164 and the southern approach falls toward 122. Two exposed blades interrupt this existing slope, with their roots buried in it. No level precinct is cut.",
+  "composition": [
+    "A taller western blade and a lower, narrower eastern blade flank a six-block open cleft.",
+    "Their unequal tops step downward toward the southern view. Horizontal pale strata continue across the fracture.",
+    "A detached slab lies below the eastern blade. A three-stone waymark and remnants of a small wind shelter suggest a former mountain crossing."
+  ],
+  "approach": "Climb the existing slope from the south. The shelter occupies a small natural shelf southwest of the fracture; the cleft opens onto the higher ridge.",
+  "survey": "shots/worldbuilding-2026-09-06/survey-north/samples.csv",
+  "limits": "No generated monument, symmetrical arch, flattening, new macro road, or changed atlas elevation. Cross sections are authored in SplitWitness.cs."
+}

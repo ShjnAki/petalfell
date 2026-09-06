@@ -623,7 +623,8 @@ public partial class AtlasSectorReview : Node3D
 				GD.Print($"[atlas-reclamation] {d.Trees} trees from {d.Candidates} authored candidates");
 			if (siteBuild is ReferenceSiteStatistics s)
 				GD.Print($"[reference-site] {_siteId} explicit surface {s.SurfaceCells} cells, " +
-				         $"{s.Voxels} voxel writes, source {_referenceSite.ReferencePath}");
+				         $"{s.Voxels} voxel writes, source " +
+				         (_referenceSite.IsOriginalDesign ? _referenceSite.DesignSourcePath : _referenceSite.ReferencePath));
 			_ambientDrift = new AmbientDrift { Name = "AtlasAmbientDrift" };
 			AddChild(_ambientDrift);
 			_ambientDrift.Setup(() => _window, _worldSeed, _player.GlobalPosition);
@@ -1165,6 +1166,9 @@ public partial class AtlasSectorReview : Node3D
 
 	private void WriteReferenceComparisons()
 	{
+		// Original landmarks have an authored design brief and terrain survey,
+		// not an unrelated image against which an RMSE would imply transcription.
+		if (IsSite && _referenceSite.IsOriginalDesign) return;
 		bool domainReference = IsDomain &&
 			_domain.Plan.SourceMode == PlanSourceMode.ReferenceReconstruction &&
 			_domain.Plan.ReferenceView != null;
@@ -2025,11 +2029,11 @@ public partial class AtlasSectorReview : Node3D
 			return;
 		foreach (AtlasReferenceSiteBuild build in builds)
 		{
-			if (build.SiteId != Reference12SculptureDetail.SiteId) continue;
 			ReferenceSiteDefinition site = _atlas.Topology.Sites
 				.FirstOrDefault(candidate => candidate.Id == build.SiteId)?.ReferencePlan;
-			Node3D detail = Reference12SculptureDetail.Build(window, site,
-				_inkLight, _inkDark);
+			Node3D detail = site?.IsOriginalDesign == true
+				? AuthoredSiteProps.Build(window, site)
+				: Reference12SculptureDetail.Build(window, site, _inkLight, _inkDark);
 			if (detail != null) parent.AddChild(detail);
 		}
 	}

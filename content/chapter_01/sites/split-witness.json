@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "siteId": "split-witness",
+  "builderId": "split-witness-v1",
+  "isOriginalDesign": true,
+  "designSourcePath": "res://content/chapter_01/sites/split-witness-design.json",
+  "groundPlanPath": "res://content/chapter_01/sites/split-witness-plan.json",
+  "origin": {
+    "x": 4424,
+    "z": 1928
+  },
+  "axisDegrees": 0,
+  "surroundingTreeThinningRadius": 0,
+  "surroundingTreeDensity": 1,
+  "footprintMin": {
+    "x": -40,
+    "z": -40
+  },
+  "footprintMax": {
+    "x": 40,
+    "z": 56
+  },
+  "playerSpawn": {
+    "x": -2,
+    "z": 12
+  },
+  "referenceView": {
+    "focus": {
+      "x": 0,
+      "z": 4
+    },
+    "distance": 180,
+    "yawDegrees": 35,
+    "pitchDegrees": 35.26439,
+    "heightOffset": 8,
+    "sourceWidth": 1600,
+    "sourceHeight": 900
+  }
+}

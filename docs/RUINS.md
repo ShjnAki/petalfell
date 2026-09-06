@@ -64,8 +64,17 @@ is cheaper and more reliable than moving a finished facade by eye.
 
 ## Fine geometry
 
-Voxel architecture remains the site frame. Author-supplied GLBs may represent
-sculpture or forms that cannot be expressed faithfully as cubic blocks.
+The original Tidekeeper’s Landing and Split Witness now exercise this workflow
+without replacing an existing reference composition. Each owns a design JSON,
+explicit ground plan, voxel blueprint and small prop records. The landing uses
+measured descending shore levels and missing paving edges; the outcrop preserves
+the entire surrounding ridge. See the [original-site evidence ledger](../building-knowledge/sites/original-worldbuilding-2026-09.md).
+
+Voxel architecture remains the site frame. Fine GLBs may represent sculpture or
+forms that need smaller carved planes. The September 6 request explicitly
+replaces Fallen Colossus's supplied meshes with from-scratch models consistent
+with the game. `tools/build_fallen_colossus.py` owns those anatomical profiles,
+bounded carving lattices, physical arrises and damaged crown; it imports no mesh.
 
 Before placement:
 
@@ -78,6 +87,11 @@ Before placement:
 
 Do not voxelize a supplied sculpture merely to make it match the storage format,
 and do not let a fine mesh replace the surrounding measured site.
+
+The authored colossus uses flat stone normals for lighting and a separate UV2
+normal for continuous pixel-width silhouette ink. Collision is the same static
+triangle surface under the mesh transform. `verify-sculpture` checks imported
+channels, shared corners, bounds, translated window anchors and actual physics.
 
 ## Terrain integration
 

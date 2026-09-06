@@ -1,0 +1,900 @@
+{
+  "version": 2,
+  "siteId": "tidekeepers-landing",
+  "designSourcePath": "res://content/chapter_01/sites/tidekeepers-landing-design.json",
+  "basis": "Original shore worksite at the surveyed 29-block shoulder. The gauge stands beside an open route down to the existing sea; narrow irregular landings follow the shore courses.",
+  "coordinateContract": {
+    "origin": {
+      "x": 0,
+      "z": 0
+    },
+    "playerSpawn": {
+      "x": -3,
+      "z": -9
+    },
+    "plotView": "source-facing",
+    "oneCellIsOneVoxel": true,
+    "runtimePlanScale": 1,
+    "runtimeMirrorX": false,
+    "sourceViewYawDegrees": 35,
+    "sourceViewPitchDegrees": 35.26439
+  },
+  "terrain": [
+    {
+      "id": "natural-shore",
+      "role": "preserved-island-slope-and-existing-sea",
+      "surfaceY": 29,
+      "material": "natural",
+      "writeMode": "preserve-atlas",
+      "footprint": [
+        -36,
+        -40,
+        38,
+        54
+      ]
+    },
+    {
+      "id": "working-yard",
+      "role": "cut-into-the-old-dry-shoulder",
+      "surfaceY": 31,
+      "material": "worn-paving",
+      "writeMode": "author-surface",
+      "polygon": [
+        [
+          -24,
+          -30
+        ],
+        [
+          16,
+          -30
+        ],
+        [
+          16,
+          -25
+        ],
+        [
+          22,
+          -25
+        ],
+        [
+          22,
+          -9
+        ],
+        [
+          18,
+          -9
+        ],
+        [
+          18,
+          -3
+        ],
+        [
+          -21,
+          -3
+        ],
+        [
+          -21,
+          -10
+        ],
+        [
+          -27,
+          -10
+        ],
+        [
+          -27,
+          -24
+        ],
+        [
+          -24,
+          -24
+        ]
+      ]
+    },
+    {
+      "id": "quay-shoulder",
+      "role": "broken-upper-landing",
+      "surfaceY": 29,
+      "material": "warm-stone",
+      "writeMode": "author-surface",
+      "polygon": [
+        [
+          -22,
+          -2
+        ],
+        [
+          19,
+          -2
+        ],
+        [
+          19,
+          14
+        ],
+        [
+          13,
+          14
+        ],
+        [
+          13,
+          19
+        ],
+        [
+          -13,
+          19
+        ],
+        [
+          -13,
+          13
+        ],
+        [
+          -22,
+          13
+        ]
+      ]
+    },
+    {
+      "id": "lower-landing",
+      "role": "shore-course-landing",
+      "surfaceY": 27,
+      "material": "worn-paving",
+      "writeMode": "author-surface",
+      "footprint": [
+        -10,
+        20,
+        10,
+        29
+      ]
+    },
+    {
+      "id": "water-landing",
+      "role": "last-dry-course-above-the-sea",
+      "surfaceY": 25,
+      "material": "warm-stone",
+      "writeMode": "author-surface",
+      "footprint": [
+        -7,
+        30,
+        7,
+        37
+      ]
+    },
+    {
+      "id": "broken-quay-toe",
+      "role": "narrow-eroded-masonry-in-the-existing-water",
+      "surfaceY": 25,
+      "material": "moss-stone",
+      "writeMode": "author-surface",
+      "polygon": [
+        [
+          -4,
+          38
+        ],
+        [
+          4,
+          38
+        ],
+        [
+          4,
+          44
+        ],
+        [
+          2,
+          44
+        ],
+        [
+          2,
+          48
+        ],
+        [
+          3,
+          48
+        ],
+        [
+          3,
+          53
+        ],
+        [
+          -2,
+          53
+        ],
+        [
+          -2,
+          50
+        ],
+        [
+          -4,
+          50
+        ]
+      ]
+    },
+    {
+      "id": "yard-north-reclamation",
+      "role": "broken-paving-gives-way-to-existing-ground",
+      "surfaceY": 29,
+      "material": "natural",
+      "writeMode": "preserve-atlas",
+      "footprint": [
+        -3,
+        -30,
+        8,
+        -25
+      ]
+    },
+    {
+      "id": "quay-west-reclamation",
+      "role": "broken-paving-gives-way-to-existing-ground",
+      "surfaceY": 29,
+      "material": "natural",
+      "writeMode": "preserve-atlas",
+      "footprint": [
+        -22,
+        -2,
+        -17,
+        3
+      ]
+    },
+    {
+      "id": "quay-broken-front",
+      "role": "broken-paving-gives-way-to-existing-ground",
+      "surfaceY": 27,
+      "material": "natural",
+      "writeMode": "preserve-atlas",
+      "footprint": [
+        -13,
+        15,
+        -10,
+        18
+      ]
+    },
+    {
+      "id": "water-edge-loss",
+      "role": "broken-paving-gives-way-to-existing-ground",
+      "surfaceY": 25,
+      "material": "natural",
+      "writeMode": "preserve-atlas",
+      "footprint": [
+        -7,
+        35,
+        -5,
+        37
+      ]
+    }
+  ],
+  "surfacePatches": [
+    {
+      "id": "trough-damp-edge",
+      "terrainId": "working-yard",
+      "material": "moss-stone",
+      "footprints": [
+        [
+          -21,
+          -25,
+          -18,
+          -24
+        ],
+        [
+          -21,
+          -23,
+          -20,
+          -16
+        ],
+        [
+          -19,
+          -15,
+          -16,
+          -14
+        ]
+      ]
+    },
+    {
+      "id": "yard-worn-stones",
+      "terrainId": "working-yard",
+      "material": "warm-stone",
+      "footprints": [
+        [
+          -9,
+          -10,
+          -6,
+          -9
+        ],
+        [
+          3,
+          -17,
+          6,
+          -16
+        ],
+        [
+          10,
+          -27,
+          13,
+          -26
+        ]
+      ]
+    },
+    {
+      "id": "quay-growth",
+      "terrainId": "quay-shoulder",
+      "material": "moss-stone",
+      "footprints": [
+        [
+          -21,
+          7,
+          -19,
+          11
+        ],
+        [
+          -18,
+          10,
+          -17,
+          12
+        ],
+        [
+          14,
+          8,
+          16,
+          11
+        ]
+      ]
+    },
+    {
+      "id": "yard-reclamation",
+      "terrainId": "working-yard",
+      "material": "reclaimed-meadow",
+      "footprints": [
+        [
+          6,
+          -24,
+          10,
+          -24
+        ],
+        [
+          5,
+          -23,
+          12,
+          -21
+        ],
+        [
+          7,
+          -20,
+          12,
+          -20
+        ],
+        [
+          10,
+          -19,
+          13,
+          -18
+        ],
+        [
+          11,
+          -17,
+          12,
+          -17
+        ],
+        [
+          -24,
+          -22,
+          -23,
+          -17
+        ],
+        [
+          -22,
+          -21,
+          -22,
+          -19
+        ],
+        [
+          -17,
+          -8,
+          -13,
+          -8
+        ],
+        [
+          -18,
+          -7,
+          -11,
+          -7
+        ],
+        [
+          -16,
+          -6,
+          -12,
+          -6
+        ]
+      ]
+    },
+    {
+      "id": "quay-reclamation",
+      "terrainId": "quay-shoulder",
+      "material": "reclaimed-meadow",
+      "footprints": [
+        [
+          -16,
+          -1,
+          -12,
+          0
+        ],
+        [
+          -16,
+          1,
+          -13,
+          2
+        ],
+        [
+          -15,
+          3,
+          -14,
+          3
+        ],
+        [
+          -16,
+          10,
+          -13,
+          11
+        ],
+        [
+          -15,
+          12,
+          -12,
+          12
+        ],
+        [
+          -12,
+          10,
+          -11,
+          10
+        ],
+        [
+          6,
+          11,
+          8,
+          11
+        ],
+        [
+          5,
+          12,
+          10,
+          13
+        ],
+        [
+          7,
+          14,
+          10,
+          14
+        ],
+        [
+          8,
+          15,
+          9,
+          15
+        ]
+      ]
+    },
+    {
+      "id": "lower-worn-edge",
+      "terrainId": "lower-landing",
+      "material": "moss-stone",
+      "footprints": [
+        [
+          -10,
+          22,
+          -8,
+          25
+        ],
+        [
+          7,
+          24,
+          10,
+          26
+        ]
+      ]
+    }
+  ],
+  "structures": [
+    {
+      "id": "yard-stair",
+      "kind": "stair",
+      "fromTerrain": "quay-shoulder",
+      "toTerrain": "working-yard",
+      "treads": [
+        {
+          "footprint": [
+            -10,
+            0,
+            3,
+            1
+          ],
+          "topY": 29
+        },
+        {
+          "footprint": [
+            -10,
+            -2,
+            3,
+            -1
+          ],
+          "topY": 30
+        },
+        {
+          "footprint": [
+            -10,
+            -4,
+            3,
+            -3
+          ],
+          "topY": 31
+        }
+      ],
+      "axis": [
+        0,
+        -1
+      ],
+      "fromLanding": [
+        -10,
+        0,
+        3,
+        1
+      ],
+      "toLanding": [
+        -10,
+        -5,
+        3,
+        -4
+      ]
+    },
+    {
+      "id": "shore-stair",
+      "kind": "stair",
+      "fromTerrain": "lower-landing",
+      "toTerrain": "quay-shoulder",
+      "treads": [
+        {
+          "footprint": [
+            -7,
+            20,
+            6,
+            20
+          ],
+          "topY": 27
+        },
+        {
+          "footprint": [
+            -7,
+            19,
+            6,
+            19
+          ],
+          "topY": 28
+        },
+        {
+          "footprint": [
+            -7,
+            18,
+            6,
+            18
+          ],
+          "topY": 29
+        }
+      ],
+      "axis": [
+        0,
+        -1
+      ],
+      "fromLanding": [
+        -7,
+        20,
+        6,
+        21
+      ],
+      "toLanding": [
+        -7,
+        17,
+        6,
+        18
+      ]
+    },
+    {
+      "id": "water-stair",
+      "kind": "stair",
+      "fromTerrain": "water-landing",
+      "toTerrain": "lower-landing",
+      "treads": [
+        {
+          "footprint": [
+            -5,
+            30,
+            4,
+            30
+          ],
+          "topY": 25
+        },
+        {
+          "footprint": [
+            -5,
+            29,
+            4,
+            29
+          ],
+          "topY": 26
+        },
+        {
+          "footprint": [
+            -5,
+            28,
+            4,
+            28
+          ],
+          "topY": 27
+        }
+      ],
+      "axis": [
+        0,
+        -1
+      ],
+      "fromLanding": [
+        -5,
+        30,
+        4,
+        31
+      ],
+      "toLanding": [
+        -5,
+        27,
+        4,
+        28
+      ]
+    },
+    {
+      "id": "gauge-wall",
+      "kind": "authored-tide-gauge",
+      "baseY": 29,
+      "height": 14,
+      "footprint": [
+        14,
+        -17,
+        17,
+        15
+      ],
+      "terrainFit": "measured-natural-foundation"
+    },
+    {
+      "id": "dry-catchment-trough",
+      "kind": "authored-hollow-trough",
+      "baseY": 31,
+      "height": 5,
+      "supportTerrain": "working-yard",
+      "footprint": [
+        -20,
+        -24,
+        -12,
+        -14
+      ]
+    },
+    {
+      "id": "hauling-stone",
+      "kind": "authored-capstan-remnant",
+      "baseY": 31,
+      "height": 5,
+      "supportTerrain": "working-yard",
+      "footprint": [
+        -7,
+        -20,
+        -3,
+        -16
+      ]
+    },
+    {
+      "id": "upper-moorings",
+      "kind": "authored-mooring-pair",
+      "baseY": 29,
+      "height": 3,
+      "supportTerrain": "quay-shoulder",
+      "footprints": [
+        [
+          -13,
+          6,
+          -12,
+          7
+        ],
+        [
+          10,
+          6,
+          11,
+          7
+        ]
+      ]
+    },
+    {
+      "id": "lower-moorings",
+      "kind": "authored-mooring-pair",
+      "baseY": 25,
+      "height": 3,
+      "supportTerrain": "water-landing",
+      "footprints": [
+        [
+          -7,
+          33,
+          -6,
+          34
+        ],
+        [
+          6,
+          33,
+          7,
+          34
+        ]
+      ]
+    },
+    {
+      "id": "wall-fall",
+      "kind": "authored-collapse-debris",
+      "baseY": 27,
+      "height": 4,
+      "footprints": [
+        [
+          21,
+          5,
+          23,
+          7
+        ],
+        [
+          24,
+          9,
+          26,
+          10
+        ],
+        [
+          20,
+          12,
+          21,
+          14
+        ],
+        [
+          26,
+          15,
+          28,
+          16
+        ]
+      ],
+      "terrainFit": "measured-natural-foundation"
+    }
+  ],
+  "acceptanceRules": {
+    "significantGeometryMustAppearInThisPlan": true,
+    "generatorMayNotMoveOrAddStructures": true,
+    "eachStairMustTouchBothNamedTerrains": true,
+    "isolatedSurvivorMaximumFootprint": [
+      2,
+      2
+    ]
+  },
+  "props": [
+    {
+      "kind": "jar",
+      "id": "kept-water-jar",
+      "x": -16,
+      "z": -11,
+      "scale": 1.5,
+      "yawDegrees": 12
+    },
+    {
+      "kind": "jar",
+      "id": "small-storage-jar",
+      "x": -13.7,
+      "z": -10.8,
+      "scale": 1.05,
+      "yawDegrees": -8
+    },
+    {
+      "kind": "broken-jar",
+      "id": "broken-yard-vessel",
+      "x": 10,
+      "z": -22,
+      "scale": 1.6,
+      "yawDegrees": 45
+    },
+    {
+      "kind": "broken-jar",
+      "id": "quay-rim-fragment",
+      "x": -17,
+      "z": 9,
+      "scale": 1.15,
+      "yawDegrees": 98
+    },
+    {
+      "kind": "rope-coil",
+      "id": "capstan-rope",
+      "x": -8.6,
+      "z": -18,
+      "scale": 1.65,
+      "yawDegrees": 0
+    },
+    {
+      "kind": "rope-coil",
+      "id": "last-mooring-rope",
+      "x": -9,
+      "z": 8,
+      "scale": 1.5,
+      "yawDegrees": 32
+    },
+    {
+      "kind": "rope-coil",
+      "id": "lower-rope-remnant",
+      "x": 4,
+      "z": 34,
+      "scale": 1,
+      "yawDegrees": -12
+    },
+    {
+      "kind": "plank",
+      "id": "yard-timber-a",
+      "x": 4,
+      "z": -10,
+      "scale": 1.5,
+      "yawDegrees": 15
+    },
+    {
+      "kind": "plank",
+      "id": "yard-timber-b",
+      "x": 5.7,
+      "z": -9.5,
+      "scale": 1.2,
+      "yawDegrees": 23
+    },
+    {
+      "kind": "plank",
+      "id": "quay-timber-remnant",
+      "x": 10,
+      "z": 13,
+      "scale": 1.3,
+      "yawDegrees": 65
+    },
+    {
+      "kind": "plank",
+      "id": "waterlogged-board",
+      "x": 3,
+      "z": 39,
+      "scale": 1,
+      "yawDegrees": -8
+    },
+    {
+      "kind": "pottery-shard",
+      "id": "jar-shard-a",
+      "x": 11.6,
+      "z": -20.5,
+      "scale": 0.7,
+      "yawDegrees": 17
+    },
+    {
+      "kind": "pottery-shard",
+      "id": "jar-shard-b",
+      "x": 10.8,
+      "z": -19.5,
+      "scale": 0.5,
+      "yawDegrees": -20
+    },
+    {
+      "kind": "stone-shard",
+      "id": "wall-chip-a",
+      "x": 11,
+      "z": 0,
+      "scale": 1.5,
+      "yawDegrees": 13
+    },
+    {
+      "kind": "stone-shard",
+      "id": "wall-chip-b",
+      "x": 12,
+      "z": 2,
+      "scale": 1,
+      "yawDegrees": -29
+    },
+    {
+      "kind": "stone-shard",
+      "id": "stair-edge-chip",
+      "x": -10.7,
+      "z": 21,
+      "scale": 1.4,
+      "yawDegrees": 19
+    }
+  ]
+}

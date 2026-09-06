@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "siteId": "tidekeepers-landing",
+  "builderId": "tidekeepers-landing-v1",
+  "isOriginalDesign": true,
+  "designSourcePath": "res://content/chapter_01/sites/tidekeepers-landing-design.json",
+  "groundPlanPath": "res://content/chapter_01/sites/tidekeepers-landing-plan.json",
+  "origin": {
+    "x": 6484,
+    "z": 7528
+  },
+  "axisDegrees": 0,
+  "surroundingTreeThinningRadius": 35,
+  "surroundingTreeDensity": 0.65,
+  "footprintMin": {
+    "x": -36,
+    "z": -40
+  },
+  "footprintMax": {
+    "x": 38,
+    "z": 54
+  },
+  "playerSpawn": {
+    "x": -3,
+    "z": -9
+  },
+  "referenceView": {
+    "focus": {
+      "x": 0,
+      "z": 12
+    },
+    "distance": 146,
+    "yawDegrees": 35,
+    "pitchDegrees": 35.26439,
+    "heightOffset": 4,
+    "sourceWidth": 1600,
+    "sourceHeight": 900
+  }
+}

@@ -38,12 +38,28 @@ pixels as hard voxel boundaries and do not invent a replacement macro planner.
 4. Author the complete L3 top plan before adding vertical detail.
 5. Build site terrain, stairs, walls, arches, pillars, rubble and exclusions as
    unique records.
-6. Add L4 material patches and supplied fine meshes.
+6. Add L4 material patches and site-owned fine meshes. Colossus's from-scratch
+   source is `tools/build_fallen_colossus.py`; its GLBs, editable blend and audit
+   are derived outputs. Rebuild them from that source instead of editing exports.
 7. Review in the normal production terrain window.
 8. Promote topology status only after the site should enter normal play.
 
 No site builder chooses its own location. No reusable structure stamp designs a
 production site.
+
+The September 6 worldbuilding request also authorizes original man-made and
+natural landmarks. An original site must declare its design source and permanent
+L2 location, then follow the same plan, terrain integration and review workflow.
+It must not masquerade as a transcription of an unrelated reference image.
+
+Tidekeeper’s Landing and Split Witness store their design briefs as authored
+`*-design.json`, registrations as `*.json` and ground plans as `*-plan.json` in
+`content/chapter_01/sites/`. Their `props` records name a bounded mesh kind, exact
+local X/Z anchor, scale and yaw; runtime only grounds and realizes those records.
+The read-only `survey-terrain X,Z OUTPUT` command exports sampled production
+heights and a terrain image for allocation. Surveys and captures are derived
+evidence, not replacement atlas sources. New topology allocations are edited
+explicitly; no survey or builder writes them.
 
 ## Fast iteration
 

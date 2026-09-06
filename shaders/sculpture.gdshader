@@ -10,12 +10,15 @@ render_mode cull_back, diffuse_burley, specular_disabled;
 uniform vec4 base_colour : source_color = vec4(0.86, 0.84, 0.92, 1.0);
 uniform float weathering : hint_range(0.0, 1.0) = 0.62;
 uniform float moss_mix : hint_range(0.0, 1.0) = 0.0;
+uniform bool carved_courses = false;
+uniform bool weathered_wood = false;
 uniform vec4 moss_colour : source_color = vec4(0.66, 0.71, 0.54, 1.0);
 uniform vec3 warm_tint : source_color = vec3(1.02, 1.00, 0.985);
 uniform vec3 cool_tint : source_color = vec3(0.945, 0.958, 1.06);
 global uniform vec3 pf_sun_dir;
 
 varying vec3 v_world;
+varying vec3 v_local;
 
 float hash21(vec2 p) {
 	uvec2 q = uvec2(ivec2(p));
@@ -45,6 +48,7 @@ float fbm(vec2 p) {
 
 void vertex() {
 	v_world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	v_local = VERTEX;
 }
 
 void fragment() {
@@ -65,10 +69,36 @@ void fragment() {
 		+ (tooth - 0.5) * 0.08, -0.13, 0.14) * weathering;
 
 	vec3 base = base_colour.rgb;
+	if (weathered_wood) {
+		float grain = abs(sin(v_local.x * 86.0 + sin(v_local.z * 1.6) * 0.6));
+		float aa = max(fwidth(grain), 0.02);
+		float groove = 1.0 - smoothstep(0.06, 0.10 + aa, grain);
+		base *= 0.76 - groove * 0.16;
+	}
 	float moss_field = smoothstep(0.53, 0.76,
 		broad * 0.68 + blotch * 0.32 + (1.0 - clamp(wn.y, 0.0, 1.0)) * 0.08);
-	base = mix(base, moss_colour.rgb, moss_field * moss_mix);
+	if (!carved_courses) base = mix(base, moss_colour.rgb, moss_field * moss_mix);
 	base *= 1.0 - stain;
+	if (carved_courses) {
+		// These metre coordinates were projected before the head was toppled.
+		// Subtle course variation and worn partial seams follow the carved object;
+		// no painted lighting or one-metre world grid is baked into its colour.
+		vec2 course = UV / vec2(3.2, 2.7);
+		course.x += mod(floor(course.y), 2.0) * 0.5;
+		vec2 cell = floor(course), within = fract(course);
+		float value = hash21(cell);
+		base *= mix(0.94, 1.045, value);
+		base *= mix(cool_tint, warm_tint, smoothstep(0.1, 0.9, value));
+		vec2 seam_distance = min(within, vec2(1.0) - within);
+		vec2 pixel = max(fwidth(course), vec2(0.0001));
+		vec2 seams = vec2(1.0) - smoothstep(vec2(0.002), vec2(0.002) + pixel * 0.85, seam_distance);
+		float worn_seam = max(seams.x, seams.y) * smoothstep(0.37, 0.65, vnoise(UV * 0.44));
+		float course_fade = 1.0 - smoothstep(0.15, 0.55, max(pixel.x, pixel.y));
+		base *= 1.0 - worn_seam * course_fade * 0.18;
+		float growth = fbm(floor(UV * 2.0) * 0.0525 + vec2(37.0, 11.0));
+		float moss = smoothstep(0.60, 0.65, growth + worn_seam * 0.025);
+		base = mix(base, moss_colour.rgb * mix(0.86, 1.0, blotch), moss * moss_mix);
+	}
 	// Triplanar weights keep continuous carved cheeks and sloping limbs free of
 	// the hard projection changes appropriate only to axis-aligned voxel faces.
 	vec3 weights = pow(an, vec3(4.0));

@@ -26,6 +26,10 @@ complete day/night response on top of the accepted terrain and measured sites.
 
 References `world-new/reference-*.png` are binding for current site structure.
 Broader scenery references guide scale and landscape rhythm, not site layout.
+The September 6 expansion also includes original authored destinations: old
+shore works and natural landmarks whose smaller remains explain their past use.
+Their explicit design briefs govern composition; they share the same terrain,
+material, day/night and player-scale requirements as the reference sites.
 
 ## World
 

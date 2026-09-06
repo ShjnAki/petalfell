@@ -324,7 +324,10 @@ def audit(data: dict) -> list[str]:
             continue
 
         support_id = structure.get("supportTerrain")
-        if support_id not in terrain_by_id:
+        measured_foundation = (bool(data.get("designSourcePath")) and
+                               structure.get("terrainFit") == "measured-natural-foundation" and
+                               support_id is None)
+        if support_id not in terrain_by_id and not measured_foundation:
             errors.append(
                 f"structure '{structure_id}' must name an existing supportTerrain"
             )

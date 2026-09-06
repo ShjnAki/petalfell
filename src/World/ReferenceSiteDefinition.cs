@@ -17,6 +17,8 @@ public sealed class ReferenceSiteDefinition
 	public string SiteId { get; set; } = "";
 	public string BuilderId { get; set; } = "";
 	public string ReferencePath { get; set; } = "";
+	public bool IsOriginalDesign { get; set; }
+	public string DesignSourcePath { get; set; } = "";
 	public string GroundPlanPath { get; set; } = "";
 	public BlockPoint Origin { get; set; } = new();
 	public float AxisDegrees { get; set; }
@@ -64,7 +66,14 @@ public sealed class ReferenceSiteDefinition
 		if (Version != 1) report.Error($"version must be 1, got {Version}");
 		if (SiteId != site.Id) report.Error($"siteId '{SiteId}' does not match '{site.Id}'");
 		if (string.IsNullOrWhiteSpace(BuilderId)) report.Error("builderId is required");
-		if (!AtlasSourceImages.Exists(ReferencePath))
+		if (IsOriginalDesign)
+		{
+			if (!string.IsNullOrEmpty(ReferencePath))
+				report.Error("original designs must not claim a reconstruction reference image");
+			if (string.IsNullOrWhiteSpace(DesignSourcePath) || !Godot.FileAccess.FileExists(DesignSourcePath))
+				report.Error($"original design source '{DesignSourcePath}' does not exist");
+		}
+		else if (!AtlasSourceImages.Exists(ReferencePath))
 			report.Error($"reference '{ReferencePath}' does not exist");
 		if (string.IsNullOrWhiteSpace(GroundPlanPath) ||
 		    !Godot.FileAccess.FileExists(GroundPlanPath))

@@ -1,0 +1,257 @@
+{
+  "version": 2,
+  "siteId": "split-witness",
+  "designSourcePath": "res://content/chapter_01/sites/split-witness-design.json",
+  "basis": "Original unequal fractured rock blades on the measured northern slope. All surrounding ground remains atlas-authored; roots extend into each natural column.",
+  "coordinateContract": {
+    "origin": {
+      "x": 0,
+      "z": 0
+    },
+    "playerSpawn": {
+      "x": -2,
+      "z": 12
+    },
+    "plotView": "source-facing",
+    "oneCellIsOneVoxel": true,
+    "runtimePlanScale": 1,
+    "runtimeMirrorX": false,
+    "sourceViewYawDegrees": 35,
+    "sourceViewPitchDegrees": 35.26439
+  },
+  "terrain": [
+    {
+      "id": "natural-ridge",
+      "role": "untouched-stepped-northern-slope",
+      "surfaceY": 144,
+      "material": "natural",
+      "writeMode": "preserve-atlas",
+      "footprint": [
+        -40,
+        -40,
+        40,
+        56
+      ]
+    }
+  ],
+  "surfacePatches": [],
+  "structures": [
+    {
+      "id": "west-blade",
+      "kind": "authored-natural-outcrop",
+      "baseY": 144,
+      "height": 35,
+      "footprints": [
+        [
+          -14,
+          -14,
+          -7,
+          -11
+        ],
+        [
+          -17,
+          -10,
+          -5,
+          -5
+        ],
+        [
+          -18,
+          -4,
+          -4,
+          1
+        ],
+        [
+          -16,
+          2,
+          -5,
+          6
+        ],
+        [
+          -13,
+          7,
+          -6,
+          10
+        ]
+      ],
+      "terrainFit": "measured-natural-foundation"
+    },
+    {
+      "id": "east-blade",
+      "kind": "authored-natural-outcrop",
+      "baseY": 144,
+      "height": 29,
+      "footprints": [
+        [
+          6,
+          -10,
+          12,
+          -7
+        ],
+        [
+          4,
+          -6,
+          15,
+          -1
+        ],
+        [
+          3,
+          0,
+          16,
+          5
+        ],
+        [
+          4,
+          6,
+          14,
+          10
+        ],
+        [
+          6,
+          11,
+          12,
+          13
+        ]
+      ],
+      "terrainFit": "measured-natural-foundation"
+    },
+    {
+      "id": "fallen-flake",
+      "kind": "authored-detached-stratum",
+      "baseY": 134,
+      "height": 13,
+      "footprints": [
+        [
+          6,
+          24,
+          12,
+          27
+        ],
+        [
+          5,
+          28,
+          16,
+          32
+        ],
+        [
+          8,
+          33,
+          18,
+          36
+        ],
+        [
+          12,
+          37,
+          17,
+          38
+        ]
+      ],
+      "terrainFit": "measured-natural-foundation"
+    },
+    {
+      "id": "wind-shelter",
+      "kind": "authored-broken-shelter",
+      "baseY": 133,
+      "height": 6,
+      "footprints": [
+        [
+          -25,
+          12,
+          -24,
+          21
+        ],
+        [
+          -23,
+          20,
+          -15,
+          21
+        ],
+        [
+          -23,
+          12,
+          -21,
+          13
+        ]
+      ],
+      "terrainFit": "measured-natural-foundation"
+    },
+    {
+      "id": "three-stone-waymark",
+      "kind": "authored-route-mark",
+      "baseY": 132,
+      "height": 5,
+      "footprint": [
+        -11,
+        23,
+        -8,
+        26
+      ],
+      "terrainFit": "measured-natural-foundation"
+    }
+  ],
+  "acceptanceRules": {
+    "significantGeometryMustAppearInThisPlan": true,
+    "generatorMayNotMoveOrAddStructures": true,
+    "isolatedSurvivorMaximumFootprint": [
+      2,
+      2
+    ]
+  },
+  "props": [
+    {
+      "kind": "broken-jar",
+      "id": "shelter-offering",
+      "x": -20,
+      "z": 17,
+      "scale": 0.9,
+      "yawDegrees": 25
+    },
+    {
+      "kind": "plank",
+      "id": "shelter-lost-roof",
+      "x": -18,
+      "z": 18,
+      "scale": 1.4,
+      "yawDegrees": 38
+    },
+    {
+      "kind": "plank",
+      "id": "shelter-beam-end",
+      "x": -21,
+      "z": 15,
+      "scale": 0.9,
+      "yawDegrees": 25
+    },
+    {
+      "kind": "stone-shard",
+      "id": "trail-flake-a",
+      "x": -8,
+      "z": 30,
+      "scale": 1.3,
+      "yawDegrees": 25
+    },
+    {
+      "kind": "stone-shard",
+      "id": "trail-flake-b",
+      "x": -5,
+      "z": 31,
+      "scale": 0.8,
+      "yawDegrees": 70
+    },
+    {
+      "kind": "stone-shard",
+      "id": "cleft-fall-a",
+      "x": -1,
+      "z": 8,
+      "scale": 1.6,
+      "yawDegrees": 17
+    },
+    {
+      "kind": "stone-shard",
+      "id": "cleft-fall-b",
+      "x": 1,
+      "z": 3,
+      "scale": 1.2,
+      "yawDegrees": -45
+    }
+  ]
+}

@@ -73,17 +73,37 @@ Canonical topology decides whether a site runs in production. `Production` and
 `Accepted` sites are overlaid; `Planned` and `Blockout` sites do not reserve or
 alter normal terrain.
 
-Each reference plan owns its footprint, levels, voxels, meshes, surface patches,
+Each authored plan owns its footprint, levels, voxels, meshes, surface patches,
 stairs and exclusion area. `ReferenceSiteBuilder` writes the plan into the
 window after natural terrain and before vegetation. Its vertical datum is
 translated onto the natural surface, but its authored proportions are not
 rescaled.
 
-Fine sculpture GLBs are prepared deterministically, stripped of source
-materials, assigned Petalfell stone/ink, and given explicit compound collision.
+Original sites explicitly set `isOriginalDesign` and `designSourcePath`; reference
+sites retain their image contract. Tidekeeper’s Landing and Split Witness use
+site-specific voxel blueprints through `AuthoredSiteWriter`. That helper only
+writes declared cells and checks exact occupied projections. It never chooses
+positions, masses or damage. Preserved terrain shapes remain untouched; written
+dry surfaces update voxel columns and hydrology together before placed geometry.
+Structures crossing a natural slope declare `measured-natural-foundation`.
+
+`AuthoredSiteProps` attaches only the plan's explicit small-prop records, with a
+64-instance per-site limit. Meshes and finishes are shared within a site, grounded
+against the active window and rebuilt on window replacement. Closed faceted jars,
+broken rims, rope coils, split boards and fragments use existing palette colours
+and the sculpture finish; timber adds object-space grain. Jar collision follows
+its actual hollow mesh. Normal production and review use the same attachment.
+
+Fine sculpture GLBs are prepared deterministically and assigned Petalfell
+stone/ink. Fallen Colossus now uses from-scratch metre-scale stepped carvings
+from `tools/build_fallen_colossus.py`, with static triangle collision taken from
+the same mesh under the same transform. No broad invisible collision boxes remain.
 They supplement site-owned voxels; they do not replace the measured site plan.
-The sculpture outline expands in framebuffer pixels, independently of imported
-mesh scale. It does not alter source geometry or compound collision.
+The sculpture outline expands in framebuffer pixels. Its authored UV2 channel
+contains a shared octahedral hull normal at hard face splits, while ordinary
+flat normals continue to light the stone. Re-entrant corners that have no outward
+average are pinned. UV1 carries metre-coordinate stone courses projected before
+the head's fallen rotation; UV2 must not be regenerated as a lightmap unwrap.
 
 ## Rendering
 

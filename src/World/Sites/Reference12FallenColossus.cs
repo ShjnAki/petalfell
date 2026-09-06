@@ -6,7 +6,7 @@ using Petalfell.Core;
 namespace Petalfell.World.Sites;
 
 /// <summary>
-/// Site-owned terrain blockout for the author's Reference 12 Meshy sculptures:
+/// Site-owned terrain blockout for the authored Reference 12 sculptures:
 /// a broad field of detached worn slabs around a three-course leg plinth and
 /// low fallen-head court. Visible sculpture and collision attach separately in
 /// Reference12SculptureDetail.
@@ -61,8 +61,8 @@ public static class Reference12FallenColossus
 			WriteTerrain();
 			WriteSurfaceWear();
 
-			// The Meshy GLBs now own the complete visible sculpture and their invisible
-			// collision volumes. Keeping the old integer-voxel shells here made smooth
+			// The site-owned GLBs own the complete visible sculpture and their matching
+			// static collision surfaces. Keeping old integer-voxel shells here made
 			// slabs poke through the authored legs, head and fallen debris.
 			ReserveExternalGeometry("fallen-crown");
 			ReserveExternalGeometry("fallen-head-core");

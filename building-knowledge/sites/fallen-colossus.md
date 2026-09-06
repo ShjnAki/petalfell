@@ -2,11 +2,11 @@
 
 - **Lifecycle:** `active`
 - **Evidence summary:** source relations are `observed/source-measured`; the
-  permanent site, twenty-six-structure plan, Meshy normalization, broad worn
-  precinct and runtime attachment are `mechanically verified`; the current v25
-  locked and far images are `visually reviewed` for 1.5× leg scale, Petalfell
-  material, silhouette ink, enlarged plinth and partial three-level outer slab
-  stacks; the site is not `author-accepted`
+  permanent precinct remains in production. The September 6 request replaces
+  supplied meshes with from-scratch stepped carvings. Import/physics checks pass;
+  v4 locked day/midnight are `visually reviewed` for the new form and material.
+  Earlier imported-sculpture matrices below are historical; the site is not
+  `author-accepted`
 - **Scope:** `site-specific` to `fallen-colossus` / `reference-12.png`
 - **Last verified:** 2026-09-06 for shared materials and outlines; placement evidence retains its earlier date
 - **Supersedes:** the v6/v7 provisional hand-built sculpture; rejected attempts
@@ -32,6 +32,9 @@ foot, ankle, calf, knee and severed thigh rather than random protruding boxes.
 
 | Claim | State | Evidence | Remaining uncertainty |
 |---|---|---|---|
+| From-scratch head and legs replace the supplied meshes at the existing permanent anchors | `mechanically verified` | `tools/build_fallen_colossus.py`, two authored GLBs, `Reference12SculptureDetail.cs`, build and `verify-sculpture`, 2026-09-06 | 31.2-unit legs and 17.513-unit head retain the preceding scale; whole-site fidelity remains open |
+| Foot/calf gap stays open and carved surfaces block rays and a player-sized capsule | `mechanically verified` | `tools/SculptureSmoke.cs` exercises the imported mesh and the live physics space; all 4,794 collision triangles match visual faces | Controlled physics queries, not a player-controlled traversal or author acceptance |
+| Stepped anatomy, crown/face recesses and stone courses remain readable at locked day and midnight | `visually reviewed` | Both full-size v4 frames in `shots/worldbuilding-2026-09-06/colossus-v4/`, 2026-09-06 | The precinct remains cleaner and sparser than the source. Full 23-view package matrix subsequently reviewed; precinct reference parity remains open |
 | The airborne revision retains the sampled precinct views | `visually reviewed` | Both `folded-air-fallen-package` raw frames at full size: locked day and close r3, 2026-09-06 | A focused effects check only. Sculpture and architecture are unchanged; preceding full matrix remains historical. Overlays were generated but not inspected |
 | The leaf-only surface revision retains precinct and sculpture readability through the site matrix | `visually reviewed` | All 23 package `shots/look-2026-09-06/satin-canopy-fallen-full/` views in labelled reduced matrices, plus full-size close r3, 2026-09-06 | This verifies broad readability after a shared shader change. Sparse dressing, smooth sculpture and distant colour remain below the source; composition is unchanged and not author-accepted |
 | Shared turf and plant colour preserves separation around the pale precinct | `visually reviewed` | All 23 package `shots/look-2026-09-06/matte-turf-fallen-full/` views in labelled reduced matrices, plus individually inspected full-size close r0; 2026-09-06 | Quiet olive/cool growth is retained, while broad wear masks, sparse dressing and smooth sculpture remain below the source. Authored composition is unchanged; no author acceptance |
@@ -63,11 +66,12 @@ foot, ankle, calf, knee and severed thigh rather than random protruding boxes.
   easing smoothly to ordinary Bloom density over 140 blocks. Do not enlarge the
   architectural footprint or reduce boulders/the whole biome to create this view.
 - Use [hybrid sculpture geometry](../structures/hybrid-voxel-and-fine-sculpture-geometry.md)
-  for normalization, material replacement, ink and collision.
+  and `art/fallen-colossus/README.md` for the current from-scratch source,
+  materials, packed outline normals and matching static collision.
 - The locked camera is source-facing yaw 0, true-isometric pitch 35.26439 and
   distance 158 at 1672x941. Other rotations test completeness, not source match.
-- Current compound collision is conservative and invisible; live walking review
-  remains required around crown teeth, cheek rubble and the gap between legs.
+- Current collision is the imported triangle surface under the same transform;
+  live walking review remains required beyond the automated rays/capsule sweeps.
 - The first doubled-leg v24 capture is superseded by the author's 1.5× correction.
   Preserve the enlarged plinth from that experiment; it prevents the 1.5× feet
   from returning to the cramped v21 support.
@@ -89,3 +93,16 @@ foot, ankle, calf, knee and severed thigh rather than random protruding boxes.
 Update immediately after geometry/material/camera changes, compound fine
 collision, a complete rotation/distance capture set, or any author correction
 or acceptance decision.
+
+The replacement sculpture’s 23 Linux-package views in
+`shots/worldbuilding-2026-09-06/colossus-package-full/` were inspected in six
+labelled reduced `qa/matrix-*.png` sheets on 2026-09-06: locked day/night, five
+clock phases and close/play/wide/far quarters. The stepped anatomy, closed back
+of the head and continuous silhouette remain readable across those views.
+This is `visually reviewed` for that scope. Broad precinct wear and sparse
+dressing remain visible source gaps; generated overlays were not inspected.
+
+The same package’s locked daytime and close r3 images were additionally
+inspected at full size: the carved face, broken crown, flat stone facets and
+continuous outline remain readable. The sculpture collision smoke passed again
+after the shared material gained the default-off timber branch.

@@ -47,8 +47,10 @@ water, voxel, render, player and camera primitives remain active in `src/`.
   placement from a seed.
 - Runtime allocations stay bounded. Never allocate continent-sized voxel or
   height arrays.
-- Significant sites are authored transcriptions of `world-new/reference-*.png`.
-  Do not generate, remix or “improve” their composition.
+- Existing reference sites are authored transcriptions of `world-new/reference-*.png`.
+  Do not generate, remix or “improve” their composition. The September 6
+  worldbuilding request also authorizes new original man-made and natural sites;
+  those require explicit permanent allocations and site-owned plans.
 - A site owns every visible stair, wall, pillar, arch, break, rubble mass,
   sculpture placement and terrain intervention. Reusable helpers may write
   voxels; they may not design the site.
@@ -78,11 +80,15 @@ Current permanent sites:
 - **Bloom Grove Court / Reference 10** — production terrain-integrated voxel
   transcription; preserved but not accepted as a complete site.
 - **Fallen Colossus / Reference 12** — production terrain-integrated precinct
-  using authored voxel foundations and the cleaned author-supplied head/legs
-  GLBs; not accepted as a complete site.
+  using authored voxel foundations and from-scratch stepped sculpture GLBs;
+  not accepted as a complete site.
 - **Shallows Gate and Causeway / Reference 1** — next structural transcription;
   its measured source plan is authoring data, not permission to use a generic
   ruin kit.
+- **Tidekeeper’s Landing** — original production shore worksite at 6484,7528,
+  with a design brief, measured levels, broken landings and authored props.
+- **Split Witness** — original production rock cleft at 4424,1928, with buried
+  stone roots, an old wind shelter and trail remnants on the existing slope.
 
 ## Code boundaries
 
@@ -137,6 +143,7 @@ Core headless checks:
 ./tools/world-authoring.sh verify-atlas-walking-handoff
 ./tools/world-authoring.sh verify-camera-auto-zoom
 ./tools/world-authoring.sh verify-camera-obstruction
+./tools/world-authoring.sh verify-sculpture
 ./tools/world-authoring.sh verify-atlas-map-transport
 ./tools/world-authoring.sh preview-site-plan bloom-grove-court ../shots/bloom.svg
 ```

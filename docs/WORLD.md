@@ -61,6 +61,19 @@ record:
 - narrative function and state of abandonment;
 - production status.
 
+Original landmarks are also authorized by the September 6 worldbuilding request.
+Their authored plans must explain the same relationship between terrain, old use
+and abandonment. A new name or a scattered prop cluster alone does not establish
+a story location.
+
+Tidekeeper’s Landing preserves a former shore worksite: a catchment trough and
+hauling stone occupy the dry shoulder, while mooring levels descend into the
+shallows. Its missing quay edges and abandoned storage remnants show retreat
+from the water. Split Witness marks an exposed northern crossing. The natural
+cleft comes first; a broken wind shelter, modest waymark and a few remains show
+how travellers once used its lee. Neither site adds an operational settlement
+or a newly generated continental road.
+
 Procedural systems may dress wilderness or realize measured damage. They may not
 invent a significant place or connection.
 

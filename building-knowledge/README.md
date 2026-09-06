@@ -1,7 +1,7 @@
 # Building knowledge
 
 This folder is Petalfell's durable, evidence-labelled handbook for **how to
-reconstruct supplied reference sites**. It records methods that worked, the
+construct authored sites and reconstruct supplied references**. It records methods that worked, the
 conditions under which they worked, and failures that must not be rediscovered.
 
 It does not decide what to build. Design authority remains in
@@ -42,7 +42,7 @@ For any reference-site plan, builder, material, or comparison-tool change:
 | [Reference measurement and coordinate calibration](workflows/reference-measurement-and-coordinate-calibration.md) | Turning source pixels and a locked camera into one integer voxel frame | Reference 10 proven; adaptable with fresh calibration |
 | [Plan-first voxel transcription](workflows/plan-first-voxel-transcription.md) | Authoring topology before vertical detail and keeping plan/runtime aligned | Reference-site ground plans v2 |
 | [Block-by-block structures and square shafts](structures/block-by-block-structures-and-square-shafts.md) | Unique walls, arches, stairs, rubble, and constant-section survivors | Reference 10 proven constraints |
-| [Hybrid voxel and fine sculpture geometry](structures/hybrid-voxel-and-fine-sculpture-geometry.md) | Cleaning author-supplied GLBs, replacing baked materials, adding silhouette ink and placing them over site-owned voxel foundations | Reference 12 Meshy integration visually reviewed; broader use remains candidate |
+| [Hybrid voxel and fine sculpture geometry](structures/hybrid-voxel-and-fine-sculpture-geometry.md) | Authoring stepped carvings, separating lighting and hull normals, and matching mesh collision to voxel foundations | Reference 12 authored replacement mechanically checked and visually reviewed |
 | [Production map-guided terrain runtime](terrain/production-map-guided-terrain-runtime.md) | Bounded full-map terrain, exact moving-window overlap, collision-continuous handoff, gradual shores, translucent water, atlas-space stairs, physical routes, fixed-distance camera and promoted-site overlays | Terrain foundation author-accepted on 2026-09-02; full 165-window ownership audit and representative collision routes mechanically verified; individual sites, exhaustive traversal and final lighting remain open |
 | [Terrain and detached slab integration](terrain/terrain-and-detached-slab-integration.md) | Making site ground part of the terrain without rings or a stamped pad | References 10 and 12 visually reviewed applications |
 | [Material and weathering breakup](surfaces/material-and-weathering-breakup.md) | Macro colour placement plus existing fine stone weathering | Existing voxel material path; References 10 and 12 applications |
@@ -51,7 +51,9 @@ For any reference-site plan, builder, material, or comparison-tool change:
 | [Time-responsive ink and high-key lighting](rendering/time-responsive-ink-and-high-key-lighting.md) | Rejected internal-softness/night-ink experiment and its historical evidence | Superseded; do not reapply |
 | [Bloom Grove Court evidence ledger](sites/bloom-grove-court.md) | Site-specific constraints, rejected readings, and current evidence gaps | Reference 10 only |
 | [Shallows Gate and Causeway evidence ledger](sites/shallows-gate-and-causeway.md) | Reference 1 source calibration, measured plan hierarchy, placement hypothesis, and rejected fixture readings | Reference 1 only; source audit before implementation |
-| [Fallen Colossus evidence ledger](sites/fallen-colossus.md) | Reference 12 1.5× leg scale, Meshy normalization, broad worn slab precinct, current evidence and rejected cuboid/2× readings | Reference 12 only; current build unaccepted |
+| [Fallen Colossus evidence ledger](sites/fallen-colossus.md) | Reference 12 authored sculpture, broad worn slab precinct, current evidence and rejected readings | Reference 12 only; current build unaccepted |
+
+| [Original shore and ridge destinations](sites/original-worldbuilding-2026-09.md) | Explicit original plans, measured natural roots, small props and production review | Tidekeeper’s Landing and Split Witness |
 
 Put new reusable methods under `workflows/`, `terrain/`, `structures/`,
 `surfaces/`, or `rendering/`. Put per-site evidence and correction history under

@@ -1,0 +1,37 @@
+{
+  "source": "tools/build_fallen_colossus.py",
+  "revision": 3,
+  "units": "metres; bottom-centred; Blender Z up; Godot Y up",
+  "assets": {
+    "legs": {
+      "mesh": "AuthoredColossusLegs",
+      "vertices": 965,
+      "triangles": 1922,
+      "godot_size": [
+        19.2,
+        31.2,
+        15.2
+      ],
+      "non_manifold_edges": 0,
+      "signed_volume": 3933.7125,
+      "materials": 0,
+      "textures": 0,
+      "external_mesh_sources": []
+    },
+    "head": {
+      "mesh": "AuthoredColossusHead",
+      "vertices": 1436,
+      "triangles": 2872,
+      "godot_size": [
+        20.5677,
+        17.513,
+        23.1246
+      ],
+      "non_manifold_edges": 0,
+      "signed_volume": 3300.1257,
+      "materials": 0,
+      "textures": 0,
+      "external_mesh_sources": []
+    }
+  }
+}
