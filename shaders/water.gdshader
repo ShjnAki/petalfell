@@ -2,10 +2,9 @@ shader_type spatial;
 
 // Water.
 //
-// Blue-violet rather than the blue-green of real water: the whole basin is lilac
-// stone and rose blossom, and a cyan river reads as a foreign object cutting
-// through it. This hue lets the water belong to the same world while being by
-// some distance the deepest, most saturated thing on the ground plane.
+// Blue depth over visible mineral terraces, with the live sky and a bounded
+// planar reflection of nearby banks. Production keeps one active water-height
+// reflection; other levels continue to use the sky.
 //
 // ONE RULE governs everything below the colour stops, and every bad revision of
 // this shader broke it: nothing periodic, and nothing broad, may pass through a
@@ -19,11 +18,9 @@ shader_type spatial;
 // sun sheen at two tenths did not sheen the lake, it tripled it. When the body
 // colour is deepened, every one of these has to come down with it.
 //
-// UNSHADED, and lit entirely by hand. As an ordinary lit surface the water
-// received the directional shadow map like any other ground, so every cliff and
-// canopy laid a grey shadow across the lake — which is not something water does.
-// A surface is dark where it reflects something dark, not where something stands
-// between it and the sun. Everything is therefore computed here: the bed seen
+// UNSHADED: the already-lit opaque bed supplies terrain shadows through the
+// transmission, and the reflected pass supplies the banks' live light. The
+// surface response is composed here: the bed seen
 // through the water, the reflection off it, the fresnel between them, one broad
 // sun sheen, and the glints. The reflection comes from a second render of the
 // world — see PlanarReflection.cs.
@@ -82,14 +79,14 @@ uniform float max_occlusion : hint_range(0.0, 1.0) = 0.93;
 // The lake is only a handful of blocks deep, so a gentle ramp never reaches the
 // deep stop at all and the whole basin comes out the pale shoal tone.
 uniform float depth_rate = 0.42;
-uniform float reflect_strength : hint_range(0.0, 1.0) = 0.85;
+uniform float reflect_strength : hint_range(0.0, 1.0) = 0.72;
 // Physically the reflectance at this camera pitch is a couple of percent, which
 // is invisible. The reference lake plainly stands its banks up in itself, so the
 // curve is lifted and flattened: still weakest looking straight down, strongest
 // at a grazing angle, but present everywhere.
-uniform float fresnel_floor : hint_range(0.0, 1.0) = 0.22;
-uniform float saturation = 1.30;
-uniform float caustic = 0.22;
+uniform float fresnel_floor : hint_range(0.0, 1.0) = 0.09;
+uniform float saturation = 1.12;
+uniform float caustic = 0.32;
 uniform float cell_tone = 0.032;
 // Screen-space displacement of the bed lookup, in UV. The flow field peaks
 // around a quarter, so this is roughly the fraction of the screen the deepest
@@ -108,13 +105,14 @@ uniform float sparkle = 0.55;
 // buried underneath.
 uniform float sun_sheen = 0.05;
 uniform float moon_sheen = 0.038;
-uniform float shore_foam : hint_range(0.0, 1.0) = 0.09;
+uniform float shore_foam : hint_range(0.0, 1.0) = 0.38;
 
 // The mirrored render of the world. See PlanarReflection.cs — a point on the
 // water plane lands at the same screen position in both views, so this is read
 // at the fragment's own SCREEN_UV, horizontally flipped to undo the winding fix.
 uniform sampler2D reflect_tex : hint_default_black, filter_linear;
 uniform float reflect_mix : hint_range(0.0, 1.0) = 0.88;
+uniform float reflection_plane_y = 24.35;
 uniform float reflect_wobble = 0.10;
 // How far the mirrored frame is squeezed toward its top edge. 1.0 is the honest
 // mirror, whose reflections are correct and barely visible; lower drags each
@@ -129,9 +127,10 @@ uniform sampler2D depth_tex : hint_depth_texture, filter_nearest;
 uniform sampler2D screen_tex : hint_screen_texture, filter_linear;
 
 float h21(vec2 p) {
-	p = fract(p * vec2(123.34, 456.21));
-	p += dot(p, p + 45.32);
-	return fract(p.x * p.y);
+	uvec2 q = uvec2(ivec2(p));
+	uint h = q.x * 374761393u + q.y * 668265263u;
+	h = (h ^ (h >> 13u)) * 1274126177u;
+	return float((h ^ (h >> 16u)) & 16777215u) / 16777216.0;
 }
 
 float n2(vec2 p) {
@@ -359,13 +358,21 @@ void fragment() {
 	body = mix(body, deep, smoothstep(0.35, 1.0, t));
 	// Sunlit ground throwing warmth back up through the first half-metre.
 	body = mix(warm, body, smoothstep(0.0, 0.22, t));
+	// This water is composited in an unshaded material; its scattering volume
+	// must follow the clock explicitly, as the already-lit bed and sky do.
+	body *= mix(1.0, 0.20, pf_night);
 
 	vec3 refracted = bed * absorb + body * (1.0 - absorb);
+	// At night the blue channel of a lit bed survives absorption much longer
+	// than red/green. Reduce that transmitted volume and its chroma, while the
+	// actual moon/sky reflections and rare surface glints remain free to shine.
+	refracted *= mix(1.0, 0.55, pf_night);
 
 	// A caustic web, only where the light still reaches the bed.
-	float caus = fbm(warp(wpos.xz * 0.48, 1.1) + vec2(TIME * 0.07, -TIME * 0.05))
-	           * fbm(warp(wpos.xz * 0.38, 1.4) - vec2(TIME * 0.05, TIME * 0.06));
-	refracted += caus * caustic * 0.12 * (1.0 - smoothstep(0.0, 0.5, t));
+	float ca = fbm(warp(wpos.xz * 0.48, 1.1) + vec2(TIME * 0.07, -TIME * 0.05));
+	float cb = fbm(warp(wpos.xz * 0.38, 1.4) - vec2(TIME * 0.05, TIME * 0.06));
+	float caus = (1.0 - smoothstep(0.012, 0.055, abs(ca - 0.5))) * (0.4 + cb * 0.6);
+	refracted += caus * caustic * 0.18 * (1.0 - smoothstep(0.0, 0.7, t)) * mix(1.0, 0.20, pf_night);
 
 	/* ---- what is on the water ------------------------------------- */
 
@@ -383,7 +390,7 @@ void fragment() {
 	// STRETCH. The mirrored pass is geometrically right and, left alone, almost
 	// invisible: reflections reach about one and a half times an object's height
 	// out from the shore and no further, so open water shows bare sky. The
-	// reference art has them lying right across the lake.
+	// earlier fixture stretched these short reflections across the lake.
 	//
 	// The frame is therefore squeezed toward its top edge. A downward-looking rig
 	// puts the far shore near the top, so pulling that way spreads the band of
@@ -391,8 +398,7 @@ void fragment() {
 	// front of it. Everything sampled is genuine mirrored geometry standing in
 	// roughly the right place; it is only reaching further than the angles allow.
 	//
-	// The direction matters and I had it inverted at first: squeezing toward the
-	// BOTTOM samples ever more of the sky that was already the problem.
+	// Production sets reflect_reach to 1.0 to retain exact bank registration.
 	vec2 ruv = vec2(1.0 - SCREEN_UV.x, SCREEN_UV.y * reflect_reach);
 
 	// The same wave filter the bed gets, mirrored in X to match the flipped
@@ -417,7 +423,13 @@ void fragment() {
 	// world's shell where nothing is meshed, and leaning on the sky there keeps
 	// those places the colour of the sky they are showing.
 	vec3 sky = mix(sky_low, sky_high, clamp(ray_world.y * 1.6, 0.0, 1.0));
-	vec3 reflected = mix(sky, mirrored, reflect_mix);
+	// A bounded atlas mirror owns one nearby water elevation. Other lakes and
+	// vertical step curtains retain their sky response instead of reflecting a
+	// different plane's geometry in the wrong location.
+	float plane_match = surface_from_mesh
+		? 1.0 - smoothstep(0.04, 0.12, abs(wpos.y - reflection_plane_y)) : 1.0;
+	float water_up = abs((INV_VIEW_MATRIX * vec4(NORMAL, 0.0)).y);
+	vec3 reflected = mix(sky, mirrored, reflect_mix * plane_match * step(0.9, water_up));
 
 	// Schlick, lifted. Water is nearly clear looking straight down and nearly a
 	// mirror at a grazing angle, and that transition is most of what says
@@ -434,7 +446,7 @@ void fragment() {
 	// masses, while remaining subtle enough that the translucent bed still owns
 	// the actual depth read.
 	col *= 1.0 + basin * 0.10;
-	col = mix(col, basin > 0.0 ? shallow : deep, abs(basin) * 0.035);
+	col = mix(col, (basin > 0.0 ? shallow : deep) * mix(1.0,0.20,pf_night), abs(basin) * 0.035);
 
 	// One broad, soft sun sheen off the calm surface, and a fine glitter off the
 	// ripples. The wide lobe is the light on the lake; the tight one is the light
@@ -476,7 +488,12 @@ void fragment() {
 	// band ignoring the blocks underneath.
 	float shore = 1.0 - smoothstep(0.0, 1.35, column);
 	float lap = 0.5 + 0.5 * sin(dot(wpos.xz, vec2(0.61, 0.79)) * 1.7 - TIME * 0.9 + wave.x * 14.0);
-	col = mix(col, sheen, shore * shore * shore_foam * (0.35 + 0.65 * lap));
+	// Broken lace gathers at the actual depth intersection; gaps and eddies
+	// come from a warped field, so the shoreline is not a continuous white rule.
+	float lace = fbm(warp(wpos.xz * 1.8, 0.8) + vec2(TIME * 0.045, -TIME * 0.028));
+	float foam = smoothstep(0.42, 0.66, lace + lap * 0.10);
+	vec3 foam_colour = sheen * mix(1.0, 0.22, pf_night);
+	col = mix(col, foam_colour, shore * shore_foam * foam);
 
 	// Drifting sheets of brighter surface.
 	//
@@ -487,7 +504,7 @@ void fragment() {
 	// this shader was tuned when the surface was three times lighter, and every
 	// one of them had to come down.
 	float sheet = fbm(warp(wpos.xz * 0.075, 1.2) + vec2(TIME * 0.010, TIME * 0.006));
-	col = mix(col, sheen, smoothstep(0.66, 0.98, sheet) *
+	col = mix(col, foam_colour, smoothstep(0.66, 0.98, sheet) *
 		mix(0.0035, 0.018, local_detail));
 
 	// A one-block lattice of lightness, so the surface belongs to the same blocky
@@ -510,7 +527,7 @@ void fragment() {
 	// Averaging two colour stops always loses chroma toward the middle; this puts
 	// the midrange back without touching either end.
 	float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
-	col = mix(vec3(lum), col, saturation);
+	col = mix(vec3(lum), col, mix(saturation, 0.70, pf_night));
 
 	ALBEDO = col;
 	// The bed is already composited in, so the surface itself is opaque. Alpha

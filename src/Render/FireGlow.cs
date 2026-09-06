@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using Petalfell.Core;
 using Petalfell.Items;
 
 namespace Petalfell.Render;
@@ -58,7 +59,7 @@ public partial class FireGlow : Node3D
 		{
 			Shader = GD.Load<Shader>("res://shaders/character.gdshader"),
 		};
-		material.SetShaderParameter("albedo", color.SrgbToLinear());
+		material.SetShaderParameter("albedo", Palette.ShaderRgba(color.SrgbToLinear()));
 		material.SetShaderParameter("emission_amount", emission);
 		_flame.AddChild(new MeshInstance3D
 		{

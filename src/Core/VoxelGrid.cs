@@ -331,6 +331,33 @@ public sealed class VoxelGrid
 	/// <summary>How many blocks have been placed on top of the bare terrain.</summary>
 	public int PlacedCount => _edits.Count;
 
+	/// <summary>
+	/// Sparse overrides in a local square, including AIR cuts. Visits only the
+	/// overlapping 32-block edit tiles; callers must not mutate during enumeration.
+	/// Bare terrain is not included. Coordinates are local to this grid.
+	/// </summary>
+	public IEnumerable<(int X, int Y, int Z, byte Material)> PlacedIn(int x0, int z0, int width)
+	{
+		if (width <= 0 || _edits.Count == 0) yield break;
+		int x1 = (int)Math.Min(Size, (long)x0 + width);
+		int z1 = (int)Math.Min(Size, (long)z0 + width);
+		x0 = Math.Max(0, x0); z0 = Math.Max(0, z0);
+		if (x1 <= x0 || z1 <= z0) yield break;
+		for (int tz = z0 >> TileShift; tz <= (z1 - 1) >> TileShift; tz++)
+		for (int tx = x0 >> TileShift; tx <= (x1 - 1) >> TileShift; tx++)
+		{
+			if (!_tileEdits.TryGetValue(tz * _tileW + tx, out var list)) continue;
+			foreach (long key in list)
+			{
+				int y = (int)(key / ((long)Size * Size));
+				int rem = (int)(key - (long)y * Size * Size);
+				int x = rem % Size, z = rem / Size;
+				if (x >= x0 && x < x1 && z >= z0 && z < z1)
+					yield return (x, y, z, _edits[key]);
+			}
+		}
+	}
+
 	/// <summary>Every placed block, for diagnostics. Not ordered.</summary>
 	public IEnumerable<byte> Placed => _edits.Values;
 }

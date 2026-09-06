@@ -4,6 +4,8 @@ shader_type spatial;
 // and carved planes; this shader gives those planes the same faded, world-space
 // stone tooth as the voxel world without drawing a one-metre grid over them.
 render_mode cull_back, diffuse_burley, specular_disabled;
+#include "cloud_light.gdshaderinc"
+#include "mineral_surface.gdshaderinc"
 
 uniform vec4 base_colour : source_color = vec4(0.86, 0.84, 0.92, 1.0);
 uniform float weathering : hint_range(0.0, 1.0) = 0.62;
@@ -16,9 +18,10 @@ global uniform vec3 pf_sun_dir;
 varying vec3 v_world;
 
 float hash21(vec2 p) {
-	p = fract(p * vec2(123.34, 456.21));
-	p += dot(p, p + 45.32);
-	return fract(p.x * p.y);
+	uvec2 q = uvec2(ivec2(p));
+	uint h = q.x * 374761393u + q.y * 668265263u;
+	h = (h ^ (h >> 13u)) * 1274126177u;
+	return float((h ^ (h >> 16u)) & 16777215u) / 16777216.0;
 }
 
 float vnoise(vec2 p) {
@@ -45,6 +48,8 @@ void vertex() {
 }
 
 void fragment() {
+	if (reflection_below_plane(v_world, CAMERA_VISIBLE_LAYERS)) discard;
+	cloud_transmission = cloud_at(v_world);
 	vec3 wn = normalize((INV_VIEW_MATRIX * vec4(normalize(NORMAL), 0.0)).xyz);
 	vec3 an = abs(wn);
 	vec2 uv = an.y > max(an.x, an.z) ? v_world.xz
@@ -64,6 +69,15 @@ void fragment() {
 		broad * 0.68 + blotch * 0.32 + (1.0 - clamp(wn.y, 0.0, 1.0)) * 0.08);
 	base = mix(base, moss_colour.rgb, moss_field * moss_mix);
 	base *= 1.0 - stain;
+	// Triplanar weights keep continuous carved cheeks and sloping limbs free of
+	// the hard projection changes appropriate only to axis-aligned voxel faces.
+	vec3 weights = pow(an, vec3(4.0));
+	weights /= max(dot(weights, vec3(1.0)), 0.0001);
+	float flake = mineral_sample(v_world.zy * 0.075) * weights.x
+		+ mineral_sample(v_world.xz * 0.075) * weights.y
+		+ mineral_sample(v_world.xy * 0.075) * weights.z;
+	float fade = 1.0 - smoothstep(85.0, 240.0, length(v_world - CAMERA_POSITION_WORLD));
+	base *= 1.0 + (flake - 0.63) * 1.40 * weathering * fade;
 
 	// Keep the reference's readable top/side separation on non-axis-aligned
 	// planes. It is intentionally gentler than the terrain ramp: the sculpture's

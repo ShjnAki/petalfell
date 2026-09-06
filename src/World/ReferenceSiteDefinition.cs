@@ -64,7 +64,7 @@ public sealed class ReferenceSiteDefinition
 		if (Version != 1) report.Error($"version must be 1, got {Version}");
 		if (SiteId != site.Id) report.Error($"siteId '{SiteId}' does not match '{site.Id}'");
 		if (string.IsNullOrWhiteSpace(BuilderId)) report.Error("builderId is required");
-		if (!Godot.FileAccess.FileExists(ReferencePath))
+		if (!AtlasSourceImages.Exists(ReferencePath))
 			report.Error($"reference '{ReferencePath}' does not exist");
 		if (string.IsNullOrWhiteSpace(GroundPlanPath) ||
 		    !Godot.FileAccess.FileExists(GroundPlanPath))

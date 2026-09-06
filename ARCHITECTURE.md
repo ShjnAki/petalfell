@@ -82,6 +82,8 @@ rescaled.
 Fine sculpture GLBs are prepared deterministically, stripped of source
 materials, assigned Petalfell stone/ink, and given explicit compound collision.
 They supplement site-owned voxels; they do not replace the measured site plan.
+The sculpture outline expands in framebuffer pixels, independently of imported
+mesh scale. It does not alter source geometry or compound collision.
 
 ## Rendering
 
@@ -91,13 +93,90 @@ grid, ground detail and overhang ceiling, then optionally builds collision.
 One material pipeline is shared across terrain and sites:
 
 - `voxel.gdshader` — world-space colour breakup and material response;
-- `voxel_ink.gdshader` — silhouette ink;
+- `ink.gdshader` — analytic concave voxel creases and existing box-prop edge passes;
 - `water.gdshader` — animated translucent depth/refraction;
-- `DayCycle`/`Atmosphere` — ordinary day and night lighting;
+- `cloud_light.gdshaderinc` — a global cloud field modulating direct light only;
+- `mineral_surface.gdshaderinc` — shared scalar mineral texture sampling;
+- `turf_surface.gdshaderinc` — continuous dry/lush colour shared by existing turf, fringe and green plants;
+- `canopy_surface.gdshaderinc` — filtered shallow petal facets inside the existing blossom material;
+- `lowland_mist.gdshader` — globally registered water-level banks in the bounded fog buffer;
+- `PlanarReflection` — one half-resolution mirror following a nearby visible water elevation;
+- `DayCycle`/`Atmosphere` — ordinary day and night lighting, horizon handover and weather;
 - `DeveloperMenu` — review-only live parameters.
+
+The shared mineral texture has an explicit mip chain, generated once if the
+disposable import lacks it. Voxel and sculpture materials share that bounded
+texture. Moss substrate breakup is confined to existing `MOSS_STONE` cells;
+the shader cannot place growth outside the authored material mask.
+Blossom surfaces retain their per-block values and add world-plane petal
+reflectance/analytic relief, filtered before becoming subpixel. Only leaf
+materials enable a small normalized diffuse wrap in the shared light function;
+shadow and cloud attenuation still apply. This adds no geometry, allocations,
+texture, material placement or vegetation anchors.
+Only upward `PAVING` faces receive shallow, field-interrupted cell joints;
+their screen footprint filters subpixel lines and their normal grain is quieter.
+Rock-pattern surfaces use the mesher's existing face UVs and exposed-edge bits
+to confine small pale scuffs to real lips. Continuous world fields interrupt
+their coverage; coplanar joins cannot create scuff seams. Sand separately has
+broad deposit tone, filtered mineral grain and sparse shallow wind ridges.
+Existing turf caps and their mesher-supplied hanging fringe share global XZ
+colour fields. The fringe retains its palette identity while receiving the same
+surface treatment; a separate connected field varies its depth. Green vertex
+colours in the ground-detail mesh share the turf tint. Flower and mineral colours
+keep their original palette. These fields do not change material membership,
+growth placement, terrain topology or authored wear masks.
+
+The reflection camera omits reserved water layer 20. Its distinct cull mask also
+identifies the reflection-only submerged clipping in solid shaders; ordinary
+cameras keep water layer 20. Other water elevations and step curtains use the
+live sky. Plane selection reads at most 289 active-window columns five times a
+second. A changed height fades the registered mirror out before moving its
+plane, then fades the new reflection in; a dry view fades out and disables it.
+It never changes hydrology or
+allocates a render target per river/lake. Capture review uses this same mirror
+with its capture camera; performance probes sum both active viewport timings.
 
 Authored sRGB colours are converted to linear exactly once. Shader noise and CPU
 noise must remain globally registered so moving-window ownership is invisible.
+`Palette.ShaderRgb`/`ShaderRgba` upload already-linear colours as numeric vectors,
+not typed `Color` variants that Godot would decode again. CPU-interpolated light
+and fog colours are encoded for Godot's sRGB properties.
+
+The surface mesh carries face UVs and exposed-lip bits in UV2. The mesher adds narrow physical chamfers
+inside exposed convex lips, with common corner decisions across chunk aprons.
+Coplanar seams remain flat and collision retains original voxel triangles.
+Convex voxel strips are omitted from the ink mesh; their physical bevel supplies
+the highlight and silhouette. `AmbientDrift` lives outside window content and resolves the active
+window through a callback, bounding airborne detail to two draws/50 instances.
+Falling pieces share an eight-facet cupped lamina, with biome width/length,
+existing spin and ground-aware landing. `airborne_petal.gdshader` uses the shared
+cloud/shadow light function and mirror-plane clipping; alpha only fades lifetime.
+Their authored sRGB colours are decoded once at spawn for linear MultiMesh COLOR.
+Firefly billboards face each rendering camera in their vertex shader, including
+capture and mirror cameras. Flower heads share the stem tip's wind weight so
+petals and centres remain attached while swaying; stem leaves use their attachment
+height's weight. Ground detail preserves authored world normals before back-face
+handling so its upward-lit blades remain consistent through camera rotations.
+Production meadow grass uses three blunt bent blades per clump. Each blade has
+two segments with identical displacement at the shared shoulder. Clump anchors
+stay within the supporting grass cell; existing meadow admission fields and
+random draw counts are unchanged. Stems and reeds retain the crossed primitive.
+Flower heads form shallow five-petal cups, with two facets per petal and one
+shared head displacement. Both shapes join the existing chunk detail mesh.
+Existing moss-stone cap cells and sparse placed cells also supply folded leaf
+facets on their exposed, dry faces. `VoxelGrid.PlacedIn` visits only overlapping
+edit tiles; cap/overlay overlap is processed once. This detail stays within the
+authored mask, merges into the ordinary chunk detail mesh and adds no collision.
+Dry snow, scree, sand and soil caps supply low faceted mineral fragments through
+a globally registered 32-block deposit field. Each cluster remains inside one
+supporting cell; it cannot bridge a step or grow on water/blocked caps. This
+natural detail uses an independent random stream and the existing chunk mesh,
+with no site masonry placement, collision, extra draw or shadow pass.
+Blossom profiles also allow small fallen-petal drifts on exposed dry `PAVING`.
+An 18-block field and independent coordinate draw place at most seven flat
+petals inside each cell, clear of its bevel; these join the existing detail mesh.
+`Atmosphere.SetViewDistance` owns the depth-haze span for both production camera
+zoom and review cameras; capture no longer carries a separate haze formula.
 
 ## Player, camera and map
 
@@ -121,6 +200,11 @@ failed transport leaves it open.
 
 Generators never rewrite authored data. Runtime correctness must not depend on a
 persisted terrain cache.
+
+The four macro control PNGs retain their original bytes in exports through
+tracked `Keep File` import settings. CPU decoding and encoding validation use
+Godot `FileAccess` for both disk and PCK paths. Display references instead accept
+imported-resource remaps; their texture representation never supplies geography.
 
 ## Verification boundary
 

@@ -12,7 +12,8 @@
   recorded here as `author-accepted`
 - **Scope:** `tool-specific` to the current reference-site review rig; Reference
   10 camera numbers are `site-specific`
-- **Last verified:** 2026-08-30
+- **Last verified:** 2026-09-06 for the shared-look capture tools;
+  historical site evidence below retains its original dates
 - **Supersedes:** single flattering screenshots and comparisons from the wrong
   isometric quadrant
 - **Superseded by:** none
@@ -24,17 +25,56 @@
 
 ## Outcome
 
+The September comparison page is generated from explicit raw directories and
+source images with `tools/build-look-review.py`. `--scene-note NAME NOTE` identifies
+the revision and limits. `shots/look-2026-09-06/review.html` now presents 23 focused
+`folded-air-*-package` views: coast 13, Bloom six, alpine two and Fallen two.
+All were reviewed, coast mainly in reduced matrices plus full-size play/probe
+frames, and every site/alpine frame individually. Coast covers five clocks,
+noon quarters, play/far, orbit and probes; the site/alpine sets have the narrower
+scope listed on the page. Four package capture logs and the probe log are clean.
+
+The preceding 70-view full material/clock/distance matrix remains available in
+`review-satin-canopy.html` and retains its named evidence in the rendering ledger.
+It predates the folded-petal change and must not be presented as current particle
+coverage. The current coast orbit contains 180 sequential PNG/CSV/encoded frames,
+30 fps, six seconds, 1600×900. Frames 0000/0045/0090/0135 were inspected individually.
+No new site orbit or accelerated clock sweep was recorded. Site overlays were
+generated but not inspected; structural parity and author acceptance remain open.
+All four refreshed scene panels loaded in the browser. The current coast video
+rendered its 0.00-second start and reached the 6.00-second endpoint; this is
+sampled playback evidence, not every-frame temporal acceptance.
+
 Every meaningful site revision is reviewed in one locked source-matching
 isometric view, one calibrated overhead view when available, ordinary day and
 night lighting, and four distances at all four cardinal rotations. Derived 50%
 overlays and edge-difference images expose drift; they support human comparison
 and never grant acceptance.
 
+Site review additionally has five views at the locked source camera:
+`site_dawn` (0.29), `site_noon` (0.50), `site_golden` (0.68),
+`site_twilight` (0.80), and `site_midnight` (0.00). They use the ordinary clock
+and do not replace the calibrated `reference_match_day`/`night` pair. The new
+default Bloom set is 24 raw shots; historical 19-shot sets below predate these
+five clock samples. Production and capture now share the view-distance haze
+rule, including outline attenuation, through `Atmosphere.SetViewDistance`.
+
+The tracked `shots/.gdignore` keeps review stills and motion sequences out of
+Godot's import scan as well as its exported resources. Captures still load as
+ordinary files in the local review page. A successful export alone is insufficient:
+`build-linux.sh` now launches the package headlessly and requires its atlas audit
+to pass before reporting readiness.
+
+During terrain capture, the capture loop owns the camera and shared haze. Normal
+playable Follow is suspended; `atlas_follow` invokes Follow explicitly inside the
+capture loop. Each still checks the expected haze span after settling and logs
+camera distance plus the resulting span, catching late writes from another camera.
+
 ## Evidence
 
 | Claim | State | Scope | Evidence | Remaining uncertainty |
 |---|---|---|---|---|
-| A full Reference 10 capture emits 19 raw shots: locked day/night, calibrated top day, and 4 distances x 4 rotations, plus four derived comparison images | `mechanically verified` | tool-specific | `AtlasSectorReview.ReviewShots` and `WriteReferenceComparisons`; complete file list in `/home/shikhar/godot/shots/reference-10-plan-v13-full/` | File production alone does not prove anyone inspected them |
+| The historical Reference 10 capture emitted 19 raw shots: locked day/night, calibrated top day, and 4 distances x 4 rotations, plus four derived comparison images | `mechanically verified` | historical/tool-specific | Complete file list in `/home/shikhar/godot/shots/reference-10-plan-v13-full/`; the September rig adds five source-camera clock samples | File production alone does not prove anyone inspected them |
 | The locked camera uses source resolution 1672x941, yaw 135, pitch 35.26439, and current distance 190 | `mechanically verified` | site-specific/tool-specific | site `referenceView`; capture viewport construction | These parameters can become stale if the source calibration changes |
 | v11 was inspected at the locked angle, overhead, all distances, all rotations, and day/night | `visually reviewed` | site-specific | `/home/shikhar/godot/shots/reference-10-plan-v11-full/`, 2026-08-30 | Later slab edits are not covered; geometry/material match remains open |
 | The corrected central occupied footprint, restored slab boundary, open channels, supported reverse faces, modest far extent, and unchanged square shafts were inspected across v13 | `visually reviewed` | site-specific | Historical pre-lighting-change evidence: all 19 raw captures and four derived comparisons in `/home/shikhar/godot/shots/reference-10-plan-v13-full/`, 2026-08-30 | These claims do not establish the current render, whole-site fidelity, collision/playability, or author acceptance |
@@ -109,6 +149,61 @@ evidence only.
   the ordinary `DayCycle`, not a presentation-only rig.
 
 ## Scope and limits
+
+### September 6 shared look checks
+
+The production `look_*` stills use distance 170, yaw 45, pitch 38 at dawn .27,
+noon .50, sunset .72, twilight .80 and midnight .00. Noon r1/r2/r3 rotate by
+90 degrees. These use ordinary production lighting and materials. Terrain
+capture logs additionally report actual cap material IDs within 100 blocks and
+the nearest snow sample; a province label alone is not material evidence.
+Each still now waits at least 24 frames and 2.5 simulation seconds after a clock
+or camera change. The earlier 24-frame-only wait left daytime petals in some
+night captures on a fast GPU. Those captures remain geometry/material evidence,
+but do not establish settled night-particle appearance.
+
+Optional `probe_no_fog`, `probe_no_grade`, and `probe_no_post` use that noon
+camera while isolating post-process contributions. They run only when explicitly
+named with `--only` and are diagnostic evidence, not beauty/acceptance views.
+
+Optional `look_motion` records 180 frames at play distance 86 with the ordinary
+900-second day; `look_cycle` records 360 frames at distance 170 with a 12-second
+accelerated day. Launch Godot with `--fixed-fps 30` **before** `--`. Frame PNGs
+and a CSV of actual clock/cloud/key values are written below the shot directory.
+`look_orbit` and `look_orbit_night` each record 180 frames at distance 86/pitch 31,
+turning from yaw 45 through a full circle at morning .34 or midnight .00.
+Their CSV also records camera yaw and the currently visible reflection plane.
+Wind, particles, water, fog and DayCycle advance inside the engine. Readback and
+PNG compression make this unsuitable as a realtime FPS measurement.
+
+Optional `look_perf_day`/`look_perf_night` use distance 75/yaw 45/pitch 31 and
+the same renderer at noon/midnight. Run **without** `--fixed-fps`. The capture
+viewport always renders on the GPU even on an inactive workspace; the duplicate
+window 3D pass is disabled. After saving its still and warming 120 frames, the
+probe measures 300 frames without image readback, then writes CSV and summary
+files. Positive GPU timestamps and visible draw counts are required. Timings
+describe warmed stationary rendering, not traversal, UI or streaming/handoff.
+With the atlas water mirror enabled, GPU/render-CPU columns sum the main and
+active mirror viewports; visible draw/primitive columns describe the main view.
+`probe_reflection` saves both the composited frame and the raw half-resolution
+mirror, with its chosen elevation in the log. These are diagnostic artifacts.
+Godot's viewport timing APIs report milliseconds; the documented source is
+[RenderingServer](https://docs.godotengine.org/en/stable/classes/class_renderingserver.html#class-renderingserver-method-viewport-get-measured-render-time-gpu).
+
+For these GPU captures on the current Hyprland machine, the tested launcher is:
+
+```bash
+env -u LD_LIBRARY_PATH hyprctl dispatch \
+  'hl.dsp.exec_cmd("env -u LD_LIBRARY_PATH PATH=/run/current-system/sw/bin:/usr/bin:/bin XDG_DATA_HOME=/tmp/petalfell-capture timeout 300s godot-mono --path /home/shikhar/godot/petalfell --display-driver x11 --disable-vsync --fixed-fps 30 -- --terrain-focus 6400,7360 --shots res://shots/look-review --only look_noon,look_midnight,look_motion > /tmp/petalfell-look-review.log 2>&1", { workspace = "5 silent" })'
+```
+
+Only one GPU review process runs at a time. Check the build's successful exit
+before launching, then inspect the fresh log/files. Encode a sequence with:
+
+```bash
+ffmpeg -framerate 30 -i shots/look-review/look_motion/frame-%04d.png \
+  -c:v libx264 -crf 18 -pix_fmt yuv420p shots/look-review/motion.mp4
+```
 
 Colour RMSE and mean edge delta have no acceptance threshold. They are useful
 only when calibration and compared content are stable. A top view cannot prove

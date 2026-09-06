@@ -8,7 +8,7 @@
   `candidate`
 - **Scope:** `site-specific` evidence for Reference 12; candidate low-level
   method for future statuary, collapsed diagonals and carved monumental forms
-- **Last verified:** 2026-08-31 with passing build/audit and inspected v25 locked/far captures
+- **Last verified:** 2026-09-06 for shared stone and pixel-width ink; older placement evidence remains scoped below
 - **Supersedes:** the rejected all-integer sculpture and the provisional
   hand-authored fractional-cuboid Blender sculpture
 - **Superseded by:** none
@@ -36,7 +36,9 @@ The current proven split is:
 4. Override every imported `MeshInstance3D` with Petalfell's world-space
    sculpture stone. Add a restrained inverted-hull plum outline because the
    ordinary voxel ink mesh expects edge-run custom channels an arbitrary GLB
-   does not contain.
+   does not contain. Expand that hull by 0.50 framebuffer pixels, independent
+   of the source asset's local units and placement scale. Project the transformed
+   normal using Godot's [spatial vertex built-ins](https://docs.godotengine.org/en/4.7/tutorials/shaders/shader_reference/spatial_shader.html).
 5. Keep collision invisible and conservative with site-owned compound shapes;
    a visible voxel core will poke smooth slabs through the imported model.
 6. Rebuild the fine node with every moving atlas window that contains the
@@ -54,6 +56,7 @@ part dimensions, transforms, damage and silhouette.
 | Meshy calibration cubes, low image-floor components and baked materials are absent from the normalized head/legs assets | `mechanically verified` | import-specific | `tools/prepare_meshy_fallen_colossus.py`; head source `2abd6a29…`, legs source `0820092a…`; successful Godot reimport, 2026-08-31 | A differently generated asset needs new measured cutoffs |
 | Petalfell stone and a 0.009-unit silhouette outline preserve the imported facial/crown and anatomical leg geometry over a massive site-owned voxel foundation; the legs face the source-forward axis at yaw 0 and use 1.5× their first imported review scale with matching collision | `visually reviewed` | site-specific | `/home/shikhar/godot/shots/reference-12-v25-legs-1_5x/reference_match_day.png` and `site_far_r0.png`, inspected at original size 2026-08-31 | Night response, hidden rotations and live collision still need author review |
 | Hybrid sculpture is suitable for every future reference | `candidate` | reference-family | Reference 12 proves one statuary case | Needs a second distinct reference and collision/play review |
+| Mineral detail blends continuously across carved planes; 0.50-pixel hull expansion removes the thick crown/leg bands produced by the old 0.009 local-unit expansion | `visually reviewed` | Reference 12 only | All six raw `shots/look-2026-09-06/refined-fallen/` frames: locked day/night, close r1/r2/r3 and far r0; passing build 2026-09-06 | Does not accept the sculpture or precinct as a source match; hidden-angle motion and compound collision remain open |
 
 ## Checks
 
@@ -68,6 +71,9 @@ part dimensions, transforms, damage and silhouette.
 
 ## Known failures
 
+- **Scaling local-space ink with the monument:** the 13× head and 19.5× legs
+  inflated the former 0.009-unit hull into broad dark seams. The current shader
+  uses framebuffer pixels; original meshes, placement and collision are unchanged.
 - **Large cuboid facial layers:** read as a small building or mask on a slab.
   Replaced by the author's Meshy head.
 - **Metre-scale protruding kneecaps:** read as robot joints. Replaced by a

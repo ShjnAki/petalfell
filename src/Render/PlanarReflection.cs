@@ -1,3 +1,4 @@
+using System;
 using Godot;
 
 namespace Petalfell.Render;
@@ -33,7 +34,7 @@ namespace Petalfell.Render;
 /// no grazing content because a twenty-one degree lens spans twenty-one degrees
 /// of elevation, and a wide level probe from the middle of the lake comes back
 /// blank because everything it can see across the water is past the fog. The
-/// shader stretches what this pass produces instead.
+/// atlas path keeps honest registration and accepts short bank reflections.
 ///
 /// Half resolution. A reflection off a rippled surface is smeared by the ripple
 /// before anyone sees it, and this is a whole extra scene render per frame.
@@ -51,6 +52,13 @@ public partial class PlanarReflection : Node3D
 	private ShaderMaterial _water;
 	private float _planeY;
 	private Vector2I _size = Vector2I.Zero;
+	private float _probeTime;
+	private float _blend;
+	private float? _selectedPlane;
+	public Func<Camera3D, float?> PlaneSource;
+	public SubViewport RenderViewport => _viewport;
+	public float? CurrentPlane => _blend > 0f ? _planeY : null;
+	internal float ReflectionWeight => _blend;
 
 	/// <summary>Fraction of the main viewport's resolution to render at.</summary>
 	public float Resolution = 0.5f;
@@ -60,6 +68,20 @@ public partial class PlanarReflection : Node3D
 		_main = main;
 		_water = water;
 		_planeY = planeY;
+		_selectedPlane = planeY;
+	}
+
+	public void SetSource(Camera3D camera)
+	{
+		_main = camera;
+		_probeTime = 0;
+	}
+
+	public void RefreshPlane()
+	{
+		if (PlaneSource == null) return;
+		_selectedPlane = PlaneSource(_main);
+		_probeTime = 0.2f;
 	}
 
 	public override void _Ready()
@@ -93,13 +115,27 @@ public partial class PlanarReflection : Node3D
 		_viewport.AddChild(_camera);
 
 		_water?.SetShaderParameter("reflect_tex", _viewport.GetTexture());
+		// Preserve actual bank registration; the old fixture's squeezed lookup
+		// is not appropriate for multiple atlas water elevations.
+		_water?.SetShaderParameter("reflect_reach", 1f);
+		_water?.SetShaderParameter("reflect_wobble", 0.015f);
+		_water?.SetShaderParameter("reflect_haze", 0.002f);
 	}
 
 	public override void _Process(double delta)
 	{
 		if (_main == null || _camera == null) return;
+		_probeTime -= (float)delta;
+		if (_probeTime <= 0) RefreshPlane();
+		AdvancePlane(_selectedPlane, (float)delta);
+		_water.SetShaderParameter("reflect_mix", _blend);
+		_water.SetShaderParameter("reflection_plane_y", _planeY);
+		RenderingServer.GlobalShaderParameterSet("pf_reflection_plane", _planeY);
+		_viewport.RenderTargetUpdateMode = _blend > 0
+			? SubViewport.UpdateMode.Always : SubViewport.UpdateMode.Disabled;
+		if (_blend <= 0) return;
 
-		var wanted = (Vector2I)(GetViewport().GetVisibleRect().Size * Resolution);
+		var wanted = (Vector2I)(_main.GetViewport().GetVisibleRect().Size * Resolution);
 		wanted = new Vector2I(Mathf.Max(wanted.X, 8), Mathf.Max(wanted.Y, 8));
 		if (wanted != _size)
 		{
@@ -110,19 +146,30 @@ public partial class PlanarReflection : Node3D
 		// Match the lens, or the reflection is a different photograph of the same
 		// world and nothing lines up along the shoreline.
 		_camera.Fov = _main.Fov;
+		_camera.Projection = _main.Projection;
+		_camera.Size = _main.Size;
 		_camera.Near = _main.Near;
 		_camera.Far = _main.Far;
 		_camera.KeepAspect = _main.KeepAspect;
 
-		Transform3D t = _main.GlobalTransform;
-		Basis b = t.Basis;
+		_camera.GlobalTransform = MirrorTransform(_main.GlobalTransform, _planeY);
+	}
 
-		// Reflect a direction through the horizontal plane.
+	internal void AdvancePlane(float? selected, float delta)
+	{
+		bool samePlane = selected.HasValue && Math.Abs(selected.Value - _planeY) <= 0.01f;
+		_blend = Mathf.MoveToward(_blend, samePlane ? 0.72f : 0f, delta * 2f);
+		// Keep the old reflected scene registered while it fades to the sky.
+		// Changing height at nonzero weight makes river-level transitions flash.
+		// The latest requested height wins if the camera turns again mid-fade.
+		if (_blend <= 0f && selected.HasValue) _planeY = selected.Value;
+	}
+
+	public static Transform3D MirrorTransform(Transform3D source, float planeY)
+	{
 		static Vector3 Mirror(Vector3 v) => new(v.X, -v.Y, v.Z);
-
-		// X negated: see the note above about winding.
-		_camera.GlobalTransform = new Transform3D(
-			new Basis(-Mirror(b.X), Mirror(b.Y), Mirror(b.Z)),
-			new Vector3(t.Origin.X, 2f * _planeY - t.Origin.Y, t.Origin.Z));
+		Basis b = source.Basis;
+		return new Transform3D(new Basis(-Mirror(b.X), Mirror(b.Y), Mirror(b.Z)),
+			new Vector3(source.Origin.X, 2f * planeY - source.Origin.Y, source.Origin.Z));
 	}
 }

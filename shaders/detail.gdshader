@@ -12,6 +12,10 @@ shader_type spatial;
 // ink's own occlusion test included — then sees grass where it should see
 // ground.
 render_mode cull_disabled, depth_draw_never, diffuse_burley, specular_disabled;
+#include "cloud_light.gdshaderinc"
+#include "turf_surface.gdshaderinc"
+varying vec3 detail_world;
+varying vec3 detail_normal_world;
 
 uniform float wind_amp = 0.10;
 uniform float wind_speed = 1.0;
@@ -23,10 +27,23 @@ void vertex() {
 	// Two frequencies, so a gust travels rather than the whole field breathing.
 	VERTEX.x += (sin(t + phase) * 0.7 + sin(t * 1.7 + phase * 1.3) * 0.3) * sway * wind_amp;
 	VERTEX.z += (cos(t * 0.83 + phase * 1.1) * 0.7) * sway * wind_amp * 0.6;
+	detail_world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	// Blades deliberately use the ground's upward normal on both sides.
+	// Preserve it before the renderer flips back-face normals: otherwise a
+	// quarter-turn changes the same meadow from pale grass into black slivers.
+	detail_normal_world = normalize(MODEL_NORMAL_MATRIX * NORMAL);
 }
 
 void fragment() {
+	if (reflection_below_plane(detail_world, CAMERA_VISIBLE_LAYERS)) discard;
+	NORMAL = normalize((VIEW_MATRIX * vec4(detail_normal_world, 0.0)).xyz);
+	cloud_transmission = cloud_at(detail_world);
 	ALBEDO = COLOR.rgb;
+	// Existing green blade/leaf colours share the turf's local dry/lush tone.
+	// Pink, cream, blue and yellow flowers, petals and mineral chips keep theirs.
+	if (COLOR.g > COLOR.r * 1.04 && COLOR.g > COLOR.b * 1.25) {
+		ALBEDO = turf_colour(ALBEDO, turf_surface(detail_world.xz).rgb);
+	}
 	ROUGHNESS = 0.95;
 	SPECULAR = 0.0;
 }

@@ -54,15 +54,15 @@ public partial class Character : Node3D
 		}
 	}
 
-	private static readonly Tone Skin = new(0xf7ddca);
-	private static readonly Tone Hood = new(0xa2c5c8);
-	private static readonly Tone HoodDeep = new(0x7aa2a8);
-	private static readonly Tone Tunic = new(0xfbf1dd);
-	private static readonly Tone Scarf = new(0xf4c58f);
-	private static readonly Tone Satchel = new(0xe2b98d);
-	private static readonly Tone Leather = new(0xa17c75);
-	private static readonly Tone Trouser = new(0x889dae);
-	private static readonly Tone Boots = new(0x92736e);
+	private static readonly Tone Skin = new(0xe6bca0);
+	private static readonly Tone Hood = new(0x478fa3);
+	private static readonly Tone HoodDeep = new(0x356f84);
+	private static readonly Tone Tunic = new(0x5a8994);
+	private static readonly Tone Scarf = new(0xe19d60);
+	private static readonly Tone Satchel = new(0xb86f3f);
+	private static readonly Tone Leather = new(0x665060);
+	private static readonly Tone Trouser = new(0x394963);
+	private static readonly Tone Boots = new(0x3e344b);
 
 	private Node3D _swimPivot; // pitches the complete figure around its torso
 	private Node3D _body;      // everything that bobs
@@ -234,7 +234,7 @@ public partial class Character : Node3D
 			CastShadow = GeometryInstance3D.ShadowCastingSetting.On,
 		};
 		var mat = new ShaderMaterial { Shader = GD.Load<Shader>("res://shaders/character.gdshader") };
-		mat.SetShaderParameter("albedo", tone.Linear);
+		mat.SetShaderParameter("albedo", Palette.ShaderRgba(tone.Linear));
 		mat.SetShaderParameter("sun_dir", Palette.SunDir);
 		mesh.MaterialOverride = mat;
 		parent.AddChild(mesh);

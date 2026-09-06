@@ -11,6 +11,24 @@ namespace Petalfell.Render;
 public static class WorldMaterials
 {
 	public readonly record struct InkSet(ShaderMaterial Light, ShaderMaterial Dark);
+	private static Texture2D _mineralDetail;
+
+	private static Texture2D MineralDetail()
+	{
+		if (_mineralDetail != null) return _mineralDetail;
+		var imported = GD.Load<Texture2D>("res://assets/materials/mineral-detail.png");
+		using var pixels = imported.GetImage();
+		// Texture imports are disposable/ignored in this repository. Do not depend
+		// on an editor having detected 3D use and enabled mipmaps on this machine.
+		if (pixels.HasMipmaps()) return _mineralDetail = imported;
+		if (pixels.IsCompressed() && pixels.Decompress() != Error.Ok)
+			throw new System.InvalidOperationException("Cannot decompress the mineral detail source.");
+		if (pixels.GenerateMipmaps() != Error.Ok)
+			throw new System.InvalidOperationException("Cannot generate mineral detail mipmaps.");
+		_mineralDetail = ImageTexture.CreateFromImage(pixels);
+		GD.Print($"[world-materials] mineral detail {pixels.GetWidth()}x{pixels.GetHeight()}, {pixels.GetMipmapCount()} mip levels");
+		return _mineralDetail;
+	}
 
 	public static InkSet CreateInk(float waterLevel, int priorityOffset = 0)
 	{
@@ -35,6 +53,13 @@ public static class WorldMaterials
 	public static ShaderMaterial CreateVoxel(float waterLevel)
 	{
 		var material = new ShaderMaterial { Shader = GD.Load<Shader>("res://shaders/voxel.gdshader") };
+		material.SetShaderParameter("mineral_detail", MineralDetail());
+		var moss = Palette.Get(Palette.MOSS_STONE);
+		var stone = Palette.Get(Palette.STONE_PALE);
+		static Vector3 Ratio(Color substrate, Color coating) =>
+			new(substrate.R / coating.R, substrate.G / coating.G, substrate.B / coating.B);
+		material.SetShaderParameter("moss_substrate_top_ratio", Ratio(stone.Top, moss.Top));
+		material.SetShaderParameter("moss_substrate_side_ratio", Ratio(stone.Side, moss.Side));
 		material.SetShaderParameter("sun_dir", Palette.SunDir);
 		material.SetShaderParameter("plane_y", waterLevel);
 		return material;
@@ -50,14 +75,15 @@ public static class WorldMaterials
 		{
 			Shader = GD.Load<Shader>("res://shaders/sculpture.gdshader"),
 		};
-		material.SetShaderParameter("base_colour", colour);
+		material.SetShaderParameter("base_colour", Palette.ShaderRgba(colour));
+		material.SetShaderParameter("mineral_detail", MineralDetail());
 		material.SetShaderParameter("weathering", weathering);
 		material.SetShaderParameter("moss_mix", mossMix);
-		material.SetShaderParameter("moss_colour", Palette.Get(Palette.MOSS_STONE).Top);
+		material.SetShaderParameter("moss_colour", Palette.ShaderRgba(Palette.Get(Palette.MOSS_STONE).Top));
 		return material;
 	}
 
-	public static ShaderMaterial CreateSculptureOutline(float width = 0.009f)
+	public static ShaderMaterial CreateSculptureOutline(float widthPixels = 0.50f)
 	{
 		var material = new ShaderMaterial
 		{
@@ -65,7 +91,7 @@ public static class WorldMaterials
 			RenderPriority = 1,
 		};
 		material.SetShaderParameter("ink_colour", Palette.InkDark);
-		material.SetShaderParameter("outline_width", width);
+		material.SetShaderParameter("outline_pixels", widthPixels);
 		return material;
 	}
 
@@ -76,14 +102,14 @@ public static class WorldMaterials
 		bool reflectionAvailable = true)
 	{
 		var material = new ShaderMaterial { Shader = GD.Load<Shader>("res://shaders/water.gdshader") };
-		material.SetShaderParameter("shoal", Palette.WaterShoal);
-		material.SetShaderParameter("shallow", Palette.WaterShallow);
-		material.SetShaderParameter("deep", Palette.WaterDeep);
-		material.SetShaderParameter("warm", Palette.WaterWarm);
-		material.SetShaderParameter("sheen", Palette.WaterSheen);
-		material.SetShaderParameter("sky_low", Palette.SkyHorizon);
-		material.SetShaderParameter("sky_high", Palette.SkyZenith);
-		material.SetShaderParameter("sun_colour", Palette.SunColor);
+		material.SetShaderParameter("shoal", Palette.ShaderRgb(Palette.WaterShoal));
+		material.SetShaderParameter("shallow", Palette.ShaderRgb(Palette.WaterShallow));
+		material.SetShaderParameter("deep", Palette.ShaderRgb(Palette.WaterDeep));
+		material.SetShaderParameter("warm", Palette.ShaderRgb(Palette.WaterWarm));
+		material.SetShaderParameter("sheen", Palette.ShaderRgb(Palette.WaterSheen));
+		material.SetShaderParameter("sky_low", Palette.ShaderRgb(Palette.SkyHorizon));
+		material.SetShaderParameter("sky_high", Palette.ShaderRgb(Palette.SkyZenith));
+		material.SetShaderParameter("sun_colour", Palette.ShaderRgb(Palette.SunColor));
 		material.SetShaderParameter("sun_dir", Palette.SunDir);
 		material.SetShaderParameter("plane_y", waterLevel);
 		material.SetShaderParameter("surface_from_mesh", surfaceFromMesh);
@@ -91,8 +117,8 @@ public static class WorldMaterials
 		// multi-height tops and step curtains still use the legacy absorption,
 		// refraction, caustics and moving-sheet response; overriding those values
 		// here once collapsed every column into one opaque periwinkle stop.
-		// A review window has no single reflection plane. Keep the real water's
-		// sky response while the multi-plane reflection compositor remains future work.
+		// Start with sky until the bounded atlas reflection controller has selected
+		// a visible water elevation and supplied its mirrored viewport.
 		if (!reflectionAvailable) material.SetShaderParameter("reflect_mix", 0f);
 		return material;
 	}

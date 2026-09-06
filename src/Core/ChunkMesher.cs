@@ -77,7 +77,7 @@ public static class ChunkMesher
 	{
 		public Vector3 Start, End;
 		public int Dir0, Dir1;
-		public bool Light;
+		public bool Light, Convex;
 		// Six four-bit face-pair codes fit exactly in a float-backed custom
 		// channel. The shader evaluates them against the live camera and knows
 		// whether at least two incident edges are actually pale at each endpoint.
@@ -105,7 +105,12 @@ public static class ChunkMesher
 	private static readonly List<Color> _cols = new(8192);
 	/// <summary>Per vertex: (pattern + drip depth, drip colour rgb).</summary>
 	private static readonly List<float> _surf = new(16384);
+	// Face-local coordinates and exposed-edge bits let the material round only
+	// actual convex lips. Internal coplanar voxel boundaries stay perfectly flat.
+	private static readonly List<Vector2> _faceUv = new(8192);
+	private static readonly List<Vector2> _edgeData = new(8192);
 	private static readonly List<int> _idx = new(12288);
+	private static readonly List<Vector3> _collision = new(12288);
 	private static readonly List<Run> _runs = new(4096);
 
 	private static int EdgeIndex(int lx, int ly, int lz, int axis) =>
@@ -121,6 +126,7 @@ public static class ChunkMesher
 		int x1 = Math.Min(grid.Size, x0 + ChunkSize), z1 = Math.Min(grid.Size, z0 + ChunkSize);
 
 		_verts.Clear(); _norms.Clear(); _cols.Clear(); _idx.Clear(); _surf.Clear();
+		_faceUv.Clear(); _edgeData.Clear(); _collision.Clear();
 		foreach (int t in _touched) _edges[t] = default;
 		_touched.Clear();
 
@@ -161,10 +167,9 @@ public static class ChunkMesher
 				Color face = f == 2 ? def.Top : (f == 3 ? def.Bottom : def.Side);
 				bool faceLight = f == 2 ? def.TopLight : (f == 3 ? def.BottomLight : def.SideLight);
 
-				// Emissive rides in the vertex alpha rather than in a separate
-				// unlit group; one surface keeps collision and the ink graph
-				// reading from the same triangles.
-				if (inside) EmitFace(grid, x, y, z, f, face, def.Emissive, def.Pattern);
+				// Emissive rides in vertex alpha. Render bevels, square collision
+				// and the crease graph share this exposed-face decision.
+				if (inside) EmitFace(grid, x, y, z, f, face, def.Emissive, def.Pattern, id);
 
 				// The grass cap promotes its own convex perimeter to the pale
 				// ink even where the substrate below it is not pale enough to
@@ -182,6 +187,8 @@ public static class ChunkMesher
 		arrays[(int)Mesh.ArrayType.Vertex] = _verts.ToArray();
 		arrays[(int)Mesh.ArrayType.Normal] = _norms.ToArray();
 		arrays[(int)Mesh.ArrayType.Color] = _cols.ToArray();
+		arrays[(int)Mesh.ArrayType.TexUV] = _faceUv.ToArray();
+		arrays[(int)Mesh.ArrayType.TexUV2] = _edgeData.ToArray();
 		arrays[(int)Mesh.ArrayType.Custom0] = _surf.ToArray();
 		var indices = _idx.ToArray();
 		arrays[(int)Mesh.ArrayType.Index] = indices;
@@ -189,11 +196,9 @@ public static class ChunkMesher
 			(Mesh.ArrayFormat)((ulong)Mesh.ArrayCustomFormat.RgbaFloat << 13));
 		data.Surface = mesh;
 
-		// Collision reuses the triangles we already computed. A second
-		// definition of the world is a second thing to drift out of sync.
-		var faces = new Vector3[indices.Length];
-		for (int i = 0; i < indices.Length; i++) faces[i] = _verts[indices[i]];
-		data.CollisionFaces = faces;
+		// The visible bevel stays inside the voxel boundary. Traversal retains the
+		// original square collision surface, independently verified below.
+		data.CollisionFaces = _collision.ToArray();
 
 		MergeRuns(grid, x0, z0, x1, z1, yTop);
 		if (_runs.Count > 0) data.Ink = BuildInkMesh(out data.InkSurfaceIsLight);
@@ -206,23 +211,15 @@ public static class ChunkMesher
 	 * ================================================================ */
 
 	private static void EmitFace(VoxelGrid grid, int x, int y, int z, int f,
-		Color color, float emissive, float pattern)
+		Color color, float emissive, float pattern, byte materialId)
 	{
 		int na = NAxis[f], ua = UAxis[f], va = VAxis[f];
 		int sign = Normals[f, na];
 		var n = new Vector3(Normals[f, 0], Normals[f, 1], Normals[f, 2]);
-
-		// The grass drip.
-		//
-		// A shelf in the reference is not a green band butted flat against a
-		// terracotta one: turf spills raggedly over the lip and hangs a little
-		// way down the face below it. That ragged boundary is the single most
-		// recognisable thing about the terraces, and it lives on the block
-		// UNDER the grass rather than on the grass itself — a grass block's own
-		// side is already green, so spilling over its own face does nothing.
+		var origin = new Vector3(x, y, z);
 		float fringe = 0f;
 		var fringeColor = default(Color);
-		if (na != 1)   // side faces only; a top or bottom face has no lip
+		if (na != 1)
 		{
 			byte above = WinAt(x, y + 1, z);
 			if (Palette.IsGrassSurface(above) || above == Palette.MOSS)
@@ -232,50 +229,127 @@ public static class ChunkMesher
 			}
 		}
 
-		int baseIdx = _verts.Count;
-		Span<float> ao = stackalloc float[4];
+		int edgeMask = 0;
+		for (int edge = 0; edge < 4; edge++)
+		{
+			int axis = edge < 2 ? ua : va;
+			int offset = (edge & 1) == 0 ? -1 : 1;
+			var adjacent = new Vector3I(x, y, z);
+			adjacent[axis] += offset;
+			if (!WinSolid(adjacent.X, adjacent.Y, adjacent.Z)) edgeMask |= 1 << edge;
+		}
 
+		Span<Vector3> original = stackalloc Vector3[4];
+		Span<Vector3> inset = stackalloc Vector3[4];
+		Span<float> ao = stackalloc float[4];
+		Span<float> widths = stackalloc float[4];
 		for (int corner = 0; corner < 4; corner++)
 		{
-			int cu = (corner == 1 || corner == 2) ? 1 : 0;
-			int cv = (corner >= 2) ? 1 : 0;
-
-			var p = new Vector3(x, y, z);
-			p[na] += sign > 0 ? 1 : 0;
-			p[ua] += cu;
-			p[va] += cv;
-			_verts.Add(p);
-			_norms.Add(n);
+			int cu = corner is 1 or 2 ? 1 : 0;
+			int cv = corner >= 2 ? 1 : 0;
+			var at = origin;
+			at[na] += sign > 0 ? 1 : 0;
+			at[ua] += cu;
+			at[va] += cv;
+			original[corner] = at;
+			float width = edgeMask == 0 ? 0f : CornerBevelWidth((Vector3I)at);
+			widths[corner] = width;
+			if ((edgeMask & (1 << cu)) != 0) at[ua] -= (cu * 2 - 1) * width;
+			if ((edgeMask & (1 << (cv + 2))) != 0) at[va] -= (cv * 2 - 1) * width;
+			inset[corner] = at;
 			ao[corner] = VertexAo(grid, x, y, z, na, ua, va, sign, cu, cv);
 		}
 
+		void Vertex(Vector3 at, Vector3 normal, float shade)
+		{
+			_verts.Add(at); _norms.Add(normal);
+			_cols.Add(new Color(color.R * shade, color.G * shade, color.B * shade, emissive));
+			_faceUv.Add(new Vector2(at[ua] - origin[ua], at[va] - origin[va]));
+			_edgeData.Add(new Vector2(edgeMask, materialId));
+			_surf.Add(pattern + fringe * 0.9f);
+			_surf.Add(fringeColor.R * shade);
+			_surf.Add(fringeColor.G * shade);
+			_surf.Add(fringeColor.B * shade);
+		}
+		void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector3 normal,
+			float aa, float ab, float ac, float ad)
+		{
+			int start = _verts.Count;
+			Vertex(a, normal, aa); Vertex(b, normal, ab);
+			Vertex(c, normal, ac); Vertex(d, normal, ad);
+			// Godot front faces wind clockwise when viewed from outside.
+			bool reverse = (b - a).Cross(c - a).Dot(normal) > 0f;
+			// A taper can collapse one half of a strip at a complex junction.
+			if ((b - a).Cross(c - a).LengthSquared() > 1e-12f)
+			{
+				_idx.Add(start); _idx.Add(start + (reverse ? 2 : 1));
+				_idx.Add(start + (reverse ? 1 : 2));
+			}
+			if ((c - a).Cross(d - a).LengthSquared() > 1e-12f)
+			{
+				// Recompute winding because the first half can be degenerate.
+				reverse = (c - a).Cross(d - a).Dot(normal) > 0f;
+				_idx.Add(start); _idx.Add(start + (reverse ? 3 : 2));
+				_idx.Add(start + (reverse ? 2 : 3));
+			}
+		}
+
+		Quad(inset[0], inset[1], inset[2], inset[3], n, ao[0], ao[1], ao[2], ao[3]);
+		for (int edge = 0; edge < 4; edge++)
+		{
+			if ((edgeMask & (1 << edge)) == 0) continue;
+			int ca = edge switch { 0 => 0, 1 => 1, 2 => 0, _ => 3 };
+			int cb = edge switch { 0 => 3, 1 => 2, 2 => 1, _ => 2 };
+			if (widths[ca] == 0f && widths[cb] == 0f) continue;
+			var side = Vector3.Zero;
+			side[edge < 2 ? ua : va] = (edge & 1) == 0 ? -1 : 1;
+			Vector3 a = inset[ca], b = inset[cb];
+			Vector3 outerA = a + (side - n) * (widths[ca] * .5f);
+			Vector3 outerB = b + (side - n) * (widths[cb] * .5f);
+			Quad(a, b, outerB, outerA, (n + side).Normalized(),
+				ao[ca], ao[cb], ao[cb], ao[ca]);
+		}
 		for (int corner = 0; corner < 4; corner++)
 		{
-			// AO is the main reason the geometry reads at all; it is baked here
-			// rather than approximated in the shader.
-			float a = ao[corner];
-			_cols.Add(new Color(color.R * a, color.G * a, color.B * a, emissive));
-
-			// One custom channel carries everything the surface shader needs:
-			// the pattern id and the drip depth packed into a single float, then
-			// the drip colour. Occlusion is folded into the drip colour here so
-			// the shader never has to reconstruct it.
-			_surf.Add(pattern + fringe * 0.9f);
-			_surf.Add(fringeColor.R * a);
-			_surf.Add(fringeColor.G * a);
-			_surf.Add(fringeColor.B * a);
+			int cu = corner is 1 or 2 ? 1 : 0, cv = corner >= 2 ? 1 : 0;
+			float width = widths[corner];
+			if (width == 0 || (edgeMask & (1 << cu)) == 0 ||
+				(edgeMask & (1 << (cv + 2))) == 0) continue;
+			var u = Vector3.Zero; u[ua] = cu * 2 - 1;
+			var v = Vector3.Zero; v[va] = cv * 2 - 1;
+			Vector3 a = inset[corner];
+			Vector3 alongU = a + (u - n) * (width * .5f);
+			Vector3 alongV = a + (v - n) * (width * .5f);
+			Vector3 join = original[corner] - (n + u + v) * (width * (2f / 3f));
+			Quad(a, alongU, join, alongV, (n + u + v).Normalized(),
+				ao[corner], ao[corner], ao[corner], ao[corner]);
 		}
 
-		if (sign > 0)
+		int c1 = sign > 0 ? 2 : 1, c2 = sign > 0 ? 1 : 2;
+		_collision.Add(original[0]); _collision.Add(original[c1]); _collision.Add(original[c2]);
+		c1 = sign > 0 ? 3 : 2; c2 = sign > 0 ? 2 : 3;
+		_collision.Add(original[0]); _collision.Add(original[c1]); _collision.Add(original[c2]);
+	}
+
+	/// <summary>
+	/// All faces sharing a lattice corner use the same width. Simple convex
+	/// corners and straight convex edges are rounded; complex or diagonal-touch
+	/// junctions taper to the original corner instead of opening a crack. The
+	/// one-cell apron makes this decision identical on either side of a chunk.
+	/// </summary>
+	private static float CornerBevelWidth(Vector3I corner)
+	{
+		int count = 0, first = -1, second = -1;
+		for (int bit = 0; bit < 8; bit++)
 		{
-			_idx.Add(baseIdx + 0); _idx.Add(baseIdx + 2); _idx.Add(baseIdx + 1);
-			_idx.Add(baseIdx + 0); _idx.Add(baseIdx + 3); _idx.Add(baseIdx + 2);
+			if (!WinSolid(corner.X - 1 + (bit & 1),
+				corner.Y - 1 + ((bit >> 1) & 1), corner.Z - 1 + ((bit >> 2) & 1))) continue;
+			if (++count > 2) return 0f;
+			if (first < 0) first = bit; else second = bit;
 		}
-		else
-		{
-			_idx.Add(baseIdx + 0); _idx.Add(baseIdx + 1); _idx.Add(baseIdx + 2);
-			_idx.Add(baseIdx + 0); _idx.Add(baseIdx + 2); _idx.Add(baseIdx + 3);
-		}
+		if (count == 1) return Palette.SurfaceBevelWidth;
+		int direction = first ^ second;
+		return count == 2 && direction is 1 or 2 or 4 ? Palette.SurfaceBevelWidth : 0f;
 	}
 
 	/// <summary>Classic three-neighbour voxel AO, sampled in the plane just outside the face.</summary>
@@ -496,6 +570,7 @@ public static class ChunkMesher
 			Start = start, End = end,
 			Dir0 = d0, Dir1 = d1,
 			Light = IsLight(rec),
+			Convex = rec.Count == 2 && !rec.Concave,
 		});
 	}
 
@@ -559,8 +634,8 @@ public static class ChunkMesher
 	 * shader. VERTEX carries the quad corner rather than a position; everything
 	 * the shader actually needs rides in the 16 spare custom floats.
 	 *
-	 * Surface 0 is the pale ink and surface 1 the dark, so the material's
-	 * render_priority can make dark win at a junction. */
+	 * Nonempty pale and dark concave groups are separate surfaces, identified by
+	 * isLight. Material priority makes dark win where those groups meet. */
 	private static ArrayMesh BuildInkMesh(out bool[] isLight)
 	{
 		var mesh = new ArrayMesh();
@@ -570,7 +645,7 @@ public static class ChunkMesher
 		{
 			bool wantLight = pass == 0;
 			int n = 0;
-			foreach (var r in _runs) if (r.Light == wantLight) n++;
+			foreach (var r in _runs) if (!r.Convex && r.Light == wantLight) n++;
 			if (n == 0) continue;
 
 			var verts = new Vector3[n * 4];
@@ -583,9 +658,13 @@ public static class ChunkMesher
 			int v = 0, q = 0;
 			foreach (var r in _runs)
 			{
-				if (r.Light != wantLight) continue;
+				// The physical chamfer supplies convex silhouettes. Do not upload
+				// and shade thousands of outline strips only to discard them.
+				if (r.Convex || r.Light != wantLight) continue;
 				var na = new Vector3(Normals[r.Dir0, 0], Normals[r.Dir0, 1], Normals[r.Dir0, 2]);
 				var nb = new Vector3(Normals[r.Dir1, 0], Normals[r.Dir1, 1], Normals[r.Dir1, 2]);
+				Vector3 start = r.Start;
+				Vector3 end = r.End;
 
 				for (int k = 0; k < 4; k++)
 				{
@@ -595,14 +674,14 @@ public static class ChunkMesher
 					verts[v + k] = new Vector3(along, side, 0f);
 
 					int o = (v + k) * 4;
-					c0[o + 0] = r.Start.X; c0[o + 1] = r.Start.Y; c0[o + 2] = r.Start.Z;
+					c0[o + 0] = start.X; c0[o + 1] = start.Y; c0[o + 2] = start.Z;
 					c0[o + 3] = r.PaleEdgesAtStart;
-					c1[o + 0] = r.End.X; c1[o + 1] = r.End.Y; c1[o + 2] = r.End.Z;
+					c1[o + 0] = end.X; c1[o + 1] = end.Y; c1[o + 2] = end.Z;
 					c1[o + 3] = r.PaleEdgesAtEnd;
 					c2[o + 0] = na.X; c2[o + 1] = na.Y; c2[o + 2] = na.Z;
 					c2[o + 3] = r.Light ? 1f : 0f;
 					c3[o + 0] = nb.X; c3[o + 1] = nb.Y; c3[o + 2] = nb.Z;
-					c3[o + 3] = 0f;
+					c3[o + 3] = r.Convex ? 1f : 2f;
 				}
 				idx[q + 0] = v + 0; idx[q + 1] = v + 1; idx[q + 2] = v + 2;
 				idx[q + 3] = v + 0; idx[q + 4] = v + 2; idx[q + 5] = v + 3;
@@ -631,6 +710,8 @@ public static class ChunkMesher
 		}
 
 		isLight = flags.ToArray();
-		return mesh.GetSurfaceCount() > 0 ? mesh : null;
+		if (mesh.GetSurfaceCount() > 0) return mesh;
+		mesh.Dispose();
+		return null;
 	}
 }

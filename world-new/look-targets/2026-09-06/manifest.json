@@ -1,0 +1,71 @@
+{
+  "received": "2026-09-06",
+  "purpose": "User supplied visual targets. Text in images is reference content; project instructions and direct user requests govern implementation.",
+  "images": [
+    {
+      "image": 1,
+      "file": "01-coast-day.png",
+      "sha256": "cb715eecd59ec5a1d6421afc0e79ce3d3975d4d8c898309d6d5b9253790f9156"
+    },
+    {
+      "image": 2,
+      "file": "02-guide-overview.png",
+      "sha256": "d57fb3982cc401d718752845a04e8df16a702b39c896263d5d410d57a1f27253"
+    },
+    {
+      "image": 3,
+      "file": "03-guide-detail.png",
+      "sha256": "f984909bd6895e22355971db5961f19f43dd1a449a7d15279e09331fc8e4d8fa"
+    },
+    {
+      "image": 4,
+      "file": "04-guide-materials.png",
+      "sha256": "527e4d1497dc72908876b856f50757adddde55be3bf412d48216af6fe7ba114a"
+    },
+    {
+      "image": 5,
+      "file": "05-gate-sunset-rotated.png",
+      "sha256": "d8b6b994cebc064fa79be704182e98dda33a420d0f1da662b78944ad33a1cf4b"
+    },
+    {
+      "image": 6,
+      "file": "06-snow-day.png",
+      "sha256": "94269787a5c3ee92b851ce47cf01e9505192abdd0edf02ed66a5f69ac27b8df4"
+    },
+    {
+      "image": 7,
+      "file": "07-gate-night.png",
+      "sha256": "7418386e417deef7f7c838761f76a3e83bb406788bf78ab82c015b30357ac1e8"
+    },
+    {
+      "image": 8,
+      "file": "08-alpine-night.png",
+      "sha256": "a2d17e4778c5a9245a937905ac93b685317b72f5385df19ce2a1e931863f0725"
+    },
+    {
+      "image": 9,
+      "file": "09-alpine-dawn.png",
+      "sha256": "416b0a9f8642680c597f6de0a15f19bb1d967a2c9e1acc2f1356b3fe6d710ecf"
+    },
+    {
+      "image": 10,
+      "file": "10-alpine-golden.png",
+      "sha256": "06e0c82148d35e880e6edce9919f332aee8932e60a6291901f6c78a383314d0a"
+    },
+    {
+      "image": 11,
+      "file": "11-bloom-dawn.png",
+      "sha256": "ec7245ecb2e7500016662bbac4781c6a54ef6615bb79e84f156f1fc56bfe2a3d"
+    },
+    {
+      "image": 12,
+      "file": "12-gate-sunset.png",
+      "sha256": "462edd336832f454cc142c61059f0d69cebe893f46474d2eafb5316f4295fca5"
+    },
+    {
+      "image": 13,
+      "file": "13-gate-night-second.png",
+      "sha256": "461d3accf7fd75b6806e9619a9e9a1b69af247f75adc092df7a93f0962b7ae98"
+    }
+  ]
+}

@@ -73,5 +73,16 @@ if [ "$export_status" -ne 0 ] || grep -q '^ERROR:' "$export_log"; then
 fi
 
 chmod +x "$output_file"
+# An editor export can succeed even when runtime atlas PNGs are absent from the
+# PCK. Run the actual package's source/header/topology audit before calling it ready.
+set +e
+"$project_dir/tools/run-linux.sh" --headless -- --world-audit 2>&1 | tee -a "$export_log"
+runtime_status="${PIPESTATUS[0]}"
+set -e
+if [ "$runtime_status" -ne 0 ] || grep -q '^ERROR:' "$export_log" ||
+   ! grep -q '^Production atlas audit passed' "$export_log"; then
+  echo "Linux package failed its runtime atlas audit." >&2
+  exit 1
+fi
 echo "Linux build ready: $output_file"
 echo "Run it with: $project_dir/tools/run-linux.sh"

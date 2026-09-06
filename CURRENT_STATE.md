@@ -1,4 +1,4 @@
-# Current state — 2026-09-02
+# Current state — 2026-09-06
 
 This is a factual snapshot, not a design proposal.
 
@@ -40,6 +40,194 @@ resolves a supported landing and closes the map on success.
 
 The terrain foundation is accepted; the completed visual fidelity of individual
 sites is not.
+
+## Shared rendering revision
+
+The 2026-09-06 image set and visual criteria live in [LOOK_TARGET](docs/LOOK_TARGET.md).
+The production renderer now has narrow physical bevels on exposed lips, world-space mineral
+and turf variation, a separate sand pattern, denser clustered flowers and grass,
+broken shoreline foam and caustic contours. The water body follows night exposure.
+The bevels stay inside authored voxels. Empty concave-ink meshes are disposed
+immediately. Terrain topology, collision, site layouts
+and tree anchors remain unchanged. Imported sculpture outlines expand by 0.50
+framebuffer pixels so their width does not grow with the monument scale.
+Fine mineral relief also uses the generated
+`assets/materials/mineral-detail.png` data texture at two scales; its prompt is
+preserved alongside it. Sculpture uses a blended triplanar sample, snow has cool
+blue sides and an icy crust, and blossom/character colours have deeper midtones.
+The shared texture loader ensures a mip chain even when a fresh import has none.
+Snow's larger glaze sample uses a minimum six-texel footprint and antialiased
+contours. Existing `MOSS_STONE` faces expose a world-space pattern of pale
+substrate within their authored material cells.
+Surface relief is weaker on sand, snow and blossom caps, and varies with the
+existing worn field on mineral faces.
+The enlarged stone texture sample now filters out fine grit before supplying
+broad mineral variation; fine flake contrast is concentrated in weathered areas.
+The filtered stone sample is centred on the texture's measured .660 mean with
+1.80 gain and a bounded -0.28..0.22 combined broad variation.
+Convex voxel outlines are omitted from the GPU mesh; concave creases retain ink.
+The voxel shader adds small pale scuffs on exposed stone lips using the
+existing mesher edge bits and face UVs. Their world-registered wear field leaves
+coplanar joins untouched. Sand separates broad deposit tone, fine mineral grain
+and sparse shallow wind ridges. The Linux package includes this revision.
+The two rejected broad-band candidates remain documented as failure evidence.
+
+`DayCycle` drives direct sunlight/moonlight, sky, haze and global moving cloud
+shade. Its direct key fades to zero at sun/moon handover across an absolute
+solar-height ramp of 0.24. Dawn/evening keys use stronger peach light and
+weaker blue ambient fill with less pale-sky contribution; noon and midnight
+keys are unchanged. The 4,097-sample clock check passes with this ramp. Terrain, ground detail,
+characters and sculpture use the same cloud field. Linear palette colours are
+uploaded as numeric shader vectors; typed sRGB light/fog properties are encoded
+at their boundary to avoid the previous double conversion.
+The current ACES exposure is 0.72 and daytime ambient multiplier 0.42. Depth
+haze has a 115–430-block minimum span and a 1.70 curve; shared view-distance
+scaling extends that span for long-lens overviews in production and review.
+Unshaded voxel ink fades in that same haze; sculpture outline width contracts
+with it. Both retain their fog-disabled colour response.
+One world-registered fog shader
+adds drifting water-level mist to the camera-bounded volumetric buffer. It does
+not allocate atlas-sized data or add density at mountain height.
+
+Production attaches `AmbientDrift` outside the replaceable window: 32 falling
+pieces and 18 fireflies in two MultiMeshes, sampled against the active window.
+Their positions remain global across a handoff. Falling pieces now use an eight-facet cupped
+lamina instead of a 12-triangle unlit box. A tapered root and notched tip supply
+the outline; the material receives scene light and cloud shadows, with a 0.24
+diffuse wrap. Authored sRGB pigment is converted once at spawn. The original
+pool, random sequence, fall/spin/landing and day/night fade are retained.
+Existing ground detail remains
+one merged mesh per streamed chunk. Flower petals and centres now move with
+their stem tips, with two small leaves attached along each stem. Ground-detail
+normals retain their authored direction on both faces, preventing reverse-view
+grass from darkening. Fireflies billboard against each rendering camera.
+Production grass now has three blunt bent blades per clump, with matched wind
+weights at the shoulder of each two-segment blade. Flower heads have shallow
+five-petal cups. The meadow/flower admission fields, draw sequence and chunk
+mesh ownership are unchanged. Six `bent-flora-bloom` and five
+`bent-flora-coast` source previews were inspected on 2026-09-06; the close Bloom
+views show fuller clumps and raised petals, while the four noon coast quarters
+retain upward grass lighting. The complete current package review is recorded
+below; `scuffed-*` captures remain evidence for the preceding plant shapes.
+Dry exposed faces of existing `MOSS_STONE` cap/placed cells carry small folded
+leaf facets in the same chunk detail mesh. The tile-bounded sparse query retains
+AIR overrides and processes rewritten cells once; no new growth mask is created.
+Dry snow, scree, sand and soil now carry low six-sided mineral fragments in
+32-block deposit fields, with more accumulation on exposed terrace lips.
+Clusters contain one to three pieces, stay within their supporting cell and
+join the existing detail mesh. They add no collision or new site rubble.
+
+Upward `PAVING` faces shade shallow cell joints only in a continuous worn
+field, with quieter slab-centre normal relief. This does not alter voxels,
+collision, macro wear masks or natural rock. The rejected continuous grid and
+intermediate review evidence are recorded in the surface knowledge entry.
+
+Existing turf, mesher-supplied fringe and green ground-detail colours now share
+continuous global-XZ dry/lush fields and a restrained colour response through
+`turf_surface.gdshaderinc`. A separate connected field varies hanging fringe
+depth; fine clods are smooth rather than square-sampled. Fringe antialiasing
+uses the world-height footprint before wrapping. All six `matte-turf-bloom`
+and five `matte-turf-coast` source previews were inspected. The current package
+matrix below includes this shared colour revision.
+
+Blossom materials replace rectangular fine noise with jittered, overlapping
+petal facets at 6.5 cells/metre, with 0.0018 analytic relief and pixel-footprint
+filtering from 0.025 to 0.095 metres. Existing per-block values and palette
+colours remain. A leaf-only normalized 0.12 diffuse wrap retains shadow/cloud
+attenuation. Six revised coast and six Bloom source previews were inspected;
+the first deeper, coarser canopy candidate was rejected as pebble-like.
+
+Blossom-region ground detail now adds small fallen-petal drifts to existing dry,
+uncovered `PAVING` caps. An 18-block continuous field owns their distribution;
+an independent draw places at most seven flat petals inside each supporting
+cell, clear of bevel lips. They join the existing chunk detail mesh.
+
+Bloom's authored surface plan restores 24 pale paving cells in four lower-court
+gaps, including beneath the traveller. Its arch builder replaces the earlier
+short moss marks with three source-specific branching patches. Evaluation of
+the before/after writes retains all 681 occupied arch cells; 43 material values
+change. Source/runtime plan audits, world audit and a zero-warning build pass.
+
+`verify-look-rendering` checks coplanar chunk seams, all 255 nonempty local
+voxel junction configurations, unchanged collision faces,
+4,097 clock samples including the horizon transition, particle continuity,
+folded-petal triangle budget/winding/landing bounds and single colour conversion,
+mirror registration at three heights/four quarters, reflection height fades,
+and sparse edit ownership across 600 clipped chunk/tile query windows.
+The fragment fixture checks identical shared-interior geometry after window
+replacement, dry support around steps/water/blockers, normal direction and the
+three-fragment-per-cell vertex bound at three distant atlas origins. The paving
+petal fixture also checks shared-interior window continuity at three distant
+origins, dry support, non-paving/blocker exclusions and the seven-petal bound.
+The meadow fixture checks grass and flower geometry/wind continuity across
+replacement windows at three distant origins, dry grass support around steps,
+water and blockers, upward grass lighting normals, and identical wind weights
+at coincident facet joints. The extended smoke check passes on 2026-09-06.
+Land and water playability checks passed after the collision/render split
+(2692,2164: 44.15 blocks; 6400,7360: 34.61 land + 10.06 swimming).
+The visual revision is not author-accepted. Named capture evidence and remaining
+gaps are recorded in [rendering knowledge](building-knowledge/rendering/reference-look-2026-09.md).
+The local comparison page is generated by `tools/build-look-review.py` from
+explicit raw captures and supplied references. Its current `folded-air-*-package`
+sets contain 23 Linux-package views: coast 13 (five clocks, four noon quarters,
+play/far, orbit still and two probe stills), Bloom six (locked day/night and
+four close quarters), alpine two (play/noon at 4490,1882), and Fallen two
+(locked day and close r3). All were reviewed on 2026-09-06: coast in reduced
+matrices plus full-size play/probe views; every Bloom/alpine/Fallen view at full
+size. Nine source coast previews were also inspected. These are focused effects
+checks. The preceding 70-view full material/clock/distance matrix is preserved
+in `shots/look-2026-09-06/review-satin-canopy.html`; it predates the airborne change.
+
+The current coast orbit has 180 sequential PNG/CSV/encoded frames, six seconds
+at 30 fps, 1600×900. Frames 0000/0045/0090/0135 were inspected at full size.
+This is sampled motion evidence. No new site orbit, accelerated clock sequence
+or traversal test accompanies this effect revision. Site overlays were generated
+but not inspected. Simple crowns, broad wear masks, sparse dressing and source
+composition remain open visual gaps. Rejected face/corner canopy-bud experiments
+were removed; the retained canopy geometry is unchanged.
+
+The export, actual-package atlas audit and extended rendering smoke pass.
+All four package capture logs and the separate probe log are free of shader or
+runtime warnings/errors. The coast probe at 6400,7360 has 300 sequential positive
+finite samples per clock at 1600×900/4× MSAA. Combined main/mirror GPU median/p95
+is 8.414/8.642 ms day and 8.383/8.615 ms night, using sorted indices 150/285.
+The main view retains 121 draws and has 154,546 primitives, 128 fewer than the
+preceding unlit-box revision. These single warmed stationary runs do not establish
+an isolated speedup, traversal performance or gameplay FPS.
+The refreshed comparison loads all four scene panels; browser playback rendered
+the coast orbit's start and six-second endpoint.
+
+One half-resolution planar mirror now follows nearby visible water. Submerged
+geometry is clipped only in the mirror pass; water at other elevations and
+vertical water-step faces retain sky reflection. Plane selection reads the
+active window, and the mirror disables when no nearby visible water is found.
+Height changes fade through sky reflection before moving the mirror plane.
+
+Opt-in `look_orbit` and `look_orbit_night` record a 180-frame camera turn with
+clock, yaw and selected reflection-height metadata. Stills settle for at least
+2.5 seconds of simulation and 24 frames after a clock/camera change, allowing
+the ordinary particle and reflection fades to finish on fast GPUs.
+
+Opt-in `look_perf_day`/`look_perf_night` probes record 300 warmed frames of a
+rendered offscreen viewport, with the window's duplicate 3D pass disabled and no
+image readback during measurement. Main and active mirror GPU timings are
+summed. Historical measurements remain in the rendering knowledge ledger;
+traversal and moving-window cost remain unmeasured.
+
+## Linux package
+
+The four atlas control images use tracked Keep File import settings. CPU image
+and PNG-header reads use Godot FileAccess inside the PCK; display-reference
+checks recognize imported resources. The source and Linux package produced the
+same terrain fingerprint at 6400,7360 after this correction. The build command
+now requires a successful headless atlas audit from the exported binary.
+`shots/.gdignore` excludes review images from Godot's import scan.
+The package passed the coast land/swimming smoke from a working directory
+outside the repository (34.61 land and 10.06 swimming blocks). Its locked
+Fallen day/night captures load both original sculpture assets, the shared
+material and imported comparison source. These two raw frames were inspected.
+Terrain captures own their camera and haze while active; each still checks the
+expected haze span after settling, preventing playable Follow from overwriting it.
 
 ## Controls and review
 
@@ -93,6 +281,6 @@ separate.
 1. Finish Reference 1 as the next exact site transcription.
 2. Continue improving Bloom and Fallen Colossus only against their references.
 3. Traverse the accepted atlas for localized collision/route issues.
-4. Tune final lighting, shadows, ink and atmosphere after site silhouettes are
-   correct.
+4. Continue reference comparison of materials, lighting and atmosphere, including
+   source-specific wear and shape fidelity.
 5. Build gameplay/story content on the accepted world foundation.

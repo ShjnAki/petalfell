@@ -75,10 +75,10 @@ public sealed class WorldAtlasDefinition
 		else report.Include(Topology.Audit(this), "topology");
 
 		if (string.IsNullOrWhiteSpace(PreviewReferencePath)) report.Error("previewReferencePath is required");
-		else if (!Godot.FileAccess.FileExists(PreviewReferencePath))
+		else if (!AtlasSourceImages.Exists(PreviewReferencePath))
 			report.Error($"preview reference '{PreviewReferencePath}' does not exist");
 		foreach (string path in CompositionReferencePaths)
-			if (!Godot.FileAccess.FileExists(path)) report.Error($"composition reference '{path}' does not exist");
+			if (!AtlasSourceImages.Exists(path)) report.Error($"composition reference '{path}' does not exist");
 
 		var layerIds = new HashSet<string>(StringComparer.Ordinal);
 		var layerKinds = new HashSet<AtlasLayerKind>();
@@ -103,7 +103,7 @@ public sealed class WorldAtlasDefinition
 				report.Error($"{layer.Status.ToString().ToLowerInvariant()} source layer '{layer.Id}' does not exist at '{layer.Path}'");
 			else if (layer.Status != AtlasLayerStatus.Planned)
 			{
-				var image = Image.LoadFromFile(ProjectSettings.GlobalizePath(layer.Path));
+				var image = AtlasSourceImages.LoadRawPng(layer.Path);
 				int expectedW = Width / BlocksPerPixel, expectedH = Depth / BlocksPerPixel;
 				if (image == null || image.GetWidth() != expectedW || image.GetHeight() != expectedH)
 					report.Error($"source layer '{layer.Id}' must be {expectedW}x{expectedH} pixels");
@@ -212,13 +212,13 @@ public sealed class WorldAtlasDefinition
 	private static bool ValidPngEncoding(AtlasSourceLayer layer, out string error)
 	{
 		error = "";
-		byte[] header = new byte[26];
-		using (var stream = File.OpenRead(ProjectSettings.GlobalizePath(layer.Path)))
-			if (stream.Read(header, 0, header.Length) != header.Length)
-			{
-				error = "is not a complete PNG";
-				return false;
-			}
+		using var file = Godot.FileAccess.Open(layer.Path, Godot.FileAccess.ModeFlags.Read);
+		byte[] header = file?.GetBuffer(26);
+		if (header == null || header.Length != 26)
+		{
+			error = "is not a complete PNG";
+			return false;
+		}
 		ReadOnlySpan<byte> pngSignature = new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 };
 		if (!header.AsSpan(0, 8).SequenceEqual(pngSignature) || Encoding.ASCII.GetString(header, 12, 4) != "IHDR")
 		{

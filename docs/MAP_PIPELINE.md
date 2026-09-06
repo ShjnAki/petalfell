@@ -64,6 +64,14 @@ comparison captures; a continent-wide terrain run is unnecessary.
 
 ## Authored versus derived
 
+The four accepted control PNGs use tracked `Keep File` import settings. Their
+original bytes must survive export: elevation is Gray16 and the region palette
+uses exact indexed/RGB values. `AtlasSourceImages.LoadRawPng` and the PNG-header
+audit read through Godot `FileAccess`, which handles both source files and PCK
+entries. They never globalize a `res://` path into a host filesystem path or
+substitute a GPU-compressed texture for atlas data. Display-only reference checks
+also recognize Godot's imported-resource remaps.
+
 Authored:
 
 - accepted macro rasters and registration;

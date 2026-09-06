@@ -45,9 +45,9 @@ public partial class DayCycle : Node
 	/// un-dimmed, one is the original exposure curve, and values above one deepen
 	/// it without changing the authored colours.
 	/// </summary>
-	public float NightDarkness { get; private set; } = 0.90f;
+	public float NightDarkness { get; private set; } = 0.45f;
 	/// <summary>Clear-sky shadow filtering, before weather adds its small softening.</summary>
-	public float ShadowSoftness { get; private set; } = 5.20f;
+	public float ShadowSoftness { get; private set; } = 4.20f;
 	/// <summary>Smoothed, deterministic weather coverage. Clouds are lighting-only.</summary>
 	public float CloudCover { get; private set; }
 	/// <summary>World-space directions from the world toward each celestial body.</summary>
@@ -69,6 +69,7 @@ public partial class DayCycle : Node
 	private float _cloudPatternCyclesB;
 	private float _cloudPatternPhaseA;
 	private float _cloudPatternPhaseB;
+	private float _weatherTime;
 
 	/// <summary>
 	/// Register the globals before anything that reads them is compiled.
@@ -93,6 +94,12 @@ public partial class DayCycle : Node
 
 		Add(SunDirParam, RenderingServer.GlobalShaderParameterType.Vec3, Palette.SunDir);
 		Add(NightParam, RenderingServer.GlobalShaderParameterType.Float, 0f);
+		Add("pf_cloud_cover", RenderingServer.GlobalShaderParameterType.Float, 0f);
+		Add("pf_weather_time", RenderingServer.GlobalShaderParameterType.Float, 0f);
+		Add("pf_cloud_daylight", RenderingServer.GlobalShaderParameterType.Float, 1f);
+		Add("pf_reflection_plane", RenderingServer.GlobalShaderParameterType.Float, -1000000f);
+		Add("pf_depth_haze", RenderingServer.GlobalShaderParameterType.Vec4,
+			new Vector4(115f, 430f, 1.70f, 1f));
 		Add(SunColourParam, RenderingServer.GlobalShaderParameterType.Vec3,
 			new Vector3(Palette.SunColor.R, Palette.SunColor.G, Palette.SunColor.B));
 	}
@@ -138,6 +145,8 @@ public partial class DayCycle : Node
 			if (DayLength > 0.01f)
 				TimeOfDay = Mathf.PosMod(TimeOfDay + (float)delta / DayLength, 1f);
 			AdvanceClouds((float)delta);
+			_weatherTime += (float)delta;
+			RenderingServer.GlobalShaderParameterSet("pf_weather_time", _weatherTime);
 		}
 
 		float step = Mathf.Floor(TimeOfDay / Quantum);
@@ -264,19 +273,25 @@ public partial class DayCycle : Node
 		// behind it: the same cover blocks the moon and deepens the ambient instead.
 		float directCloud = daylight
 			? Mathf.Lerp(1f, 0.60f, CloudCover)
-			: Mathf.Lerp(1f, 0.28f, CloudCover);
+			: Mathf.Lerp(1f, 0.58f, CloudCover);
 		float ambientCloud = daylight
 			? Mathf.Lerp(1f, 1.08f, CloudCover)
-			: Mathf.Lerp(1f, 0.50f, CloudCover);
+			: Mathf.Lerp(1f, 0.76f, CloudCover);
 		float cloudSoftness = Mathf.Clamp((CloudCover - 0.08f) / 0.84f, 0f, 1f);
 		cloudSoftness *= cloudSoftness * (3f - 2f * cloudSoftness);
 
 		if (_key != null)
 		{
-			_key.LightColor = keyColour;
-			_key.LightEnergy = energy * keyExposure * directCloud;
-			_key.ShadowOpacity = Lerp(from.ShadowOpacity, to.ShadowOpacity)
-				* Mathf.Lerp(1f, 0.76f, cloudSoftness);
+			_key.LightColor = keyColour.LinearToSrgb();
+			// Fade direct light to zero before changing celestial ownership. The sky
+			// and ambient retain twilight while the shadow direction crosses horizon.
+			// Spread the rise over enough of the arc that quantised shadow updates
+			// remain continuous even with the brighter golden-hour key.
+			float horizonKey = Mathf.SmoothStep(0f, 0.24f, Mathf.Abs(SunDirection.Y));
+			_key.LightEnergy = energy * keyExposure * directCloud * horizonKey;
+			// Cloud transmission already dims the direct key. Retain occlusion;
+			// fading it a second time floods sheltered faces with direct light.
+			_key.ShadowOpacity = Lerp(from.ShadowOpacity, to.ShadowOpacity);
 			// Clear skies retain the existing crisp storybook shadows. Scattered
 			// overcast light expands the effective source and lowers the shadow's
 			// contrast instead of merely making the whole scene darker.
@@ -295,18 +310,18 @@ public partial class DayCycle : Node
 		}
 
 		if (_fill != null)
-			_fill.LightEnergy = Mathf.Lerp(0.11f, 0.075f, night)
+			_fill.LightEnergy = Mathf.Lerp(0.065f, 0.055f, night)
 				* (daylight ? Mathf.Lerp(1f, 1.22f, CloudCover) : Mathf.Lerp(1f, 0.55f, CloudCover));
 
 		if (_env != null)
 		{
 			_env.AmbientLightColor = Blend(from.Ambient, to.Ambient);
 			_env.AmbientLightEnergy = Lerp(from.AmbientEnergy, to.AmbientEnergy)
-				* ambientExposure * ambientCloud;
+				* ambientExposure * ambientCloud * Mathf.Lerp(0.42f, 0.85f, night);
 			_env.AmbientLightSkyContribution = Lerp(from.SkyMix, to.SkyMix)
 				* Mathf.Lerp(1f, 0.72f, CloudCover);
 			var fog = Blend(from.Fog, to.Fog);
-			_env.FogLightColor = fog;
+			_env.FogLightColor = fog.LinearToSrgb();
 			_env.FogLightEnergy = Mathf.Pow(0.68f, darkness)
 				* (daylight ? Mathf.Lerp(1f, 0.92f, CloudCover) : Mathf.Lerp(1f, 0.56f, CloudCover));
 			// Lanterns and lit windows have to clear the glow threshold at night
@@ -317,25 +332,25 @@ public partial class DayCycle : Node
 
 		if (_sky != null)
 		{
-			_sky.SetShaderParameter("zenith", Blend(from.Zenith, to.Zenith));
-			_sky.SetShaderParameter("horizon", Blend(from.Horizon, to.Horizon));
-			_sky.SetShaderParameter("ground", Blend(from.Ground, to.Ground));
-			_sky.SetShaderParameter("sun_tint", sunColour);
+			_sky.SetShaderParameter("zenith", Palette.ShaderRgb(Blend(from.Zenith, to.Zenith)));
+			_sky.SetShaderParameter("horizon", Palette.ShaderRgb(Blend(from.Horizon, to.Horizon)));
+			_sky.SetShaderParameter("ground", Palette.ShaderRgb(Blend(from.Ground, to.Ground)));
+			_sky.SetShaderParameter("sun_tint", Palette.ShaderRgb(sunColour));
 			_sky.SetShaderParameter("sun_dir", SunDirection);
 			_sky.SetShaderParameter("night", night);
 			// The moon is opposite the sun and only drawn once it is up.
 			_sky.SetShaderParameter("moon_dir", MoonDirection);
-			_sky.SetShaderParameter("moon_tint", moonColour);
+			_sky.SetShaderParameter("moon_tint", Palette.ShaderRgb(moonColour));
 			_sky.SetShaderParameter("cloud_cover", CloudCover);
 		}
 
 		if (_water != null)
 		{
 			// The lake reflects the sky it is actually under.
-			_water.SetShaderParameter("sky_low", Blend(from.Horizon, to.Horizon));
-			_water.SetShaderParameter("sky_high", Blend(from.Zenith, to.Zenith));
-			_water.SetShaderParameter("sun_colour", sunColour);
-			_water.SetShaderParameter("moon_colour", moonColour);
+			_water.SetShaderParameter("sky_low", Palette.ShaderRgb(Blend(from.Horizon, to.Horizon)));
+			_water.SetShaderParameter("sky_high", Palette.ShaderRgb(Blend(from.Zenith, to.Zenith)));
+			_water.SetShaderParameter("sun_colour", Palette.ShaderRgb(sunColour));
+			_water.SetShaderParameter("moon_colour", Palette.ShaderRgb(moonColour));
 			_water.SetShaderParameter("sun_dir", SunDirection);
 			_water.SetShaderParameter("moon_dir", MoonDirection);
 			_water.SetShaderParameter("sun_visibility", sunVisibility);
@@ -345,6 +360,8 @@ public partial class DayCycle : Node
 
 		RenderingServer.GlobalShaderParameterSet(SunDirParam, keyDir);
 		RenderingServer.GlobalShaderParameterSet(NightParam, night);
+		RenderingServer.GlobalShaderParameterSet("pf_cloud_cover", CloudCover);
+		RenderingServer.GlobalShaderParameterSet("pf_cloud_daylight", 1f - night);
 		RenderingServer.GlobalShaderParameterSet(SunColourParam,
 			new Vector3(keyColour.R, keyColour.G, keyColour.B));
 	}

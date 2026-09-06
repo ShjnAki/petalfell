@@ -12,6 +12,10 @@ objects, weather and changing light make the route itself meaningful.
 
 ## Visual direction
 
+The current finish target is the author's [September 6 reference set](docs/LOOK_TARGET.md).
+It governs surface detail, light-catching edges, natural dressing, water and the
+complete day/night response on top of the accepted terrain and measured sites.
+
 - pastel voxel landscape with selective fine geometry;
 - long-lens isometric/perspective framing;
 - high-key stone and ground with restrained dark ink;

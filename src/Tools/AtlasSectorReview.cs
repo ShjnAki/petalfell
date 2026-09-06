@@ -73,6 +73,16 @@ public partial class AtlasSectorReview : Node3D
 		// model cliffs and shelves rather than reducing the frame to overhead moonlight.
 		new("atlas_night_wide", 170f, 45f, 38f, time: .90f),
 		new("atlas_night_far", 300f, 45f, 48f, time: .90f),
+		// Identical camera across a complete lighting cycle. These exercise the
+		// ordinary DayCycle; no separate presentation lights or exposure exist.
+		new("look_dawn", 170f, 45f, 38f, time: .27f),
+		new("look_noon", 170f, 45f, 38f, time: .50f),
+		new("look_sunset", 170f, 45f, 38f, time: .72f),
+		new("look_twilight", 170f, 45f, 38f, time: .80f),
+		new("look_midnight", 170f, 45f, 38f, time: .00f),
+		new("look_noon_r1", 170f, 135f, 38f, time: .50f),
+		new("look_noon_r2", 170f, 225f, 38f, time: .50f),
+		new("look_noon_r3", 170f, 315f, 38f, time: .50f),
 	};
 	private static readonly Capture.Shot[] DomainShots =
 	{
@@ -89,6 +99,21 @@ public partial class AtlasSectorReview : Node3D
 		new("domain_night_wide", 440f, 45f, 38f, time: 0.90f),
 		new("domain_night_reverse", 440f, 225f, 36f, time: 0.90f),
 		new("domain_night_far", 1000f, 45f, 46f, time: 0.90f),
+	};
+	// Explicit opt-in diagnostics. These are never part of beauty/acceptance
+	// matrices; the same noon camera isolates what each post-process contributes.
+	private static readonly Capture.Shot[] LookProbeShots =
+	{
+		new("probe_no_fog", 170f, 45f, 38f, time: .50f),
+		new("probe_no_grade", 170f, 45f, 38f, time: .50f),
+		new("probe_no_post", 170f, 45f, 38f, time: .50f),
+		new("look_motion", 86f, 45f, 31f, time: .34f),
+		new("look_orbit", 86f, 45f, 31f, time: .34f),
+		new("look_orbit_night", 86f, 45f, 31f, time: 0f),
+		new("look_cycle", 170f, 45f, 38f, time: .00f),
+		new("look_perf_day", 75f, 45f, 31f, time: .50f),
+		new("look_perf_night", 75f, 45f, 31f, time: .00f),
+		new("probe_reflection", 75f, 45f, 31f, time: .50f),
 	};
 
 	private string _mapPath;
@@ -115,6 +140,8 @@ public partial class AtlasSectorReview : Node3D
 	private Node3D _content;
 	private Controller _player;
 	private Character _character;
+	private AmbientDrift _ambientDrift;
+	private PlanarReflection _reflection;
 	private ShaderMaterial _inkLight;
 	private ShaderMaterial _inkDark;
 	private ShaderMaterial _voxelMaterial;
@@ -191,6 +218,16 @@ public partial class AtlasSectorReview : Node3D
 						// Later night samples reduced this pale court to navy silhouettes.
 						siteView.PitchDegrees, time: 0.80f),
 				};
+				// The finish references also require the same architecture throughout
+				// the day. Keep the source camera, rather than borrowing the terrain
+				// probe's unrelated yaw, focus and distance for these comparisons.
+				foreach (var phase in new (string Name, float Time)[]
+				{
+					("dawn", .29f), ("noon", .50f), ("golden", .68f),
+					("twilight", .80f), ("midnight", .00f),
+				})
+					siteShots.Add(new Capture.Shot($"site_{phase.Name}", siteView.Distance,
+						siteView.YawDegrees, siteView.PitchDegrees, time: phase.Time));
 				if (_referenceSite.SiteId == Reference10SiteId)
 				{
 					// This separate orthographic shot owns footprint review. The accepted
@@ -521,6 +558,9 @@ public partial class AtlasSectorReview : Node3D
 				_camera.Follow(_player.GlobalPosition, Vector3.Zero, 1.0);
 			}
 			else PlaceInteractiveCamera();
+			_reflection = new PlanarReflection { Name = "AtlasWaterReflection", PlaneSource = NearbyReflectionPlane };
+			_reflection.Setup(_camera, _waterMaterial, data.SeaLevel + 0.35f);
+			AddChild(_reflection);
 			if (_playable)
 			{
 				// These controls use the actual atlas camera, ink materials and clock.
@@ -564,6 +604,7 @@ public partial class AtlasSectorReview : Node3D
 			         $"submerged-dry {stats.SubmergedDryBoundaryEdges} " +
 			         $"max-depth {stats.MaxSubmergedDryDepth}@{stats.MaxSubmergedDryX},{stats.MaxSubmergedDryZ} " +
 			         $"height {stats.MinHeight}..{stats.MaxHeight} water {stats.MinWaterSurface}..{stats.MaxWaterSurface}");
+			if (_shotDirectory != null && IsTerrainFocusReview) LogCaptureMaterials(globalFocus);
 			if (blockout is DomainBlockoutStatistics b)
 				GD.Print($"[domain-blockout] {b.Platforms} platforms/{b.PlatformCells} cells  " +
 				         $"caps {b.TerrainCapCells} terrain/{b.PavedCapCells} paved/" +
@@ -583,6 +624,9 @@ public partial class AtlasSectorReview : Node3D
 			if (siteBuild is ReferenceSiteStatistics s)
 				GD.Print($"[reference-site] {_siteId} explicit surface {s.SurfaceCells} cells, " +
 				         $"{s.Voxels} voxel writes, source {_referenceSite.ReferencePath}");
+			_ambientDrift = new AmbientDrift { Name = "AtlasAmbientDrift" };
+			AddChild(_ambientDrift);
+			_ambientDrift.Setup(() => _window, _worldSeed, _player.GlobalPosition);
 			_started = true;
 
 			if (_playabilitySmoke != null) await RunPlayabilitySmoke(_playabilitySmoke);
@@ -762,12 +806,40 @@ public partial class AtlasSectorReview : Node3D
 
 	private Vector3 GlobalFocus() => _focusLocal + _content.Position;
 
+	private float? NearbyReflectionPlane(Camera3D camera)
+	{
+		if (_window == null || camera == null) return null;
+		Vector3 focus = _player?.GlobalPosition ?? GlobalFocus();
+		float best = float.MaxValue;
+		float? selected = null;
+		// At most 289 existing-column queries, five times a second. Sampling is
+		// globally registered and reads the active window after travel/handoff.
+		int cx = Mathf.FloorToInt(focus.X / 8f) * 8;
+		int cz = Mathf.FloorToInt(focus.Z / 8f) * 8;
+		for (int dz = -64; dz <= 64; dz += 8)
+		for (int dx = -64; dx <= 64; dx += 8)
+		{
+			int x = cx + dx, z = cz + dz;
+			if (!_window.TryWaterColumnAtGlobal(x, z, out float bed, out float surface) || bed >= surface) continue;
+			var at = new Vector3(x, surface, z);
+			float distance = focus.DistanceSquaredTo(at);
+			if (distance >= best || Math.Abs(focus.Y - surface) > 80f ||
+				!camera.IsPositionInFrustum(at)) continue;
+			best = distance;
+			selected = surface;
+		}
+		return selected;
+	}
+
 	private void PlaceInteractiveCamera()
 	{
 		if (_camera == null) return;
 		var shot = new Capture.Shot("interactive", _interactiveDistance, _interactiveYaw,
 			_interactivePitch);
 		Capture.Place(_camera, shot, GlobalFocus());
+		if (_environment != null)
+			Atmosphere.SetViewDistance(_environment, _interactiveDistance,
+				IsSite && _referenceSite?.SiteId == Reference1SiteId ? _referenceSite.RuntimePlanScale : 1f);
 	}
 
 	private async System.Threading.Tasks.Task RunCapture()
@@ -788,6 +860,7 @@ public partial class AtlasSectorReview : Node3D
 		var captureCamera = new Camera3D
 		{
 			Name = "DeterministicCaptureCamera",
+			PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off,
 			Current = true,
 			Projection = _camera.Projection,
 			Fov = _camera.Fov,
@@ -797,13 +870,25 @@ public partial class AtlasSectorReview : Node3D
 			CullMask = _camera.CullMask,
 		};
 		captureViewport.AddChild(captureCamera);
-		captureViewport.AddChild(WorldMaterials.CreateGrade());
+		var captureGrade = WorldMaterials.CreateGrade();
+		captureViewport.AddChild(captureGrade);
 		AddChild(captureViewport);
+		_reflection?.SetSource(captureCamera);
+		// The capture viewport owns the rendered frame. Suppress the duplicate
+		// window's 3D pass, including during silent-workspace GPU measurements.
+		GetViewport().Disable3D = true;
 		for (int i = 0; i < 12; i++)
 			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
-		foreach (Capture.Shot shot in ReviewShots)
+		bool fogEnabled = _environment.FogEnabled;
+		bool glowEnabled = _environment.GlowEnabled;
+		bool mistEnabled = _environment.VolumetricFogEnabled;
+		foreach (Capture.Shot shot in ReviewShots.Concat(LookProbeShots.Where(s => _only?.Contains(s.Name) == true)))
 		{
 			if (_only != null && !_only.Contains(shot.Name)) continue;
+			captureGrade.Visible = shot.Name is not ("probe_no_grade" or "probe_no_post");
+			_environment.FogEnabled = fogEnabled && shot.Name is not ("probe_no_fog" or "probe_no_post");
+			_environment.GlowEnabled = glowEnabled && shot.Name != "probe_no_post";
+			_environment.VolumetricFogEnabled = mistEnabled && shot.Name is not ("probe_no_fog" or "probe_no_post");
 			bool playableFollow = shot.Name == "atlas_follow" &&
 				IsTerrainFocusReview && _player != null;
 			bool referenceTop = IsReferenceTopShot(shot);
@@ -831,14 +916,12 @@ public partial class AtlasSectorReview : Node3D
 			}
 			if (_environment != null)
 			{
-				// Preserve the authored density/curve but move its far plane with a
-				// deliberate atlas overview. Leaving the 580-block play end here made
-				// every 1,000-block composition test a flat fog-colour swatch.
+				// Use the same long-lens haze span as ordinary interactive play.
 				float siteScale = IsSite && _referenceSite?.SiteId == Reference1SiteId
 					? _referenceSite.RuntimePlanScale : 1f;
-				_environment.FogDepthBegin = Math.Max(180f * siteScale, shot.Distance * .40f);
-				_environment.FogDepthEnd = Math.Max(700f * siteScale, shot.Distance * 2.00f);
+				Atmosphere.SetViewDistance(_environment, shot.Distance, siteScale);
 			}
+			var shotHaze = new Vector2(_environment.FogDepthBegin, _environment.FogDepthEnd);
 			Vector3 shotFocus = CaptureFocus(shot);
 			if (playableFollow)
 			{
@@ -847,21 +930,105 @@ public partial class AtlasSectorReview : Node3D
 				_camera.Distance = _camera.TargetDistance = shot.Distance;
 			}
 			else PlaceReviewCamera(_camera, shot, shotFocus, referenceTop);
-			for (int i = 0; i < 24; i++)
+			// Clock jumps also drive time-based petal/firefly and reflection fades.
+			// A fixed frame count is too short on a fast GPU and leaves daytime
+			// particles in a night still. Let the ordinary runtime finish its fade.
+			float settledSeconds = 0f;
+			for (int i = 0; i < 24 || settledSeconds < 2.5f; i++)
 			{
 				if (playableFollow)
 					_camera.Follow(_player.GetGlobalTransformInterpolated().Origin,
 						Vector3.Zero, 1.0 / 60.0);
 				else PlaceReviewCamera(_camera, shot, shotFocus, referenceTop);
 				captureCamera.GlobalTransform = _camera.GlobalTransform;
+				if (i == 0) _reflection?.RefreshPlane();
 				await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+				settledSeconds += (float)GetProcessDeltaTime();
 			}
 			await RenderingServer.Singleton.ToSignal(RenderingServer.Singleton,
 				RenderingServer.SignalName.FramePostDraw);
+			if (Mathf.Abs(_environment.FogDepthBegin - shotHaze.X) > 0.05f ||
+				Mathf.Abs(_environment.FogDepthEnd - shotHaze.Y) > 0.05f)
+				throw new InvalidOperationException($"Capture '{shot.Name}' haze was overwritten during settling.");
+			GD.Print($"[capture-camera] {shot.Name} distance {shot.Distance} haze {shotHaze.X}..{shotHaze.Y}");
 			Capture.Save(captureViewport, _shotDirectory, shot.Name);
+			if (shot.Name == "probe_reflection" && _reflection?.CurrentPlane is float plane)
+			{
+				Capture.Save(_reflection.RenderViewport, _shotDirectory, "probe_reflection_mirror");
+				GD.Print($"[capture-reflection] plane {plane}, mirror {_reflection.RenderViewport.Size}");
+			}
+			if (shot.Name is "look_motion" or "look_cycle" or "look_orbit" or "look_orbit_night")
+				await CaptureLookSequence(captureViewport, captureCamera, shot, shotFocus);
+			if (shot.Name is "look_perf_day" or "look_perf_night")
+				await CaptureBenchmark.Measure(this, captureViewport, _shotDirectory, shot.Name, _reflection?.RenderViewport);
 		}
 		WriteReferenceComparisons();
 		GetTree().Quit();
+	}
+
+	private async System.Threading.Tasks.Task CaptureLookSequence(SubViewport viewport,
+		Camera3D camera, Capture.Shot shot, Vector3 focus)
+	{
+		// The engine advances shader TIME, wind, particles and DayCycle together.
+		// No offline animation or second rendering path is involved. PNG readback
+		// costs time, so this is visual evidence, never a realtime FPS benchmark.
+		// Engine-owned switches are consumed before OS.GetCmdlineArgs(). Verify
+		// the actual simulation delta rather than searching that filtered list.
+		if (Math.Abs(GetProcessDeltaTime() - 1.0 / 30.0) > 0.00001)
+			throw new InvalidOperationException("Motion capture requires Godot --fixed-fps 30 before --.");
+		string name = shot.Name;
+		bool fullCycle = name == "look_cycle";
+		bool orbit = name is "look_orbit" or "look_orbit_night";
+		int count = fullCycle ? 360 : 180;
+		float dayLength = _day.DayLength;
+		_day.DayLength = fullCycle ? 12f : 900f;
+		_day.Paused = false;
+		string directory = $"{_shotDirectory}/{name}";
+		DirAccess.MakeDirRecursiveAbsolute(directory);
+		using var metadata = new StreamWriter(ProjectSettings.GlobalizePath($"{directory}/frames.csv"));
+		metadata.WriteLine("frame,time_of_day,night,cloud_cover,key_energy,camera_yaw,reflection_plane");
+		for (int frame = 0; frame < count; frame++)
+		{
+			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+			// ProcessFrame precedes node processing. Move the source camera here so
+			// the priority-100 mirror sees this frame's pose, just as in normal play.
+			float yaw = shot.Yaw + (orbit ? 360f * frame / count : 0f);
+			if (orbit)
+				Capture.Place(camera, new Capture.Shot(name, shot.Distance, yaw, shot.Pitch), focus);
+			await RenderingServer.Singleton.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+			Capture.Save(viewport, directory, $"frame-{frame:D4}", quiet: true);
+			metadata.WriteLine(FormattableString.Invariant($"{frame},{_day.TimeOfDay:F7},{_day.NightAmount:F5},{_day.CloudCover:F5},{_key.LightEnergy:F5},{yaw:F3},{_reflection?.CurrentPlane:F3}"));
+			if ((frame + 1) % 60 == 0) GD.Print($"[capture-motion] {name} {frame + 1}/{count}");
+		}
+		_day.Paused = true;
+		_day.DayLength = dayLength;
+		GD.Print($"[capture-motion] {directory}: {count} frames at 30 simulation frames/second");
+	}
+
+	private void LogCaptureMaterials(Vector3 focus)
+	{
+		var data = _window.Data;
+		int[] counts = new int[256];
+		float nearestDistance = float.MaxValue;
+		var nearestSnow = new Vector2I(-1, -1);
+		for (int z = 0; z < data.Depth; z += 2)
+		for (int x = 0; x < data.Width; x += 2)
+		{
+			int index = z * data.Width + x;
+			byte cap = _window.Grid.At(x, data.Height[index] - 1, z);
+			float dx = data.OriginX + x - focus.X, dz = data.OriginZ + z - focus.Z;
+			float distance = dx * dx + dz * dz;
+			if (distance <= 10000f) counts[cap]++;
+			if (cap == Palette.SNOW && distance < nearestDistance)
+			{
+				nearestDistance = distance;
+				nearestSnow = new Vector2I(data.OriginX + x, data.OriginZ + z);
+			}
+		}
+		string coverage = string.Join(",", Enumerable.Range(0, counts.Length)
+			.Where(i => counts[i] > 0).Select(i => $"{i}:{counts[i]}"));
+		GD.Print($"[capture-materials] material-id:sample-count within 100 blocks (2-block stride) " +
+			$"{coverage}; nearest snow sample {nearestSnow.X},{nearestSnow.Y}");
 	}
 
 	private Vector3 CaptureFocus(Capture.Shot shot)
@@ -1032,7 +1199,7 @@ public partial class AtlasSectorReview : Node3D
 		string outputStem, string label)
 	{
 		if (!Godot.FileAccess.FileExists(capturePath) ||
-		    !Godot.FileAccess.FileExists(referencePath)) return;
+		    !AtlasSourceImages.Exists(referencePath)) return;
 
 		Image captured = Image.LoadFromFile(capturePath);
 		// Comparison sources are ordinary tracked PNGs, not runtime texture assets.
@@ -1040,7 +1207,7 @@ public partial class AtlasSectorReview : Node3D
 		// reference until an editor happened to create its .godot/imported cache.
 		// The review result must be identical on a cold clone and in an isolated XDG
 		// capture process, so decode the source file directly first.
-		Image reference = Image.LoadFromFile(referencePath);
+		Image reference = AtlasSourceImages.LoadReference(referencePath);
 		if (reference == null || reference.IsEmpty())
 		{
 			Texture2D referenceTexture = ResourceLoader.Load<Texture2D>(referencePath);
@@ -1383,6 +1550,7 @@ public partial class AtlasSectorReview : Node3D
 	public override void _Process(double delta)
 	{
 		if (!_started || _player == null || _character == null) return;
+		_ambientDrift?.Advance(_player.GlobalPosition, delta, _day.NightAmount);
 		if (_playable)
 		{
 			ConstrainRefusedWalkingEdge();
@@ -1390,8 +1558,15 @@ public partial class AtlasSectorReview : Node3D
 			_atlasMap?.SetPlayer(_player.GlobalPosition);
 			Vector3 local = _player.Position;
 			_streamer.UpdateAround(local);
-			_camera.Follow(_player.GetGlobalTransformInterpolated().Origin,
-				_player.Velocity, delta);
+			// Capture owns its camera and uses the same haze rule at the shot's
+			// actual distance. A background playable Follow must not overwrite it
+			// with the dormant player-camera zoom during the settling frames.
+			if (_shotDirectory == null)
+			{
+				_camera.Follow(_player.GetGlobalTransformInterpolated().Origin,
+					_player.Velocity, delta);
+				Atmosphere.SetViewDistance(_environment, _camera.Distance);
+			}
 		}
 		_character.Animate(_player.Velocity, _player.Facing,
 			_player.IsOnFloor(), _player.Swimming, _player.Sitting, delta);

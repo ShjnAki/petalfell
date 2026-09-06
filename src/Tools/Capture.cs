@@ -109,7 +109,7 @@ public static class Capture
 		return (dir, only);
 	}
 
-	public static void Place(CameraRig rig, in Shot shot, Vector3 focus)
+	public static void Place(Camera3D rig, in Shot shot, Vector3 focus)
 	{
 		float yaw = Mathf.DegToRad(shot.Yaw);
 		float pitch = Mathf.DegToRad(shot.Pitch);
@@ -121,12 +121,13 @@ public static class Capture
 		rig.LookAt(focus, Vector3.Up);
 	}
 
-	public static void Save(Viewport viewport, string dir, string name)
+	public static void Save(Viewport viewport, string dir, string name, bool quiet = false)
 	{
-		var image = viewport.GetTexture().GetImage();
+		using var image = viewport.GetTexture().GetImage();
 		DirAccess.MakeDirRecursiveAbsolute(dir);
 		string path = $"{dir}/{name}.png";
-		image.SavePng(path);
-		GD.Print($"[capture] {path}");
+		Error result = image.SavePng(path);
+		if (result != Error.Ok) throw new InvalidOperationException($"Capture failed: {path} ({result})");
+		if (!quiet) GD.Print($"[capture] {path}");
 	}
 }

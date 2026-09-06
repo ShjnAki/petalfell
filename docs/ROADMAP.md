@@ -19,6 +19,10 @@
 
 ## Current order
 
+The current visual target is [the author's September image set](LOOK_TARGET.md).
+The shared rendering pass is in place; reference parity and author review remain
+open alongside the site work below.
+
 ### 1. Repository and documentation cleanup
 
 - keep one production entry point and one documented world path;
@@ -52,8 +56,13 @@
 
 ### 5. Visual parity
 
-- tune stone/ground breakup, ink weight, shadows, atmosphere and day/night light
-  against supplied references;
+- close remaining shape, stone wear, ground-cover and atmospheric-depth gaps
+  against the September references;
+- refine broad square wear masks through source-owned surface plans and address
+  sparse shore dressing; assess detail density beyond the new paving joints,
+  fallen petals, bent grass, cupped flowers, shared turf colour, fine canopy
+  surfaces, lit airborne petals and natural fragments at multiple scales;
+- check continuous motion during traversal, changing water elevations and weather;
 - preserve high-key pastel readability and translucent moving water;
 - judge at play, wide and far distances.
 

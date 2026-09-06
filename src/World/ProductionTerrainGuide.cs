@@ -365,7 +365,7 @@ public sealed class ProductionTerrainGuide
 		AtlasSourceLayer layer = atlas.SourceLayers.FirstOrDefault(candidate =>
 			candidate.Kind == kind && candidate.Status != AtlasLayerStatus.Planned)
 			?? throw new InvalidOperationException($"atlas has no registered {kind} guide");
-		Image image = Image.LoadFromFile(ProjectSettings.GlobalizePath(layer.Path));
+		Image image = AtlasSourceImages.LoadRawPng(layer.Path);
 		return image ?? throw new InvalidOperationException($"could not load atlas guide '{layer.Path}'");
 	}
 

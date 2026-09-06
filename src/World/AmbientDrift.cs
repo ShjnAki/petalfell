@@ -145,16 +145,16 @@ public partial class AmbientDrift : Node3D
 		},
 	};
 
-	// Across a radius larger than the play frame, fourteen pieces reads as an
-	// occasional leaf or petal rather than continuous weather.
-	private const int FallingCount = 14;
-	private const int FireflyCount = 7;
+	// A fixed pool around the play frame keeps airborne detail bounded.
+	private const int FallingCount = 32;
+	private const int FireflyCount = 18;
 	private const float SpawnRadius = 28f;
 	private const float RecycleRadius = 52f;
 
 	private readonly List<FallingPiece> _falling = new(FallingCount);
 	private readonly List<Firefly> _fireflies = new(FireflyCount);
 	private Terrain _terrain;
+	private Func<AtlasSectorWindow> _activeWindow;
 	private Rng _rng;
 	private Profile _profile;
 	private Biome? _biome;
@@ -168,11 +168,28 @@ public partial class AmbientDrift : Node3D
 	public void Setup(Terrain terrain, Vector3 at)
 	{
 		_terrain = terrain;
+		_activeWindow = null;
 		_rng ??= new Rng(unchecked(terrain.Size * 0x45d9f3b) ^ 0x71A1F17E);
 		if (_fallingMesh == null) BuildRenderers();
 
 		_biome = null;
 		_probeClock = 0f;
+		Probe(at, force: true);
+		ResetPool(at);
+	}
+
+	/// <summary>
+	/// The production pool lives in atlas coordinates outside the replaceable
+	/// window node. Resolve the current window on demand so a handoff neither
+	/// moves existing particles nor retains the old terrain allocation.
+	/// </summary>
+	public void Setup(Func<AtlasSectorWindow> activeWindow, int seed, Vector3 at)
+	{
+		_activeWindow = activeWindow ?? throw new ArgumentNullException(nameof(activeWindow));
+		_terrain = null;
+		_rng = new Rng(unchecked(seed ^ 0x71A1F17E));
+		if (_fallingMesh == null) BuildRenderers();
+		_biome = null;
 		Probe(at, force: true);
 		ResetPool(at);
 	}
@@ -198,21 +215,17 @@ public partial class AmbientDrift : Node3D
 
 	private void BuildRenderers()
 	{
-		var fleckMaterial = new StandardMaterial3D
+		// This small simulation advances in render time alongside the camera.
+		PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
+		var fleckMaterial = new ShaderMaterial
 		{
-			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-			AlbedoColor = Colors.White,
-			VertexColorUseAsAlbedo = true,
-			Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
-			CullMode = BaseMaterial3D.CullModeEnum.Disabled,
-			DisableReceiveShadows = true,
-			Roughness = 1f,
+			Shader = GD.Load<Shader>("res://shaders/airborne_petal.gdshader"),
 		};
 		_fallingMesh = new MultiMesh
 		{
 			TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
 			UseColors = true,
-			Mesh = new BoxMesh { Size = Vector3.One, Material = fleckMaterial },
+			Mesh = BuildFallingMesh(fleckMaterial),
 			InstanceCount = FallingCount,
 		};
 		AddChild(new MultiMeshInstance3D
@@ -246,6 +259,49 @@ public partial class AmbientDrift : Node3D
 		});
 	}
 
+	/// <summary>
+	/// One open, cupped lamina: tapered root, broad shoulders and a small notch
+	/// at the tip. Eight facets describe the fold without a rectangular box's
+	/// duplicate back surfaces. Instance width/length preserve biome proportions.
+	/// </summary>
+	internal static ArrayMesh BuildFallingMesh(Material material)
+	{
+		Vector3[] rim = {
+			new(0, 0, -.5f), new(-.34f, .12f, -.25f), new(-.5f, .48f, .15f),
+			new(-.24f, .75f, .5f), new(0, .58f, .40f), new(.28f, .65f, .47f),
+			new(.48f, .40f, .10f), new(.29f, .08f, -.29f),
+		};
+		var heart = new Vector3(0, .08f, -.04f);
+		var positions = new Vector3[rim.Length * 3];
+		var normals = new Vector3[positions.Length];
+		var colors = new Color[positions.Length];
+		var uv = new Vector2[positions.Length];
+		for (int i = 0; i < rim.Length; i++)
+		{
+			int start = i * 3;
+			Vector3 a = heart, b = rim[(i + 1) % rim.Length], c = rim[i];
+			Vector3 normal = (c - a).Cross(b - a).Normalized();
+			positions[start] = a; positions[start + 1] = b; positions[start + 2] = c;
+			for (int j = 0; j < 3; j++)
+			{
+				normals[start + j] = normal;
+				colors[start + j] = Colors.White;
+				Vector3 p = positions[start + j];
+				uv[start + j] = new Vector2(p.X + .5f, p.Z + .5f);
+			}
+		}
+		var arrays = new Godot.Collections.Array();
+		arrays.Resize((int)Mesh.ArrayType.Max);
+		arrays[(int)Mesh.ArrayType.Vertex] = positions;
+		arrays[(int)Mesh.ArrayType.Normal] = normals;
+		arrays[(int)Mesh.ArrayType.Color] = colors;
+		arrays[(int)Mesh.ArrayType.TexUV] = uv;
+		var mesh = new ArrayMesh();
+		mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
+		mesh.SurfaceSetMaterial(0, material);
+		return mesh;
+	}
+
 	private void ResetPool(Vector3 around)
 	{
 		_falling.Clear();
@@ -267,7 +323,24 @@ public partial class AmbientDrift : Node3D
 
 	private void Probe(Vector3 position, bool force)
 	{
-		var biome = _terrain.Plan.RegionAt(position.X, position.Z).Biome;
+		Biome biome;
+		if (_activeWindow != null)
+		{
+			AtlasSectorWindow window = _activeWindow();
+			int x = Mathf.FloorToInt(position.X) - window.Data.OriginX;
+			int z = Mathf.FloorToInt(position.Z) - window.Data.OriginZ;
+			if (x < 0 || z < 0 || x >= window.Data.Width || z >= window.Data.Depth)
+			{ _surfaceAllowed = false; return; }
+			string detail = window.GroundDetailSetAt(x, z);
+			biome = detail.Contains("snow", StringComparison.Ordinal) ? Biome.SnowyHills
+				: detail.Contains("petal", StringComparison.Ordinal) ? Biome.Sakura
+				: detail.Contains("reed", StringComparison.Ordinal) ? Biome.Wetland
+				: detail.Contains("fern", StringComparison.Ordinal) ? Biome.Forest
+				: detail.Contains("talus", StringComparison.Ordinal) ||
+				  detail.Contains("scree", StringComparison.Ordinal) ? Biome.Highland
+				: Biome.Meadow;
+		}
+		else biome = _terrain.Plan.RegionAt(position.X, position.Z).Biome;
 		if (force || _biome != biome)
 		{
 			_biome = biome;
@@ -287,6 +360,23 @@ public partial class AmbientDrift : Node3D
 	private bool TryGround(SurfaceRule rule, float wx, float wz, out float ground)
 	{
 		ground = 0f;
+		if (_activeWindow != null)
+		{
+			AtlasSectorWindow window = _activeWindow();
+			int lx = Mathf.FloorToInt(wx) - window.Data.OriginX;
+			int lz = Mathf.FloorToInt(wz) - window.Data.OriginZ;
+			if (lx < 1 || lz < 1 || lx >= window.Data.Width - 1 || lz >= window.Data.Depth - 1)
+				return false;
+			int index = lz * window.Data.Width + lx;
+			int height = window.Grid.HeightAt(lx, lz);
+			if (height <= window.Data.WaterSurface[index] || height <= 0) return false;
+			byte surface = window.Grid.At(lx, height - 1, lz);
+			bool vegetation = Palette.IsGrassSurface(surface) || surface is Palette.MOSS or Palette.BLOSSOM_DRIFT;
+			if (rule == SurfaceRule.Grass && !vegetation) return false;
+			if (rule == SurfaceRule.Wetland && !vegetation && surface != Palette.MUD) return false;
+			ground = height + 0.025f;
+			return true;
+		}
 		int x = Mathf.FloorToInt(wx);
 		int z = Mathf.FloorToInt(wz);
 		if (x < 1 || z < 1 || x >= _terrain.Size - 1 || z >= _terrain.Size - 1) return false;
@@ -332,7 +422,8 @@ public partial class AmbientDrift : Node3D
 			piece.GroundY = ground;
 			piece.Velocity = new Vector3(_rng.Range(0.04f, 0.18f),
 				-_rng.Range(layer.SpeedMin, layer.SpeedMax), _rng.Range(-0.08f, 0.10f));
-			piece.Color = _rng.Pick(layer.Colors);
+			// MultiMesh COLOR is a linear shader input, not a source_color uniform.
+			piece.Color = _rng.Pick(layer.Colors).SrgbToLinear();
 			piece.Width = layer.Width * _rng.Range(0.82f, 1.16f);
 			piece.Length = layer.Length * _rng.Range(0.80f, 1.20f);
 			piece.Age = initial ? _rng.Range(0.4f, 2.0f) : 0f;
@@ -424,8 +515,6 @@ public partial class AmbientDrift : Node3D
 	private void AdvanceFireflies(Vector3 player, float dt)
 	{
 		const float recycleSq = 42f * 42f;
-		var camera = GetViewport()?.GetCamera3D();
-		var billboard = camera?.GlobalBasis.Orthonormalized() ?? Basis.Identity;
 		for (int i = 0; i < _fireflies.Count; i++)
 		{
 			var firefly = _fireflies[i];
@@ -450,7 +539,7 @@ public partial class AmbientDrift : Node3D
 			// survives bloom downsampling. The shader keeps the actual dot pin-small.
 			float size = firefly.Size * 3.6f * (0.88f + pulse * 0.18f);
 			_fireflyMesh.SetInstanceTransform(i, new Transform3D(
-				billboard.ScaledLocal(new Vector3(size, size, 1f)), firefly.Position));
+				Basis.Identity.ScaledLocal(new Vector3(size, size, 1f)), firefly.Position));
 			var color = firefly.Color * (0.58f + pulse * 0.42f);
 			color.A = Mathf.Clamp(_nightFade * firefly.Fade * (0.38f + pulse * 0.62f), 0f, 1f);
 			_fireflyMesh.SetInstanceColor(i, color);

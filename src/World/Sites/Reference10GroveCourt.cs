@@ -179,14 +179,26 @@ public static class Reference10GroveCourt
 			Fill(-3, 1, 116, 116, 20, 20, Palette.STONE_WARM);
 			Fill(8, 12, 119, 119, 22, 22, Palette.STONE);
 			Fill(2, 7, 123, 123, 20, 20, Palette.STONE_WARM);
-			// Moss follows narrow connected seams on the source-facing plane. The
-			// rejected isolated green cubes read as confetti rather than age.
-			Fill(-3, -3, 119, 122, 20, 20, Palette.MOSS_STONE);
 			Put(-1, 124, 22, Palette.STONE);
-			Fill(0, 1, 125, 125, 20, 20, Palette.MOSS_STONE);
 			Put(4, 126, 20, Palette.AIR);
 			Put(9, 126, 22, Palette.STONE_WARM);
-			Fill(11, 11, 116, 118, 20, 20, Palette.MOSS_STONE);
+
+			// Reference 10: the lower left fork, lintel stain with short tails,
+			// and taller inner-right streak are distinct connected patches. These
+			// repaint existing masonry only; the doorway and crown bites stay open.
+			Fill(-3, -3, 115, 119, 20, 20, Palette.MOSS_STONE);
+			Fill(-2, -1, 115, 116, 20, 20, Palette.MOSS_STONE);
+			Fill(-1, -1, 117, 119, 20, 20, Palette.MOSS_STONE);
+			Put(0, 118, 20, Palette.MOSS_STONE);
+			Fill(-2, -2, 119, 120, 20, 20, Palette.MOSS_STONE);
+			Fill(-1, 2, 125, 125, 20, 20, Palette.MOSS_STONE);
+			Fill(0, 2, 124, 124, 20, 20, Palette.MOSS_STONE);
+			Put(2, 123, 20, Palette.MOSS_STONE);
+			Fill(-1, 0, 126, 126, 20, 20, Palette.MOSS_STONE);
+			Fill(9, 9, 116, 121, 20, 20, Palette.MOSS_STONE);
+			Fill(8, 8, 119, 122, 20, 20, Palette.MOSS_STONE);
+			Put(10, 118, 20, Palette.MOSS_STONE);
+			Fill(8, 8, 116, 119, 21, 21, Palette.MOSS_STONE);
 		}
 
 		private void WriteInnerWestSpine()

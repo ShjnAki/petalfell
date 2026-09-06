@@ -21,6 +21,7 @@ shader_type spatial;
 // hardware test either z-fights or eats the line at grazing angles.
 render_mode unshaded, blend_mix, depth_draw_never, depth_test_disabled,
 	cull_disabled, shadows_disabled, fog_disabled, specular_disabled;
+#include "outline_haze.gdshaderinc"
 
 // Dark is a soft plum-grey, never black: the only genuinely dark values in this
 // world are tree trunks, and ink that goes to black reads as a cartoon stroke
@@ -35,10 +36,10 @@ uniform vec3 ink_light : source_color = vec3(0.62, 0.61, 0.65);
 // shows. Moving in a few discrete jumps reads instead like the scene being
 // re-inked a handful of times between dusk and dark, which is what a
 // hand-drawn frame would do and what this world's whole look is imitating.
-uniform float ink_night_scale : hint_range(0.1, 1.0) = 0.40;
+uniform float ink_night_scale : hint_range(0.1, 1.0) = 0.20;
 uniform float ink_night_steps : hint_range(1.0, 8.0) = 4.0;
 global uniform float pf_night;
-uniform float core_width = 3.2;
+uniform float core_width = 1.3;
 // Pass 0 draws only pale fragments, pass 1 only the dark silhouette fragments
 // of that same eligible geometry, and pass 2 draws permanently-dark runs.
 // Splitting rather than overdrawing also keeps the antialias fringe single-width.
@@ -59,6 +60,7 @@ varying flat vec2 v_endpoint_pale_count;
 varying flat vec3 v_normal_a;
 varying flat vec3 v_normal_b;
 varying flat float v_pale_eligible;
+varying flat float v_rounded_edge;
 
 vec3 face_direction(int direction) {
 	if (direction == 0) return vec3(1.0, 0.0, 0.0);
@@ -109,6 +111,7 @@ void vertex() {
 	// Baked half of the rule: both owning faces pale, manifold, not a concave
 	// fold. The camera half is decided in the fragment stage.
 	v_pale_eligible = CUSTOM2.w;
+	v_rounded_edge = CUSTOM3.w;
 
 	vec4 vs = VIEW_MATRIX * vec4(ws_start, 1.0);
 	vec4 ve = VIEW_MATRIX * vec4(ws_end, 1.0);
@@ -183,6 +186,8 @@ float scene_depth_at(vec2 uv, mat4 inverse_projection) {
 }
 
 void fragment() {
+	// The half-resolution mirror uses physical silhouettes without overlay ink.
+	if (CAMERA_VISIBLE_LAYERS == 0x7ffffu) discard;
 	vec2 pa = FRAGCOORD.xy - v_screen_start;
 	vec2 ba = v_screen_end - v_screen_start;
 	float bb = dot(ba, ba);
@@ -190,7 +195,8 @@ void fragment() {
 	float tc = clamp(t, 0.0, 1.0);
 
 	float dist = length(pa - ba * tc);
-	float coverage = 1.0 - smoothstep(core_width * 0.5 - 0.5, core_width * 0.5 + 0.5, dist);
+	float width = core_width * (v_rounded_edge > 0.5 ? 0.72 : 1.0);
+	float coverage = 1.0 - smoothstep(width * 0.5 - 0.5, width * 0.5 + 0.5, dist);
 	if (coverage <= 0.001) discard;
 
 	// `tc` is a screen-space parameter. View depth and world position are not
@@ -219,6 +225,10 @@ void fragment() {
 	// edge is a silhouette, and a silhouette is always dark — that contrast is
 	// what separates a shape from whatever is behind it.
 	float both = step(0.02, min(face_a, face_b));
+	// Physical convex bevels supply the lit turn and silhouette. New voxel
+	// meshes emit only concave cracks; tolerate earlier in-memory convex strips
+	// without drawing a floating wire cage around the softened solid.
+	if (v_rounded_edge > 0.5 && v_rounded_edge < 1.5) discard;
 	float pale = v_pale_eligible * both;
 	if (ink_pass == 0 && pale < 0.5) discard;
 	if (ink_pass == 1 && pale > 0.5) discard;
@@ -228,7 +238,7 @@ void fragment() {
 	// one-pale/one-dark and one-pale/many-dark vertices. Only a vertex with two
 	// or more camera-visible pale incident edges masks dark ink in the shared
 	// cap region, revealing the already-connected pale lines underneath.
-	if (pale < 0.5) {
+	if (pale < 0.5 && v_rounded_edge < 0.5) {
 		float joint_radius = core_width * 0.5 + 0.5;
 		if (v_endpoint_pale_count.x >= 2.0 &&
 			length(FRAGCOORD.xy - v_screen_start) <= joint_radius) discard;
@@ -244,7 +254,13 @@ void fragment() {
 	float stepped = floor(night * ink_night_steps + 0.5) / ink_night_steps;
 	vec3 pale_ink = ink_light * mix(1.0, ink_night_scale, stepped);
 
-	vec3 col = mix(ink_dark, pale_ink, pale);
+	// Preserve the original edge graph, opaque cores and endpoint unions.
+	// Both palette families must live at the exposure of the night scene.
+	vec3 dark_ink = ink_dark * mix(1.0, 0.36, night);
+	vec3 col = mix(dark_ink, pale_ink, pale);
+	// Air gradually removes distant strokes instead of tinting every unshaded
+	// line with bright fog. The mathematical line and endpoint graph stay intact.
+	float air = outline_air(length(point - CAMERA_POSITION_WORLD));
 
 	// The waterline is a hard visual stop, not a fade.
 	float submerged = smoothstep(water_level - 0.06, water_level + 0.06, point.y);
@@ -275,5 +291,5 @@ void fragment() {
 	// The stroke body is genuinely opaque. Alpha exists only for the one-pixel
 	// analytic fringe (and the waterline cut), so intersecting same-colour lines
 	// are idempotent instead of becoming darker at every vertex.
-	ALPHA = coverage * wet;
+	ALPHA = coverage * wet * air;
 }

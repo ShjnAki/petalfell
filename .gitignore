@@ -2,6 +2,11 @@
 /.godot/
 /.mono/
 *.import
+# Atlas control images are CPU data, so their Keep File import policy is authored.
+!/content/chapter_01/continent/land.png.import
+!/content/chapter_01/continent/elevation.png.import
+!/content/chapter_01/continent/water.png.import
+!/content/chapter_01/continent/region.png.import
 
 # C# / .NET build products
 /.vs/
@@ -18,7 +23,8 @@
 /exports/
 
 # Generated screenshots and render captures
-/shots/
+/shots/*
+!/shots/.gdignore
 /screenshots/
 /captures/
 /renders/

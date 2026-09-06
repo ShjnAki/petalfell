@@ -220,7 +220,7 @@ public partial class Dog : Node3D
 			Position = at,
 		};
 		var mat = new ShaderMaterial { Shader = GD.Load<Shader>("res://shaders/character.gdshader") };
-		mat.SetShaderParameter("albedo", tone.Linear);
+		mat.SetShaderParameter("albedo", Palette.ShaderRgba(tone.Linear));
 		mat.SetShaderParameter("sun_dir", Palette.SunDir);
 		mesh.MaterialOverride = mat;
 		parent.AddChild(mesh);

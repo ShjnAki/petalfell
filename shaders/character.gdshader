@@ -4,6 +4,8 @@ shader_type spatial;
 // tinting and the same flat, uninterrupted surfaces as the terrain, so a
 // figure standing on a shelf belongs to it.
 render_mode cull_back, diffuse_burley, specular_disabled;
+#include "cloud_light.gdshaderinc"
+varying vec3 character_world;
 
 uniform vec4 albedo : source_color = vec4(0.9, 0.9, 0.9, 1.0);
 uniform vec3 warm_tint : source_color = vec3(1.03, 1.00, 0.975);
@@ -16,7 +18,13 @@ global uniform vec3 pf_sun_dir;
 global uniform float pf_night;
 uniform float emission_amount = 0.0;
 
+void vertex() {
+	character_world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+}
+
 void fragment() {
+	if (reflection_below_plane(character_world, CAMERA_VISIBLE_LAYERS)) discard;
+	cloud_transmission = cloud_at(character_world);
 	vec3 wn = normalize((INV_VIEW_MATRIX * vec4(normalize(NORMAL), 0.0)).xyz);
 	float facing = dot(wn, normalize(pf_sun_dir));
 	vec3 tint = mix(cool_tint, warm_tint, smoothstep(-0.6, 0.9, facing));

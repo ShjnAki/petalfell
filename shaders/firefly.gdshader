@@ -9,6 +9,14 @@ render_mode unshaded, blend_add, depth_draw_never, cull_disabled,
 
 uniform float emission_strength : hint_range(0.0, 8.0) = 2.2;
 
+void vertex() {
+	// Face the camera rendering this pass. CPU-facing quads used the root
+	// viewport's camera and turned edge-on in capture or mirrored views.
+	vec3 center = (VIEW_MATRIX * MODEL_MATRIX[3]).xyz;
+	vec2 size = vec2(length(MODEL_MATRIX[0].xyz), length(MODEL_MATRIX[1].xyz));
+	POSITION = PROJECTION_MATRIX * vec4(center + vec3(VERTEX.xy * size, 0.0), 1.0);
+}
+
 void fragment() {
 	float distance_from_core = length(UV * 2.0 - 1.0);
 	float core = 1.0 - smoothstep(0.10, 0.25, distance_from_core);

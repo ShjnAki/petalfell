@@ -1688,7 +1688,7 @@ public sealed class AtlasSectorCompiler
 		AtlasSourceLayer layer = _atlas.SourceLayers.Single(l => l.Kind == kind);
 		if (layer.Status == AtlasLayerStatus.Planned)
 			throw new InvalidOperationException($"source layer '{layer.Id}' must reach Blockout before sectors can compile");
-		var image = Image.LoadFromFile(ProjectSettings.GlobalizePath(layer.Path));
+		var image = AtlasSourceImages.LoadRawPng(layer.Path);
 		if (image == null || image.IsEmpty())
 			throw new InvalidOperationException($"could not load source layer '{layer.Id}' from '{layer.Path}'");
 		return image;
@@ -1698,7 +1698,7 @@ public sealed class AtlasSectorCompiler
 	{
 		AtlasSourceLayer layer = _atlas.SourceLayers.Single(l => l.Kind == kind);
 		if (layer.Status == AtlasLayerStatus.Planned) return null;
-		var image = Image.LoadFromFile(ProjectSettings.GlobalizePath(layer.Path));
+		var image = AtlasSourceImages.LoadRawPng(layer.Path);
 		if (image == null || image.IsEmpty())
 			throw new InvalidOperationException($"could not load source layer '{layer.Id}' from '{layer.Path}'");
 		return image;

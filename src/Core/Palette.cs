@@ -12,11 +12,9 @@ namespace Petalfell.Core;
 /// accumulated result of the whole art-direction pass and are not to be
 /// "improved" casually.
 ///
-/// Direction: storybook pastel with ink. Shelf tops are a pale sage green,
-/// cliff sides run terracotta over lilac stone, canopies are pink / blush /
-/// cream / lavender cubes, water is dusty violet, the sky bright periwinkle.
-/// The only dark values in the world are tree trunks and the ink itself, and
-/// both are a soft plum — never black.
+/// September reference direction: mineral lavender cliffs, sage and ochre
+/// ground, richer blossom canopies, clear blue water and a teal traveller.
+/// Warm daylight and cool night keep readable shade and pale chamfer highlights.
 /// </summary>
 public static class Palette
 {
@@ -29,6 +27,11 @@ public static class Palette
 
 	private static Color Srgb(uint hex) => new Color(
 		((hex >> 16) & 0xFF) / 255f, ((hex >> 8) & 0xFF) / 255f, (hex & 0xFF) / 255f);
+
+	// Godot converts Color shader arguments from sRGB. These values are already
+	// linear (including CPU-interpolated sky colours), so upload numeric vectors.
+	public static Vector3 ShaderRgb(Color linear) => new(linear.R, linear.G, linear.B);
+	public static Vector4 ShaderRgba(Color linear) => new(linear.R, linear.G, linear.B, linear.A);
 
 	/* ---------------- atmosphere ---------------- */
 	public static readonly Color SkyZenith = C(0xb9b4e8);
@@ -47,9 +50,9 @@ public static class Palette
 	public static readonly Color FillColor = C(0xd8cdf2);
 
 	/* ---------------- water ---------------- */
-	public static readonly Color WaterShoal = C(0xb9bcf2);
-	public static readonly Color WaterShallow = C(0x7076e2);
-	public static readonly Color WaterDeep = C(0x3a3ea6);
+	public static readonly Color WaterShoal = C(0x9ccbe4);
+	public static readonly Color WaterShallow = C(0x4e8dbd);
+	public static readonly Color WaterDeep = C(0x294d81);
 	// Multi-height atlas water has no planar reflection pass to lift its body.
 	// The ordinary blue ramp plus the review sky rendered electric violet; this
 	// dustier, low-chroma periwinkle instead supplies the pale volume seen around
@@ -81,13 +84,15 @@ public static class Palette
 	// Shader `source_color` uniforms perform the sRGB-to-linear conversion.
 	// Supplying an already-linear value here would convert it twice and make this
 	// intended mid-grey ink render almost black.
-	public static readonly Color InkDark = new Color(0.30f, 0.28f, 0.33f);
-	public static readonly Color InkLight = new Color(0.62f, 0.61f, 0.65f);
+	public static readonly Color InkDark = new Color(0.43f, 0.40f, 0.48f);
+	public static readonly Color InkLight = new Color(0.55f, 0.53f, 0.60f);
 	/// <summary>
 	/// Stroke width in framebuffer pixels. Kept here so the renderer and the
 	/// developer control always start from the same authored value.
 	/// </summary>
 	public const float InkWidth = 1.30f;
+	/// <summary>Narrow physical chamfer, contained inside authored voxel surfaces.</summary>
+	public const float SurfaceBevelWidth = 0.09f;
 
 	/* ---------------- grade ----------------
 	 *
@@ -106,9 +111,9 @@ public static class Palette
 	public const float GradeExposure = 1.12f;
 	public static readonly Vector3 GradeLift = new(0.002f, 0.000f, 0.010f);
 	public static readonly Vector3 GradeGamma = new(1.00f, 1.005f, 0.99f);
-	public static readonly Vector3 GradeGain = new(1.015f, 1.02f, 1.05f);
-	public const float GradeSaturation = 1.17f;
-	public const float GradeContrast = 1.10f;
+	public static readonly Vector3 GradeGain = new(1.02f, 1.015f, 1.025f);
+	public const float GradeSaturation = 1.10f;
+	public const float GradeContrast = 1.04f;
 	public const float GradeVignette = 0.06f;
 
 	/* ---------------- time of day ----------------
@@ -135,12 +140,9 @@ public static class Palette
 	 * hues alive, dim and cold enough that a lit window still reads as the
 	 * warmest thing for miles.
 	 *
-	 * ONE RULE for the twilight keys: the SKY may be as hot as it likes, the KEY
-	 * LIGHT may not. A saturated orange key does not tint a scene, it REPLACES
-	 * every albedo in it with its own hue — and with the grade running at 1.26
-	 * saturation the first dusk came back a uniform neon crimson with no material
-	 * distinguishable from any other. Sunset colour belongs in the sky, the fog
-	 * and the bloom; what actually lands on surfaces stays close to white. */
+	 * Dawn and evening use peach keys against cool ambient light. Keep both
+	 * contributions visible: an excessively saturated key erases the differences
+	 * between blossom, limestone and soil. Review the whole clock, not one sunset. */
 	public readonly struct SkyState
 	{
 		public readonly float At;
@@ -185,17 +187,17 @@ public static class Palette
 	public static readonly SkyState[] Day =
 	{
 		//              t     zenith    horizon   ground    sun       energy ambient   energy fog       shad night glow
-		new SkyState(0.00f, 0x232c5e, 0x3b4478, 0x272a4c, 0xc3d0ff, 0.34f, 0xaeb6e2, 0.40f, 0x3a3f6a, 0.38f, 1.00f, 0.40f, 0.62f),
-		new SkyState(0.21f, 0x33356a, 0x64507f, 0x36335a, 0xc7aae4, 0.38f, 0xb0a8dc, 0.42f, 0x54497a, 0.40f, 0.90f, 0.44f, 0.52f),
+		new SkyState(0.00f, 0x232c5e, 0x3b4478, 0x272a4c, 0xc3d0ff, 0.56f, 0x9caddf, 0.52f, 0x56659d, 0.82f, 1.00f, 0.60f, 0.30f),
+		new SkyState(0.21f, 0x33356a, 0x64507f, 0x36335a, 0xc7b9eb, 0.48f, 0xa8acdc, 0.48f, 0x746a9c, 0.84f, 0.90f, 0.60f, 0.30f),
 		// The sun on the horizon: the long, low, orange half hour.
-		new SkyState(0.27f, 0x6f74c0, 0xe8a290, 0x8b7196, 0xffd2b4, 0.60f, 0xbcb4e0, 0.38f, 0xd6b4b0, 0.52f, 0.42f, 0.70f, 0.26f),
-		new SkyState(0.33f, 0x9aa0e0, 0xf0cdc4, 0xc0aec4, 0xffe6d6, 0.92f, 0xd6d4f2, 0.40f, 0xe6cfda, 0.58f, 0.12f, 0.92f, 0.56f),
-		new SkyState(0.50f, 0xb9b4e8, 0xdcd6f4, 0xd2cbef, 0xfff0ee, 0.98f, 0xebeeff, 0.42f, 0xcdc6ef, 0.60f, 0.00f, 1.05f, 0.78f),
-		new SkyState(0.68f, 0xb0aae6, 0xe4d2e2, 0xcdc2ea, 0xffeee2, 0.94f, 0xe4e2f8, 0.42f, 0xd6c8ea, 0.60f, 0.02f, 1.00f, 0.68f),
+		new SkyState(0.27f, 0x6f74c0, 0xe8a290, 0x8b7196, 0xffc798, 1.65f, 0xb0b8e6, 0.40f, 0xd6b4b0, 0.90f, 0.42f, 0.70f, 0.22f),
+		new SkyState(0.33f, 0x9aa0e0, 0xf0cdc4, 0xc0aec4, 0xffcf9f, 1.85f, 0xb8c1e7, 0.40f, 0xe6cfda, 0.95f, 0.12f, 0.92f, 0.35f),
+		new SkyState(0.50f, 0xb4c9ec, 0xe8deec, 0xcbc6dd, 0xffefce, 1.20f, 0xe0eaff, 0.43f, 0xcdc6ef, 0.96f, 0.00f, 1.05f, 0.48f),
+		new SkyState(0.68f, 0xb0aae6, 0xe4d2e2, 0xcdc2ea, 0xffc18b, 2.05f, 0xaeb8e4, 0.38f, 0xd6c8ea, 0.96f, 0.02f, 1.00f, 0.28f),
 		// Dusk. Warmer and deeper than dawn, because the day has to end
 		// differently from how it began or the cycle reads as a loop.
-		new SkyState(0.76f, 0x6a63b4, 0xe8ab96, 0x8f6f92, 0xffc8a4, 0.56f, 0xb4aeda, 0.38f, 0xd8b2ae, 0.52f, 0.46f, 0.66f, 0.24f),
-		new SkyState(0.83f, 0x35326a, 0x6b4a7c, 0x38335c, 0xbb9edd, 0.38f, 0xaea6da, 0.42f, 0x584878, 0.40f, 0.92f, 0.44f, 0.52f),
+		new SkyState(0.76f, 0x6a63b4, 0xe8ab96, 0x8f6f92, 0xffbe91, 1.50f, 0x9eaee2, 0.40f, 0xd8b2ae, 0.90f, 0.46f, 0.66f, 0.20f),
+		new SkyState(0.83f, 0x35326a, 0x6b4a7c, 0x38335c, 0xc2b9ed, 0.50f, 0xa7b0df, 0.50f, 0x68619b, 0.84f, 0.92f, 0.60f, 0.30f),
 	};
 
 	/* ---------------- petals ---------------- */
@@ -208,8 +210,8 @@ public static class Palette
 		C(0xaab581), C(0x929f70), C(0xc4b989), C(0xb59b82),
 	};
 
-	// Particle material colors stay in authored sRGB: Godot's material and
-	// particle color properties perform their own source-color conversion.
+	// Airborne colours stay authored in sRGB here. AmbientDrift converts them
+	// once at spawn before uploading the custom spatial shader's linear COLOR.
 	public static readonly Color[] AirLeafColors =
 	{
 		Srgb(0xb5bf8d), Srgb(0x99a879), Srgb(0xc9bc91), Srgb(0xb89c87),
@@ -320,6 +322,7 @@ public static class Palette
 	public const float PatternPlank = 3f;
 	public const float PatternBark = 4f;
 	public const float PatternGrass = 5f;
+	public const float PatternSand = 9f;
 	public const float PatternTrodden = 6f;
 	/// <summary>
 	/// Per-block tonal jitter, no lines.
@@ -395,21 +398,21 @@ public static class Palette
 		// Warm soil or cool stone begins on the block *below*, which keeps the
 		// material boundary aligned to the voxel topology instead of leaving a
 		// brown strip immediately under the grass.
-		Def(GRASS, 0xc6cd8b, 0xbcc98f, 0xa8b57f, lightEdge: true, pattern: PatternGrass, fringe: 0xa2bb5f);
-		Def(GRASS_LIGHT, 0xd2d79a, 0xc9d49f, 0xb5c18e, lightEdge: true, pattern: PatternGrass, fringe: 0xb0c76c);
-		Def(GRASS_DEEP, 0xb2bd78, 0xaaba7e, 0x97a86f, lightEdge: true, pattern: PatternGrass, fringe: 0x8fac52);
-		Def(GRASS_STONE, 0xc6cd8b, 0xbcc98f, 0xa8b57f, lightEdge: true, pattern: PatternGrass, fringe: 0xa2bb5f);
-		Def(GRASS_LIGHT_STONE, 0xd2d79a, 0xc9d49f, 0xb5c18e, lightEdge: true, pattern: PatternGrass, fringe: 0xb0c76c);
-		Def(GRASS_DEEP_STONE, 0xb2bd78, 0xaaba7e, 0x97a86f, lightEdge: true, pattern: PatternGrass, fringe: 0x8fac52);
+		Def(GRASS, 0xbac877, 0xafc180, 0x98ac6f, lightEdge: true, pattern: PatternGrass, fringe: 0xa2bb5f);
+		Def(GRASS_LIGHT, 0xccd38a, 0xbdce90, 0xa6b880, lightEdge: true, pattern: PatternGrass, fringe: 0xb0c76c);
+		Def(GRASS_DEEP, 0xa6b96a, 0x9cb370, 0x88a060, lightEdge: true, pattern: PatternGrass, fringe: 0x8fac52);
+		Def(GRASS_STONE, 0xbac877, 0xafc180, 0x98ac6f, lightEdge: true, pattern: PatternGrass, fringe: 0xa2bb5f);
+		Def(GRASS_LIGHT_STONE, 0xccd38a, 0xbdce90, 0xa6b880, lightEdge: true, pattern: PatternGrass, fringe: 0xb0c76c);
+		Def(GRASS_DEEP_STONE, 0xa6b96a, 0x9cb370, 0x88a060, lightEdge: true, pattern: PatternGrass, fringe: 0x8fac52);
 
 		Def(SOIL, 0xc2836f, 0xc4826d, 0xa96d5c, pattern: PatternEarth,
 			forceLightFaces: true);
-		Def(SAND, 0xefe3cb, 0xe5d6bc, 0xd2c1a6, pattern: PatternGrass);
+		Def(SAND, 0xefe3cb, 0xe5d6bc, 0xd2c1a6, pattern: PatternSand);
 
 		// Biome surfaces. Each province has to be recognisable from its ground
 		// alone — the plan's whole point in having provinces is that you can
 		// tell where you are by looking, before any tree or building appears.
-		Def(SNOW, 0xf4f2fa, 0xe9e6f3, 0xd6d2e6, lightEdge: true, pattern: PatternSnow);
+		Def(SNOW, 0xe8f4f8, 0xb9dcea, 0x96bcd3, lightEdge: true, pattern: PatternSnow);
 		Def(MOSS, 0xa6b87c, 0x9fb384, 0x8ba070, lightEdge: true, pattern: PatternGrass, fringe: 0x86a355);
 		Def(MUD, 0xa48a75, 0x99806c, 0x847060, pattern: PatternEarth);
 		Def(BLOSSOM_DRIFT, 0xf0dce2, 0xe9d2da, 0xd6bec7, lightEdge: true, pattern: PatternGrass);
@@ -457,12 +460,12 @@ public static class Palette
 		Def(TRUNK_PALE, 0x9a7080, 0x886073, 0x745164, pattern: PatternBark);
 		Def(TRUNK_ROSE, 0x9c7783, 0x8d6875, 0x7b5866, pattern: PatternBark);
 
-		Def(LEAF_PINK, 0xf8ccda, 0xf3c1d0, 0xe5b0bf, pattern: PatternLeaf);
-		Def(LEAF_BLUSH, 0xfcdee4, 0xf8d2da, 0xebbfc8, pattern: PatternLeaf);
-		Def(LEAF_LILAC, 0xdccef1, 0xd2c2eb, 0xc0b0da, pattern: PatternLeaf);
-		Def(LEAF_CREAM, 0xfae6de, 0xf5dcd3, 0xe4cac2, pattern: PatternLeaf);
-		Def(LEAF_MINT, 0xd9dff3, 0xccd3ec, 0xb9c0da, pattern: PatternLeaf);
-		Def(LEAF_ROSE, 0xf3c0cd, 0xedb5c3, 0xdca2b1, pattern: PatternLeaf);
+		Def(LEAF_PINK, 0xf2b3cd, 0xe79ab9, 0xc77da3, pattern: PatternLeaf);
+		Def(LEAF_BLUSH, 0xf6cbd9, 0xeeb4cb, 0xd99bb8, pattern: PatternLeaf);
+		Def(LEAF_LILAC, 0xcfb7ea, 0xbda1dc, 0xa78cc7, pattern: PatternLeaf);
+		Def(LEAF_CREAM, 0xf5dcd0, 0xeac4b9, 0xd3aaab, pattern: PatternLeaf);
+		Def(LEAF_MINT, 0xccd8ea, 0xb2c6df, 0x93accb, pattern: PatternLeaf);
+		Def(LEAF_ROSE, 0xe9a5bf, 0xdb8cad, 0xba6c94, pattern: PatternLeaf);
 
 		Def(LANTERN, 0xffdcb8, 0xffd2a8, 0xf6c79e, emissive: 0.75f);
 		Def(CRYSTAL, 0xdfd0f7, 0xd2c0f1, 0xc2aee5, emissive: 0.42f);

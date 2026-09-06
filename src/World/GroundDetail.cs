@@ -12,22 +12,21 @@ namespace Petalfell.World;
 /// The reference images are covered in tiny handcrafted marks. None of it is
 /// legible as an object from the play camera; all of it is what makes a grass
 /// shelf read as *made* rather than as fill. A voxel is a metre here, so this
-/// layer cannot be blocks: it is one merged mesh per chunk of cross-quads and
-/// sub-voxel boxes.
+/// layer cannot be blocks: it is one merged mesh per chunk of small blades,
+/// folded petals and sub-voxel boxes.
 ///
 /// Four decisions carry the whole look, and getting any of them wrong turns the
 /// meadow into something else:
 ///
-///   * A tuft is a CROSSED PAIR of blades, not a single quad and not a fan.
+///   * Meadow grass has three bent blades with a shared rooted clump. The
+///     crossed-pair primitive remains available for stems and reeds.
 ///   * Blade normals point straight UP, not out of the quad. Lit like the
 ///     ground they grow from, blades stay inside the high-key band; lit as
 ///     vertical surfaces they turn into dark slivers and a shelf reads as
 ///     gravel.
-///   * A blade tapers only to 0.62 of its base width. Taper it to a point and
-///     every tuft reads as a tiny conifer.
-///   * Detail arrives in sparse CLUMPS — a few percent of columns, one to three
-///     blades each — never as an even dusting over every column. An even
-///     dusting is a lawn; clumps are a meadow.
+///   * Blade ends stay blunt. Pointed straight silhouettes read as tiny conifers.
+///   * Detail follows broad meadow fields, with several blades or flowers per
+///     occupied column and quiet gaps between patches.
 ///
 /// Wind lives in the vertex shader, driven by a per-vertex sway weight (0 at
 /// the root, 1 at the tip) and a per-clump phase, so a whole meadow ripples
@@ -38,7 +37,7 @@ public static class GroundDetail
 	/// <summary>World seed, so the scatter fields agree with the terrain's.</summary>
 	public static int Seed;
 
-	private static Noise2D _meadow, _flowers, _waterDrift;
+	private static Noise2D _meadow, _flowers, _waterDrift, _fragments, _pavingDrift;
 
 	/// <summary>Face brightness ramp for sub-voxel boxes, matching the voxel shader's.</summary>
 	private const float ShadeTop = 1.0f, ShadeSide = 0.88f, ShadeSideZ = 0.82f, ShadeBottom = 0.7f;
@@ -90,20 +89,47 @@ public static class GroundDetail
 
 		public bool Empty => Pos.Count == 0;
 
-		/// <summary>One quad. `sway` applies to the last two corners — the top edge.</summary>
+		/// <summary>One quad with separately weighted bottom and top edges.</summary>
 		public void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector3 n,
-			Color bottom, Color top, float sway, float phase)
+			Color bottom, Color top, float sway, float phase, float bottomSway = 0f)
 		{
 			int i = Pos.Count;
 			Pos.Add(a); Pos.Add(b); Pos.Add(c); Pos.Add(d);
 			for (int k = 0; k < 4; k++) Nrm.Add(n);
 			Col.Add(bottom); Col.Add(bottom); Col.Add(top); Col.Add(top);
-			Det.Add(0f); Det.Add(phase);
-			Det.Add(0f); Det.Add(phase);
+			Det.Add(bottomSway); Det.Add(phase);
+			Det.Add(bottomSway); Det.Add(phase);
 			Det.Add(sway); Det.Add(phase);
 			Det.Add(sway); Det.Add(phase);
 			Idx.Add(i); Idx.Add(i + 1); Idx.Add(i + 2);
 			Idx.Add(i); Idx.Add(i + 2); Idx.Add(i + 3);
+		}
+
+		/// <summary>Three blunt bent leaves, rooted together and lit like their turf.</summary>
+		public void Grass(float x, float y, float z, float w, float h,
+			Color bottom, Color top, float phase, float leanX, float leanZ)
+		{
+			var centre = new Vector3(x, y, z);
+			var lean = new Vector3(leanX, 0f, leanZ) * 0.2f;
+			for (int blade = 0; blade < 3; blade++)
+			{
+				float angle = phase + blade * Mathf.Tau / 3f;
+				var outward = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+				var across = new Vector3(-outward.Z, 0f, outward.X) * (w * 0.24f);
+				float stature = 0.72f + blade * 0.14f;
+				var root = centre + outward * 0.025f;
+				var shoulder = root + Vector3.Up * (h * stature * 0.58f) + outward * 0.035f;
+				var tip = root + Vector3.Up * (h * stature * 0.92f) + outward * 0.15f + lean;
+				Color middle = bottom.Lerp(top, 0.58f);
+				float shoulderSway = stature * 0.55f;
+				Quad(root - across * 0.8f, root + across * 0.8f,
+					shoulder + across, shoulder - across, Vector3.Up,
+					bottom, middle, shoulderSway, phase);
+				// Duplicated shoulder vertices use identical weights in both segments.
+				Quad(shoulder - across, shoulder + across,
+					tip + across * 0.5f, tip - across * 0.5f, Vector3.Up,
+					middle, top, stature, phase, shoulderSway);
+			}
 		}
 
 		/// <summary>A crossed pair of vertical blades — the workhorse.</summary>
@@ -145,6 +171,45 @@ public static class GroundDetail
 			Quad(new(x0, y0, z1), new(x0, y0, z0), new(x0, y1, z0), new(x0, y1, z1), Vector3.Left, sxc, sxc, sway, phase);
 			Quad(new(x1, y0, z1), new(x0, y0, z1), new(x0, y1, z1), new(x1, y1, z1), Vector3.Back, szc, szc, sway, phase);
 			Quad(new(x0, y0, z0), new(x1, y0, z0), new(x1, y1, z0), new(x0, y1, z0), Vector3.Forward, szc, szc, 0f, phase);
+		}
+
+		/// <summary>A low mineral plate with two broken corners and six lit bevels.</summary>
+		public void Chip(float x, float y, float z, float width, float height, float depth,
+			float angle, float cut, Color color)
+		{
+			float hx = width * 0.5f, hz = depth * 0.5f;
+			Span<Vector2> profile = stackalloc Vector2[6]
+			{
+				new(-hx + width * cut, -hz), new(hx, -hz), new(hx, hz - depth * cut),
+				new(hx - width * cut, hz), new(-hx, hz), new(-hx, -hz + depth * cut),
+			};
+			Span<Vector3> rim = stackalloc Vector3[6];
+			Span<Vector3> top = stackalloc Vector3[6];
+			float c = Mathf.Cos(angle), s = Mathf.Sin(angle);
+			for (int k = 0; k < 6; k++)
+			{
+				var p = profile[k];
+				var offset = new Vector3(p.X * c - p.Y * s, 0f, p.X * s + p.Y * c);
+				rim[k] = new Vector3(x, y + 0.012f, z) + offset;
+				top[k] = new Vector3(x, y + height, z) + offset * 0.72f;
+			}
+			for (int k = 0; k < 6; k++)
+			{
+				int next = (k + 1) % 6;
+				var normal = (rim[k] - rim[next]).Cross(top[k] - rim[next]).Normalized();
+				Quad(rim[next], rim[k], top[k], top[next], normal, color, color, 0f, 0f);
+			}
+			// All facets face upward; a buried base would only add invisible faces.
+			for (int k = 1; k < 5; k++)
+			{
+				int first = Pos.Count;
+				Pos.Add(top[0]); Pos.Add(top[k + 1]); Pos.Add(top[k]);
+				for (int j = 0; j < 3; j++)
+				{
+					Nrm.Add(Vector3.Up); Col.Add(color); Det.Add(0f); Det.Add(0f);
+					Idx.Add(first + j);
+				}
+			}
 		}
 
 		/// <summary>
@@ -192,6 +257,35 @@ public static class GroundDetail
 				Vector3.Up, color, color, 0f, 0f);
 		}
 
+		/// <summary>A folded four-facet leaf, attached to an authored moss face.</summary>
+		public void MossLeaf(Vector3 root, Vector3 along, Vector3 across, Vector3 outward,
+			float length, float width, Color color)
+		{
+			var middle = root + along * (length * 0.48f);
+			var ridge = middle + outward * 0.055f;
+			var tip = root + along * length + outward * 0.028f;
+			var left = middle + across * (width * 0.5f);
+			var right = middle - across * (width * 0.5f);
+			Facet(root, left, ridge); Facet(left, tip, ridge);
+			Facet(tip, right, ridge); Facet(right, root, ridge);
+
+			void Facet(Vector3 a, Vector3 b, Vector3 c)
+			{
+				var normal = (b - a).Cross(c - a).Normalized();
+				if (normal.Dot(outward) < 0f) normal = -normal;
+				// Wall leaves tip toward the sky, retaining the pale growth palette
+				// while their facets still respond differently to the moving key.
+				normal = (normal + Vector3.Up * 0.35f).Normalized();
+				int first = Pos.Count;
+				Pos.Add(a); Pos.Add(b); Pos.Add(c);
+				for (int i = 0; i < 3; i++)
+				{
+					Nrm.Add(normal); Col.Add(color); Det.Add(0f); Det.Add(0f);
+					Idx.Add(first + i);
+				}
+			}
+		}
+
 		public ArrayMesh Build()
 		{
 			var arrays = new Godot.Collections.Array();
@@ -210,6 +304,55 @@ public static class GroundDetail
 				(Mesh.ArrayFormat)fmt);
 			return mesh;
 		}
+
+		public void Flower(float x, float y, float z, float height, Color petals, float phase)
+		{
+			Tuft(x, y - 0.025f, z, 0.055f, height + 0.025f, TuftBase, ReedTip, phase, sway: 0.5f);
+			// Two small leaves give the flower a stem silhouette at walking distance.
+			// They share the stem's displacement at their attachment height.
+			for (int leaf = 0; leaf < 2; leaf++)
+			{
+				float level = 0.32f + leaf * 0.22f;
+				float angle = phase + leaf * Mathf.Pi;
+				var along = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+				var across = new Vector3(-along.Z, 0f, along.X) * 0.048f;
+				var root = new Vector3(x, y + height * level, z);
+				var middle = root + along * 0.085f + Vector3.Up * 0.025f;
+				int start = Det.Count;
+				Quad(root, middle + across, root + along * 0.17f + Vector3.Up * 0.035f,
+					middle - across, Vector3.Up, TuftBase, ReedTip, 0f, phase);
+				float weight = 0.5f * (height * level + 0.025f) / (height + 0.025f);
+				for (int i = start; i < Det.Count; i += 2) Det[i] = weight;
+			}
+			// The head is attached to the stem tip. Give every head vertex the same
+			// wind weight; applying the blade's root/tip gradient would tear it apart.
+			int headStart = Det.Count;
+			// A low cup catches light on two broad facets per petal, keeping the
+			// five-part flower silhouette visible from both low and overhead views.
+			for (int petal = 0; petal < 5; petal++)
+			{
+				float angle = phase + petal * Mathf.Tau / 5f;
+				var along = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+				var across = new Vector3(-along.Z, 0f, along.X);
+				var root = new Vector3(x, y + height, z) + along * 0.02f;
+				var shoulder = root + along * 0.08f + Vector3.Up * 0.018f;
+				var tip = root + along * 0.17f + Vector3.Up * 0.065f;
+				var innerNormal = (Vector3.Up - along * 0.225f).Normalized();
+				var outerNormal = (Vector3.Up - along * 0.52f).Normalized();
+				Quad(root - across * 0.019f, root + across * 0.019f,
+					shoulder + across * 0.063f, shoulder - across * 0.063f,
+					innerNormal, petals.Darkened(0.06f), petals, 0f, phase);
+				Quad(shoulder - across * 0.063f, shoulder + across * 0.063f,
+					tip + across * 0.027f, tip - across * 0.027f,
+					outerNormal, petals, petals.Lightened(0.035f), 0f, phase);
+			}
+			Box(x, y + height - 0.01f, z, 0.065f, 0.035f, 0.065f, FlowerHeart);
+			for (int i = headStart; i < Det.Count; i += 2)
+			{
+				Det[i] = 0.5f;
+				Det[i + 1] = phase;
+			}
+		}
 	}
 
 	private static Color Srgb(uint hex) => new Color(
@@ -218,6 +361,7 @@ public static class GroundDetail
 	private static readonly Color[] FlowerTops =
 	{
 		Srgb(0xf6c3d4), Srgb(0xf2dcc0), Srgb(0xe2cdf3), Srgb(0xfaeaf0), Srgb(0xf3b9c6),
+		Srgb(0x82bdde), Srgb(0xefca68), Srgb(0xf5eddb),
 	};
 	private static readonly Color[] PebbleTops =
 	{
@@ -231,6 +375,7 @@ public static class GroundDetail
 	private static readonly Color ReedBase = Srgb(0x9aa877);
 	private static readonly Color ReedTip = Srgb(0xc3cf9c);
 	private static readonly Color Lichen = Srgb(0xa8b782);
+	private static readonly Color FlowerHeart = Srgb(0xf4cd71);
 
 	// Reclamation greens (plan.md §11a.4). Deliberately deeper and less pastel
 	// than the meadow's: growth taking a building back is the one green in this
@@ -726,6 +871,61 @@ public static class GroundDetail
 		return true;
 	}
 
+	private static readonly Vector3I[] MossFaces =
+	{
+		Vector3I.Right, Vector3I.Left, Vector3I.Up, Vector3I.Back, Vector3I.Forward,
+	};
+
+	/// <summary>
+	/// Add physical growth only to existing moss-stone cells. Cap profiles and
+	/// sparse masonry are separate storage paths; process their overlap once.
+	/// No region, structure, mask or collision is authored here.
+	/// </summary>
+	private static void MasonryGrowth(Field field, VoxelGrid grid, AtlasSectorData data,
+		int x0, int z0, int x1, int z1)
+	{
+		for (int z = z0; z < z1; z++)
+		for (int x = x0; x < x1; x++)
+		{
+			int y = grid.Top[z * grid.Size + x] - 1;
+			if (y >= 0 && grid.At(x, y, z) == Palette.MOSS_STONE) GrowCell(x, y, z);
+		}
+		foreach (var cell in grid.PlacedIn(x0, z0, ChunkMesher.ChunkSize))
+		{
+			if (cell.X >= x1 || cell.Z >= z1 || cell.Material != Palette.MOSS_STONE ||
+				cell.Y == grid.Top[cell.Z * grid.Size + cell.X] - 1) continue;
+			GrowCell(cell.X, cell.Y, cell.Z);
+		}
+
+		void GrowCell(int x, int y, int z)
+		{
+			int water = data.WaterSurface[z * data.Width + x];
+			if (water > 0 && y <= water) return;
+			for (int face = 0; face < MossFaces.Length; face++)
+			{
+				Vector3I step = MossFaces[face];
+				if (grid.At(x + step.X, y + step.Y, z + step.Z) != Palette.AIR) continue;
+				Vector3 normal = step;
+				var u = step.Y != 0 ? Vector3.Right : normal.Cross(Vector3.Up);
+				var v = step.Y != 0 ? Vector3.Back : Vector3.Up;
+				var center = new Vector3(x + 0.5f, y + 0.5f, z + 0.5f) + normal * 0.518f;
+				var rng = new Draw(x + grid.OriginX, z + grid.OriginZ, y * 37 + face * 101 + 0xB07);
+				// The material owns the patch; the draw only varies leaf shape inside
+				// this face. Every tip stays inside its in-plane bounds, clear of lips.
+				int count = rng.Int(4, 7);
+				for (int leaf = 0; leaf < count; leaf++)
+				{
+					float angle = rng.Range(0f, Mathf.Tau);
+					var along = u * Mathf.Cos(angle) + v * Mathf.Sin(angle);
+					var across = -u * Mathf.Sin(angle) + v * Mathf.Cos(angle);
+					var root = center + u * rng.Range(-0.16f, 0.16f) + v * rng.Range(-0.16f, 0.16f);
+					field.MossLeaf(root, along, across, normal, rng.Range(0.19f, 0.29f),
+						rng.Range(0.12f, 0.20f), VineAttach.Lerp(VineTip, rng.Range(0.25f, 0.80f)));
+				}
+			}
+		}
+	}
+
 	/// <summary>
 	/// Sub-voxel detail for a compiled atlas window. The authored biome profile
 	/// chooses the vocabulary; the visible cap and water depth decide what can
@@ -736,6 +936,8 @@ public static class GroundDetail
 	{
 		_meadow ??= new Noise2D(Seed + 71);
 		_flowers ??= new Noise2D(Seed + 72);
+		_fragments ??= new Noise2D(Seed + 74);
+		_pavingDrift ??= new Noise2D(Seed + 75);
 
 		AtlasSectorData data = window.Data;
 		VoxelGrid grid = window.Grid;
@@ -759,14 +961,21 @@ public static class GroundDetail
 			bool snowy = cap == Palette.SNOW;
 			bool scree = cap == Palette.SCREE;
 			bool sandy = cap == Palette.SAND;
+			bool earthy = cap == Palette.SOIL;
 			bool stony = cap is Palette.STONE or Palette.STONE_PALE or Palette.STONE_WARM or
 				Palette.MOSS_STONE or Palette.PAVING;
-			if (!grassy && !muddy && !snowy && !scree && !sandy && !stony) continue;
+			if (!grassy && !muddy && !snowy && !scree && !sandy && !earthy && !stony) continue;
+			// Material-scale plates are natural cap detail. Paving, masonry, rubble
+			// and the authored moss mask retain their site-owned surface vocabulary.
+			if (snowy || scree || sandy || earthy)
+				SurfaceFragments(f, grid, data, x, z, h, cap);
 
 			int gx = data.OriginX + x, gz = data.OriginZ + z;
 			var rng = new Draw(gx, gz, 0x5EED);
 			float y = h, fx = x + 0.5f, fz = z + 0.5f;
 			string detailSet = window.GroundDetailSetAt(x, z);
+			if (cap == Palette.PAVING && detailSet.Contains("petal", StringComparison.Ordinal))
+				PavingPetals(f, gx, gz, fx, y, fz);
 
 			// The atlas stores actual water height, so a shallow is a depth test
 			// rather than a comparison with one legacy global sea plane.
@@ -790,30 +999,42 @@ public static class GroundDetail
 				var block = Palette.Get(cap);
 				var light = new Color(block.Top.R * 1.08f, block.Top.G * 1.08f, block.Top.B * 1.08f);
 				float lush = _meadow.Fbm01(gx * 0.045f, gz * 0.045f, 3);
+				float meadowBand = Rng.Smoothstep(0.40f, 0.70f, lush);
 				float density = detailSet is "talus-and-blanks" or "snow-windtrace"
 					? 0.010f + lush * 0.025f
-					: 0.018f + lush * 0.055f;
+					: 0.04f + meadowBand * 0.42f;
 				if (rng.Chance(density))
 				{
-					int count = rng.Int(1, 3);
+					int count = rng.Int(2, 5);
 					for (int k = 0; k < count; k++)
-						f.Tuft(fx + rng.Range(-0.32f, 0.32f), y - 0.03f,
-							fz + rng.Range(-0.32f, 0.32f), rng.Range(0.16f, 0.30f),
-							rng.Range(0.26f, 0.52f), TuftBase, light, rng.Next() * 6.28f,
+						f.Grass(fx + rng.Range(-0.25f, 0.25f), y - 0.03f,
+							fz + rng.Range(-0.25f, 0.25f), rng.Range(0.16f, 0.30f),
+							rng.Range(0.30f, 0.60f), TuftBase, light, rng.Next() * 6.28f,
 							rng.Range(-0.14f, 0.14f), rng.Range(-0.14f, 0.14f));
 				}
 
 				bool flowers = detailSet.Contains("flower", StringComparison.Ordinal) ||
 					detailSet.Contains("petal", StringComparison.Ordinal);
 				float flowerField = _flowers.Fbm01(gx * 0.028f, gz * 0.028f, 3);
-				if (flowers && flowerField > 0.66f && rng.Chance((flowerField - 0.66f) * 0.30f))
+				float flowerBand = Rng.Smoothstep(0.45f, 0.70f, flowerField);
+				if (flowers && rng.Chance(flowerBand * 0.34f))
 				{
-					float stem = rng.Range(0.24f, 0.42f);
-					float ox = rng.Range(-0.30f, 0.30f), oz = rng.Range(-0.30f, 0.30f);
-					f.Tuft(fx + ox, y - 0.03f, fz + oz, 0.07f, stem,
-						TuftBase, TuftBase, 0f, 0f, 0f, 0.6f);
-					f.Box(fx + ox, y + stem - 0.04f, fz + oz, 0.20f, 0.16f, 0.20f,
-						rng.Pick(FlowerTops), 0.9f, rng.Next() * 6.28f);
+					Color petals = rng.Pick(FlowerTops);
+					int count = rng.Int(2, 4);
+					for (int k = 0; k < count; k++)
+						f.Flower(fx + rng.Range(-0.30f, 0.30f), y,
+							fz + rng.Range(-0.30f, 0.30f), rng.Range(0.20f, 0.45f),
+							petals, rng.Next() * Mathf.Tau);
+				}
+				if (detailSet.Contains("petal", StringComparison.Ordinal) &&
+					rng.Chance(meadowBand * 0.12f))
+				{
+					int count = rng.Int(3, 6);
+					for (int k = 0; k < count; k++)
+						f.Fleck(fx + rng.Range(-0.34f, 0.34f), y + 0.018f,
+							fz + rng.Range(-0.34f, 0.34f), rng.Range(0.09f, 0.17f),
+							rng.Range(0.05f, 0.09f), rng.Next() * Mathf.Pi,
+							rng.Pick(Palette.PetalColors));
 				}
 				if (rng.Chance(0.0055f))
 					f.Box(fx + rng.Range(-0.25f, 0.25f), y - 0.05f,
@@ -936,6 +1157,63 @@ public static class GroundDetail
 			}
 		}
 
+		MasonryGrowth(f, grid, data, x0, z0, x1, z1);
 		return f.Empty ? null : f.Build();
+	}
+
+	/// <summary>Wind litter on existing dry blossom-region paving, never new growth or damage.</summary>
+	private static void PavingPetals(Field field, int gx, int gz, float x, float y, float z)
+	{
+		// A wavelength field admits entire drift patches; the independent draw only
+		// distributes tiny petals inside them and cannot perturb existing detail.
+		float drift = _pavingDrift.Fbm01(gx / 18f, gz / 18f, 3);
+		float band = Rng.Smoothstep(0.43f, 0.68f, drift);
+		var rng = new Draw(gx, gz, 0x9E7A);
+		if (!rng.Chance(band * 0.48f)) return;
+		int count = rng.Int(3, 7);
+		float angle = -0.38f + (drift - 0.5f) * 0.7f;
+		for (int k = 0; k < count; k++)
+			field.Fleck(x + rng.Range(-0.30f, 0.30f), y + 0.018f,
+				z + rng.Range(-0.30f, 0.30f), rng.Range(0.12f, 0.24f),
+				rng.Range(0.065f, 0.12f), angle + rng.Range(-0.65f, 0.65f),
+				rng.Pick(Palette.PetalColors));
+	}
+
+	private static void SurfaceFragments(Field field, VoxelGrid grid, AtlasSectorData data,
+		int x, int z, int height, byte cap)
+	{
+		int gx = x + data.OriginX, gz = z + data.OriginZ;
+		float deposit = _fragments.Fbm01(gx / 32f, gz / 32f, 3);
+		float band = Rng.Smoothstep(0.39f, 0.69f, deposit);
+		if (band < 0.10f) return;
+		bool lip = grid.At(x - 1, height - 1, z) == Palette.AIR ||
+			grid.At(x + 1, height - 1, z) == Palette.AIR ||
+			grid.At(x, height - 1, z - 1) == Palette.AIR ||
+			grid.At(x, height - 1, z + 1) == Palette.AIR;
+		var rng = new Draw(gx, gz, 0xC41F);
+		float chance = band * band * 0.16f + (lip ? band * 0.18f : 0f);
+		if (!rng.Chance(chance)) return;
+		bool snow = cap == Palette.SNOW;
+		bool sand = cap == Palette.SAND;
+		Color ground = Palette.Get(cap).Top;
+		int count = rng.Int(1, 3);
+		for (int k = 0; k < count; k++)
+		{
+			float size = k == 0 ? rng.Range(0.35f, 0.65f) : rng.Range(0.14f, 0.29f);
+			float depth = size * rng.Range(0.55f, 0.85f);
+			float angle = rng.Int(0, 3) * Mathf.Pi * 0.5f + rng.Range(-0.16f, 0.16f);
+			float c = Mathf.Abs(Mathf.Cos(angle)), s = Mathf.Abs(Mathf.Sin(angle));
+			// Clamp the rotated footprint, not just its centre. No chip bridges a
+			// terrace break or crosses ownership at a chunk/window boundary.
+			float rx = (size * c + depth * s) * 0.5f;
+			float rz = (size * s + depth * c) * 0.5f;
+			float px = x + 0.5f + rng.Range(-0.47f + rx, 0.47f - rx);
+			float pz = z + 0.5f + rng.Range(-0.47f + rz, 0.47f - rz);
+			Color mineral = snow ? ground : ground.Lerp(rng.Pick(PebbleTops), sand ? 0.55f : 0.32f);
+			float tone = rng.Range(snow ? 0.96f : 0.82f, snow ? 1.08f : 1.04f);
+			mineral = new Color(mineral.R * tone, mineral.G * tone, mineral.B * tone);
+			field.Chip(px, height, pz, size, rng.Range(0.045f, snow ? 0.13f : 0.11f),
+				depth, angle, rng.Range(0.14f, 0.30f), mineral);
+		}
 	}
 }

@@ -93,6 +93,10 @@ case "$command_name" in
 	exec godot-mono --headless --path "$project_dir" \
 	  --script res://tools/camera-auto-zoom-smoke.gd
 	;;
+	verify-look-rendering)
+	exec godot-mono --headless --path "$project_dir" \
+	  --script res://tools/look-render-smoke.gd
+	;;
 	review-site)
 		site_id="${2:?usage: $0 review-site <site-id>}"
 		exec godot-mono --path "$project_dir" -- --review-site "$site_id"
@@ -105,7 +109,7 @@ case "$command_name" in
 		exec godot-mono --path "$project_dir" --fullscreen -- "${args[@]}"
 		;;
   *)
-echo "usage: $0 audit | atlas-preview [output] | atlas-topology-preview [output] | atlas-map-preview [output] | preview-atlas-domain <domain-id> [output] | preview-site-plan <site-id> [output] [--runtime-facing] | reference-top-grid [output] [source-pixel-x,y ...] | reference-plan-overlay [output] | verify-production-terrain <global-x,z> | audit-production-terrain | verify-production-playability <global-x,z> [land|water] | review-production-terrain <global-x,z> | capture-production-terrain <global-x,z> [output] [shot-names] | verify-atlas-walking-handoff | verify-camera-obstruction | verify-atlas-map-transport | verify-camera-auto-zoom | review-site <site-id> | capture-site <site-id> [output] [shot-names]" >&2
+echo "usage: $0 audit | atlas-preview [output] | atlas-topology-preview [output] | atlas-map-preview [output] | preview-atlas-domain <domain-id> [output] | preview-site-plan <site-id> [output] [--runtime-facing] | reference-top-grid [output] [source-pixel-x,y ...] | reference-plan-overlay [output] | verify-production-terrain <global-x,z> | audit-production-terrain | verify-production-playability <global-x,z> [land|water] | review-production-terrain <global-x,z> | capture-production-terrain <global-x,z> [output] [shot-names] | verify-atlas-walking-handoff | verify-camera-obstruction | verify-atlas-map-transport | verify-camera-auto-zoom | verify-look-rendering | review-site <site-id> | capture-site <site-id> [output] [shot-names]" >&2
     exit 64
     ;;
 esac

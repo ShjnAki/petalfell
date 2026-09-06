@@ -43,14 +43,14 @@ public sealed class DomainPlanDefinition
 		else if (!PointInPolygon(Origin, domain.Boundary)) report.Error("origin lies outside the domain boundary");
 		if (ReferencePaths.Count == 0) report.Error("at least one visual reference is required");
 		foreach (string path in ReferencePaths)
-			if (!Godot.FileAccess.FileExists(path)) report.Error($"reference '{path}' does not exist");
+			if (!AtlasSourceImages.Exists(path)) report.Error($"reference '{path}' does not exist");
 		if (SourceMode == PlanSourceMode.ReferenceReconstruction)
 		{
 			if (string.IsNullOrWhiteSpace(ReconstructionReferencePath))
 				report.Error("a reference reconstruction requires reconstructionReferencePath");
 			else if (!ReferencePaths.Contains(ReconstructionReferencePath, StringComparer.Ordinal))
 				report.Error("reconstructionReferencePath must also be the plan's visual reference");
-			else if (!Godot.FileAccess.FileExists(ReconstructionReferencePath))
+			else if (!AtlasSourceImages.Exists(ReconstructionReferencePath))
 				report.Error($"reconstruction reference '{ReconstructionReferencePath}' does not exist");
 			if (ReferencePaths.Count != 1)
 				report.Error("a reference reconstruction must name exactly one structural reference");
