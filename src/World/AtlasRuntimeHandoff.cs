@@ -182,7 +182,7 @@ public static class AtlasRuntimeHandoff
 		int minZ = data.OriginZ + data.Apron;
 		int maxX = minX + data.CoreSize;
 		int maxZ = minZ + data.CoreSize;
-		LandingSupportField support = BuildLandingSupportField(data);
+		LandingSupportField support = BuildLandingSupportField(window);
 		if (TryResolveExactLanding(window, requestedGlobalX, requestedGlobalZ,
 		    out landing, out requestedRejection))
 		{
@@ -238,8 +238,9 @@ public static class AtlasRuntimeHandoff
 	/// Water participates at its actual surface so a small low island remains
 	/// playable by swimming; only a dry cell may become the landing itself.
 	/// </summary>
-	private static LandingSupportField BuildLandingSupportField(AtlasSectorData data)
+	private static LandingSupportField BuildLandingSupportField(AtlasSectorWindow window)
 	{
+		AtlasSectorData data = window.Data;
 		int width = data.Width, depth = data.Depth, count = width * depth;
 		var labels = new int[count];
 		var queue = new int[count];
@@ -248,6 +249,7 @@ public static class AtlasRuntimeHandoff
 		int Surface(int index)
 		{
 			if (data.Land[index] != 0) return data.Height[index];
+			if (DryBridgeSurface(window, index) is int deck) return deck;
 			return data.WaterSurface[index] > 0
 				? data.WaterSurface[index]
 				: data.Height[index];
@@ -291,19 +293,32 @@ public static class AtlasRuntimeHandoff
 			components.Add(new LandingSupportComponent(cells, minSum, maxSum,
 				minDifference, maxDifference));
 		}
-		return new LandingSupportField(data, labels, components.ToArray());
+		return new LandingSupportField(window, labels, components.ToArray());
+	}
+
+	// A wet terrain column may carry a solid authored bridge. Hydrology must
+	// continue to describe its submerged bed, while travel follows the deck.
+	internal static int? DryBridgeSurface(AtlasSectorWindow window, int index)
+	{
+		int water = window.Data.WaterSurface[index];
+		int top = window.Grid.Heights[index];
+		if (water == 0 || top <= water + 1) return null;
+		int x = index % window.Data.Width, z = index / window.Data.Width;
+		return TraversableTop(window.Grid.At(x, top - 1, z)) ? top : null;
 	}
 
 	private sealed class LandingSupportField
 	{
 		private readonly AtlasSectorData _data;
+		private readonly AtlasSectorWindow _window;
 		private readonly int[] _labels;
 		private readonly LandingSupportComponent[] _components;
 
-		public LandingSupportField(AtlasSectorData data, int[] labels,
+		public LandingSupportField(AtlasSectorWindow window, int[] labels,
 			LandingSupportComponent[] components)
 		{
-			_data = data;
+			_window = window;
+			_data = window.Data;
 			_labels = labels;
 			_components = components;
 		}
@@ -313,7 +328,7 @@ public static class AtlasRuntimeHandoff
 			int x = globalX - _data.OriginX, z = globalZ - _data.OriginZ;
 			if (x < 0 || z < 0 || x >= _data.Width || z >= _data.Depth) return false;
 			int index = z * _data.Width + x;
-			if (_data.Land[index] == 0) return false;
+			if (_data.Land[index] == 0 && DryBridgeSurface(_window, index) == null) return false;
 			LandingSupportComponent component = _components[_labels[index]];
 			int sum = x + z, difference = x - z;
 			int radius = Math.Max(
@@ -703,7 +718,8 @@ public static class AtlasRuntimeHandoff
 			Palette.SOIL or Palette.SAND or Palette.SNOW or Palette.MUD or Palette.MOSS or
 			Palette.BLOSSOM_DRIFT or Palette.SCREE or Palette.STONE or Palette.STONE_PALE or
 			Palette.STONE_WARM or Palette.MOSS_STONE or Palette.PATH or Palette.PAVING or
-			Palette.PLANK or Palette.PLANK_PALE;
+			Palette.PLANK or Palette.PLANK_PALE or Palette.STONE_ROSE or Palette.STONE_AMETHYST;
+
 
 	private static Image LoadLayer(WorldAtlasDefinition atlas, AtlasLayerKind kind)
 	{

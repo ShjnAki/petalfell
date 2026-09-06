@@ -1,0 +1,684 @@
+{
+  "version": 2,
+  "siteId": "sanctuary-of-the-last-light",
+  "referencePath": "res://world-new/reference-6.png",
+  "basis": "Reference 6. Traveller 906,611 (~53 px =2 m), main altar 797,388, west obelisk 480,247, detached east shrine 1095,511. A small stepped sanctuary, not a monumental temple: two short ascending terraces, four unequal carved piers beneath a broken curved rear arch, a separate eastern chapel, a thin western obelisk. Snow preserves the existing shelf outside explicit foundations. Centre survey184, neighbours162..185.",
+  "coordinateContract": {
+    "origin": {
+      "x": 0,
+      "z": 0
+    },
+    "playerSpawn": {
+      "x": 9,
+      "z": 17
+    },
+    "plotView": "source-facing",
+    "oneCellIsOneVoxel": true,
+    "runtimePlanScale": 1,
+    "runtimeMirrorX": false,
+    "sourceViewYawDegrees": 45,
+    "sourceViewPitchDegrees": 35.26439
+  },
+  "terrain": [
+    {
+      "id": "ordinary-atlas-context",
+      "role": "ordinary-atlas-context",
+      "surfaceY": 184,
+      "material": "natural",
+      "writeMode": "preserve-atlas",
+      "footprint": [-34, -32, 34, 35]
+    },
+    {
+      "id": "snow-approach",
+      "role": "snow-approach",
+      "surfaceY": 184,
+      "material": "snow",
+      "writeMode": "author-surface",
+      "polygon": [
+        [-30, -22],
+        [-21, -22],
+        [-21, -30],
+        [25, -30],
+        [25, -8],
+        [32, -8],
+        [32, 22],
+        [25, 22],
+        [25, 32],
+        [-19, 32],
+        [-19, 26],
+        [-30, 26]
+      ]
+    },
+    {
+      "id": "lower-sanctuary",
+      "role": "lower-sanctuary",
+      "surfaceY": 186,
+      "material": "worn-paving",
+      "writeMode": "author-surface",
+      "polygon": [
+        [-26, -23],
+        [23, -23],
+        [23, -14],
+        [28, -14],
+        [28, 16],
+        [23, 16],
+        [23, 24],
+        [-24, 24],
+        [-24, 16],
+        [-29, 16],
+        [-29, -9],
+        [-26, -9]
+      ]
+    },
+    {
+      "id": "upper-sanctuary",
+      "role": "upper-sanctuary",
+      "surfaceY": 190,
+      "material": "worn-paving",
+      "writeMode": "author-surface",
+      "polygon": [
+        [-19, -21],
+        [13, -21],
+        [13, -16],
+        [19, -16],
+        [19, -2],
+        [15, -2],
+        [15, 5],
+        [-20, 5],
+        [-20, -5],
+        [-23, -5],
+        [-23, -14],
+        [-19, -14]
+      ]
+    },
+    {
+      "id": "central-altar",
+      "role": "central-altar",
+      "surfaceY": 193,
+      "material": "worn-paving",
+      "writeMode": "author-surface",
+      "footprint": [-10, -17, 10, -5]
+    },
+    {
+      "id": "east-chapel-floor",
+      "role": "east-chapel-floor",
+      "surfaceY": 188,
+      "material": "worn-paving",
+      "writeMode": "author-surface",
+      "footprint": [18, 0, 28, 10]
+    },
+    {
+      "id": "west-obelisk-foot",
+      "role": "west-obelisk-foot",
+      "surfaceY": 190,
+      "material": "worn-paving",
+      "writeMode": "author-surface",
+      "footprint": [-26, -17, -20, -10]
+    },
+    {
+      "id": "front-west-snow-bank",
+      "role": "front-west-snow-bank",
+      "surfaceY": 185,
+      "material": "snow",
+      "writeMode": "author-surface",
+      "footprint": [-31, 18, -22, 25]
+    },
+    {
+      "id": "front-east-snow-bank",
+      "role": "front-east-snow-bank",
+      "surfaceY": 185,
+      "material": "snow",
+      "writeMode": "author-surface",
+      "footprint": [20, 22, 31, 28]
+    }
+  ],
+  "structures": [
+    {
+      "id": "lower-stair",
+      "kind": "stair",
+      "fromTerrain": "snow-approach",
+      "toTerrain": "lower-sanctuary",
+      "axis": [0, -1],
+      "fromLanding": [-15, 29, -5, 30],
+      "toLanding": [-15, 22, -5, 23],
+      "treads": [
+        {
+          "footprint": [-15, 29, -5, 30],
+          "topY": 184
+        },
+        {
+          "footprint": [-15, 26, -5, 28],
+          "topY": 185
+        },
+        {
+          "footprint": [-15, 24, -5, 25],
+          "topY": 186
+        }
+      ]
+    },
+    {
+      "id": "upper-stair",
+      "kind": "stair",
+      "fromTerrain": "lower-sanctuary",
+      "toTerrain": "upper-sanctuary",
+      "axis": [0, -1],
+      "fromLanding": [-13, 14, -2, 15],
+      "toLanding": [-13, 3, -2, 4],
+      "treads": [
+        {
+          "footprint": [-13, 14, -2, 15],
+          "topY": 186
+        },
+        {
+          "footprint": [-13, 12, -2, 13],
+          "topY": 187
+        },
+        {
+          "footprint": [-13, 10, -2, 11],
+          "topY": 188
+        },
+        {
+          "footprint": [-13, 8, -2, 9],
+          "topY": 189
+        },
+        {
+          "footprint": [-13, 5, -2, 7],
+          "topY": 190
+        }
+      ]
+    },
+    {
+      "id": "altar-front-ascent",
+      "kind": "stair",
+      "fromTerrain": "upper-sanctuary",
+      "toTerrain": "central-altar",
+      "axis": [0, -1],
+      "fromLanding": [-7, 2, 7, 3],
+      "toLanding": [-7, -6, 7, -5],
+      "treads": [
+        {
+          "footprint": [-7, 2, 7, 3],
+          "topY": 190
+        },
+        {
+          "footprint": [-7, 0, 7, 1],
+          "topY": 191
+        },
+        {
+          "footprint": [-7, -2, 7, -1],
+          "topY": 192
+        },
+        {
+          "footprint": [-7, -4, 7, -3],
+          "topY": 193
+        }
+      ]
+    },
+    {
+      "id": "chapel-short-ascent",
+      "kind": "stair",
+      "fromTerrain": "lower-sanctuary",
+      "toTerrain": "east-chapel-floor",
+      "axis": [0, -1],
+      "fromLanding": [20, 14, 26, 15],
+      "toLanding": [20, 8, 26, 9],
+      "treads": [
+        {
+          "footprint": [20, 14, 26, 15],
+          "topY": 186
+        },
+        {
+          "footprint": [20, 12, 26, 13],
+          "topY": 187
+        },
+        {
+          "footprint": [20, 10, 26, 11],
+          "topY": 188
+        }
+      ]
+    },
+    {
+      "id": "altar-front-stepped-plinth",
+      "kind": "measured-masonry",
+      "baseY": 193,
+      "footprints": [
+        [-10, -9, 10, -7],
+        [-8, -6, 10, -6],
+        [-8, -5, 7, -5]
+      ],
+      "courses": [
+        [-10, 10, 193, 193, -9, -7, 11],
+        [-8, 10, 193, 193, -6, -6, 11],
+        [-8, 7, 193, 193, -5, -5, 11],
+        [-8, 8, 194, 194, -9, -6, 11],
+        [-6, -4, 195, 196, -8, -6, 11],
+        [2, 4, 195, 195, -8, -6, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "west-arch-pier",
+      "kind": "measured-masonry",
+      "baseY": 190,
+      "footprints": [
+        [-12, -17, -8, -12]
+      ],
+      "courses": [
+        [-12, -8, 190, 192, -17, -12, 11],
+        [-11, -9, 193, 202, -16, -13, 11],
+        [-12, -8, 203, 203, -17, -12, 11],
+        [-12, -10, 204, 205, -16, -13, 11],
+        [-10, -10, 194, 201, -12, -12, 10],
+        [-10, -10, 196, 200, -13, -13, 41],
+        [-12, -12, 203, 203, -12, -12, 0]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "rear-inner-left-pier",
+      "kind": "measured-masonry",
+      "baseY": 190,
+      "footprints": [
+        [-4, -21, 0, -17]
+      ],
+      "courses": [
+        [-4, 0, 190, 192, -21, -17, 11],
+        [-3, -1, 193, 200, -20, -18, 11],
+        [-4, 0, 201, 201, -21, -17, 11],
+        [-3, -1, 202, 203, -20, -18, 11],
+        [-2, -2, 194, 198, -17, -17, 10]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "rear-inner-right-pier",
+      "kind": "measured-masonry",
+      "baseY": 190,
+      "footprints": [
+        [3, -22, 7, -17]
+      ],
+      "courses": [
+        [3, 7, 190, 192, -22, -17, 11],
+        [4, 6, 193, 204, -21, -18, 10],
+        [3, 7, 205, 205, -22, -17, 11],
+        [4, 6, 206, 206, -21, -18, 11],
+        [5, 5, 194, 203, -17, -17, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "front-east-arch-pier",
+      "kind": "measured-masonry",
+      "baseY": 190,
+      "footprints": [
+        [10, -14, 14, -9]
+      ],
+      "courses": [
+        [10, 14, 190, 192, -14, -9, 11],
+        [11, 13, 193, 200, -13, -10, 11],
+        [10, 14, 201, 202, -14, -9, 11],
+        [11, 12, 203, 203, -13, -10, 11],
+        [12, 12, 194, 199, -9, -9, 10],
+        [12, 12, 195, 198, -10, -10, 41],
+        [10, 10, 202, 202, -9, -9, 0]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "broken-curved-rear-arch",
+      "kind": "measured-masonry",
+      "baseY": 203,
+      "footprints": [
+        [-11, -20, -8, -17],
+        [-8, -21, 6, -18],
+        [6, -20, 10, -17],
+        [10, -17, 13, -12],
+        [-8, -17, -7, -17]
+      ],
+      "courses": [
+        [-11, -8, 204, 205, -20, -17, 11],
+        [-8, -5, 206, 207, -21, -18, 11],
+        [-5, 2, 208, 209, -21, -18, 11],
+        [2, 6, 207, 208, -21, -18, 11],
+        [6, 10, 205, 206, -20, -17, 11],
+        [10, 13, 203, 204, -17, -12, 11],
+        [-2, -1, 209, 209, -18, -18, 0],
+        [4, 5, 208, 208, -18, -18, 0],
+        [7, 8, 206, 206, -17, -17, 0],
+        [-8, -7, 204, 204, -17, -17, 10],
+        [10, 10, 203, 203, -13, -12, 0]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "west-thin-obelisk",
+      "kind": "measured-masonry",
+      "baseY": 190,
+      "footprints": [
+        [-25, -16, -21, -11]
+      ],
+      "courses": [
+        [-25, -21, 190, 191, -16, -11, 11],
+        [-24, -22, 192, 193, -15, -12, 11],
+        [-23, -22, 194, 208, -14, -13, 11],
+        [-22, -22, 196, 207, -12, -12, 10],
+        [-22, -22, 198, 205, -13, -13, 41],
+        [-23, -23, 209, 209, -14, -13, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "east-chapel-left-pier",
+      "kind": "measured-masonry",
+      "baseY": 188,
+      "footprints": [
+        [18, 0, 21, 3]
+      ],
+      "courses": [
+        [18, 21, 188, 189, 0, 3, 11],
+        [19, 20, 190, 195, 1, 2, 11],
+        [18, 21, 196, 196, 0, 3, 11],
+        [19, 19, 191, 194, 3, 3, 41]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "east-chapel-right-pier",
+      "kind": "measured-masonry",
+      "baseY": 188,
+      "footprints": [
+        [25, 0, 28, 3]
+      ],
+      "courses": [
+        [25, 28, 188, 189, 0, 3, 11],
+        [26, 27, 190, 195, 1, 2, 11],
+        [25, 28, 196, 196, 0, 3, 11],
+        [26, 26, 191, 194, 3, 3, 41],
+        [28, 28, 196, 196, 3, 3, 0]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "east-chapel-rear-arch",
+      "kind": "measured-masonry",
+      "baseY": 194,
+      "footprints": [
+        [19, -2, 21, 1],
+        [25, -2, 27, 1],
+        [22, -2, 24, 0],
+        [22, 1, 23, 1]
+      ],
+      "courses": [
+        [19, 21, 194, 197, -2, 1, 11],
+        [25, 27, 194, 197, -2, 1, 11],
+        [21, 25, 198, 198, -2, 0, 11],
+        [22, 24, 199, 199, -2, 0, 11],
+        [21, 23, 198, 198, 1, 1, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "east-chapel-offering-slab",
+      "kind": "measured-masonry",
+      "baseY": 188,
+      "footprints": [
+        [22, 4, 25, 7]
+      ],
+      "courses": [
+        [22, 25, 188, 189, 4, 7, 11],
+        [23, 24, 190, 190, 5, 6, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "east-chapel-broken-curb",
+      "kind": "measured-masonry",
+      "baseY": 188,
+      "footprints": [
+        [18, 7, 20, 9],
+        [26, 6, 28, 9]
+      ],
+      "courses": [
+        [18, 20, 188, 189, 7, 9, 11],
+        [26, 28, 188, 189, 6, 9, 11],
+        [27, 28, 190, 191, 6, 7, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "altar-small-violet-offerings",
+      "kind": "measured-masonry",
+      "baseY": 193,
+      "footprints": [
+        [-6, -7, -5, -6],
+        [0, -14, 1, -13],
+        [5, -9, 6, -8]
+      ],
+      "courses": [
+        [-6, -5, 194, 195, -7, -6, 11],
+        [-6, -6, 196, 198, -7, -7, 41],
+        [0, 1, 193, 194, -14, -13, 11],
+        [0, 0, 195, 197, -14, -14, 41],
+        [5, 6, 193, 194, -9, -8, 11],
+        [5, 5, 195, 196, -8, -8, 41]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "west-terrace-broken-wall",
+      "kind": "measured-masonry",
+      "baseY": 186,
+      "footprints": [
+        [-25, -7, -23, 1],
+        [-23, -6, -19, -4]
+      ],
+      "courses": [
+        [-25, -23, 186, 191, -7, 1, 11],
+        [-23, -19, 190, 192, -6, -4, 11],
+        [-25, -25, 190, 191, -1, 1, 0],
+        [-24, -24, 192, 193, -6, -5, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "right-stair-flank",
+      "kind": "measured-masonry",
+      "baseY": 186,
+      "footprints": [
+        [4, 6, 9, 11]
+      ],
+      "courses": [
+        [4, 9, 186, 189, 6, 11, 11],
+        [5, 8, 190, 191, 7, 10, 11],
+        [6, 7, 192, 193, 8, 9, 11],
+        [4, 4, 189, 189, 10, 11, 0]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "front-left-collapsed-parapet",
+      "kind": "measured-masonry",
+      "baseY": 186,
+      "footprints": [
+        [-25, 20, -17, 23],
+        [-22, 17, -19, 20]
+      ],
+      "courses": [
+        [-25, -17, 186, 187, 20, 23, 11],
+        [-22, -19, 188, 190, 17, 20, 11],
+        [-24, -23, 188, 189, 21, 22, 11],
+        [-19, -17, 188, 188, 22, 23, 12]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "front-right-collapsed-parapet",
+      "kind": "measured-masonry",
+      "baseY": 186,
+      "footprints": [
+        [13, 20, 20, 23],
+        [17, 18, 20, 20]
+      ],
+      "courses": [
+        [13, 20, 186, 187, 20, 23, 11],
+        [17, 20, 188, 190, 18, 20, 11],
+        [14, 15, 188, 189, 21, 22, 11],
+        [19, 20, 191, 191, 18, 19, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "west-obelisk-foot-rubble",
+      "kind": "measured-masonry",
+      "baseY": 186,
+      "footprints": [
+        [-28, -12, -25, -8],
+        [-23, -10, -20, -8]
+      ],
+      "courses": [
+        [-28, -25, 186, 187, -12, -8, 11],
+        [-27, -26, 188, 189, -11, -10, 11],
+        [-23, -20, 190, 191, -10, -8, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "rear-crown-fallen-blocks",
+      "kind": "measured-masonry",
+      "baseY": 193,
+      "footprints": [
+        [-7, -20, -4, -17],
+        [7, -18, 10, -15]
+      ],
+      "courses": [
+        [-7, -4, 193, 194, -20, -17, 11],
+        [-6, -5, 195, 196, -19, -18, 11],
+        [7, 10, 193, 194, -18, -15, 11],
+        [9, 10, 195, 195, -17, -16, 12]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "eastern-snow-rubble",
+      "kind": "measured-masonry",
+      "baseY": 184,
+      "footprints": [
+        [29, 11, 32, 14],
+        [23, 27, 27, 30]
+      ],
+      "courses": [
+        [29, 32, 184, 185, 11, 14, 11],
+        [30, 31, 186, 187, 12, 13, 11],
+        [23, 27, 184, 185, 27, 30, 11],
+        [24, 25, 186, 186, 28, 29, 14]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "west-alpine-blossom",
+      "kind": "measured-tree",
+      "baseY": 0,
+      "groundAt": [-30, -24],
+      "terrainFit": "measured-course-support",
+      "footprints": [
+        [-30, -24, -30, -24],
+        [-33, -27, -30, -24],
+        [-30, -25, -27, -22],
+        [-31, -23, -29, -21]
+      ],
+      "courses": [
+        [-30, -30, 0, 7, -24, -24, 23],
+        [-33, -30, 6, 9, -27, -24, 33],
+        [-30, -27, 7, 10, -25, -22, 31],
+        [-31, -29, 9, 11, -23, -21, 32]
+      ]
+    },
+    {
+      "id": "rear-alpine-blossom",
+      "kind": "measured-tree",
+      "baseY": 0,
+      "groundAt": [16, -28],
+      "terrainFit": "measured-course-support",
+      "footprints": [
+        [16, -28, 16, -28],
+        [12, -30, 16, -27],
+        [16, -31, 19, -28],
+        [15, -27, 18, -25]
+      ],
+      "courses": [
+        [16, 16, 0, 8, -28, -28, 23],
+        [12, 16, 7, 10, -30, -27, 33],
+        [16, 19, 8, 11, -31, -28, 31],
+        [15, 18, 10, 12, -27, -25, 31]
+      ]
+    },
+    {
+      "id": "east-alpine-blossom",
+      "kind": "measured-tree",
+      "baseY": 0,
+      "groundAt": [31, -11],
+      "terrainFit": "measured-course-support",
+      "footprints": [
+        [31, -11, 31, -11],
+        [28, -14, 31, -10],
+        [31, -12, 34, -9],
+        [30, -10, 32, -8]
+      ],
+      "courses": [
+        [31, 31, 0, 7, -11, -11, 23],
+        [28, 31, 6, 9, -14, -10, 33],
+        [31, 34, 7, 10, -12, -9, 31],
+        [30, 32, 9, 11, -10, -8, 32]
+      ]
+    },
+    {
+      "id": "front-alpine-blossom",
+      "kind": "measured-tree",
+      "baseY": 0,
+      "groundAt": [-29, 30],
+      "terrainFit": "measured-course-support",
+      "footprints": [
+        [-29, 30, -29, 30],
+        [-32, 28, -29, 31],
+        [-29, 27, -26, 30],
+        [-30, 30, -28, 33]
+      ],
+      "courses": [
+        [-29, -29, 0, 7, 30, 30, 23],
+        [-32, -29, 6, 9, 28, 31, 31],
+        [-29, -26, 7, 10, 27, 30, 33],
+        [-30, -28, 9, 11, 30, 33, 32]
+      ]
+    }
+  ],
+  "surfacePatches": [
+    {
+      "id": "lower-snow-reclamation",
+      "terrainId": "lower-sanctuary",
+      "material": "snow",
+      "footprints": [
+        [-25, -21, -24, -18],
+        [-26, 1, -22, 11],
+        [-18, 18, -14, 22],
+        [9, 17, 16, 21]
+      ]
+    },
+    {
+      "id": "upper-snow-fragments",
+      "terrainId": "upper-sanctuary",
+      "material": "snow",
+      "footprints": [
+        [-18, -20, -14, -17],
+        [15, -14, 17, -6],
+        [-20, -4, -17, 2]
+      ]
+    }
+  ],
+  "surroundingTrees": [],
+  "acceptanceRules": {
+    "isolatedSurvivorMaximumFootprint": [4, 4],
+    "eachStairMustTouchBothNamedTerrains": true,
+    "significantGeometryMustAppearInThisPlan": true,
+    "generatorMayNotMoveOrAddStructures": true
+  }
+}

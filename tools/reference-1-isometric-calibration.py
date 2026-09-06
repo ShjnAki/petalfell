@@ -176,7 +176,7 @@ def audit(camera: dict) -> tuple[list[str], dict]:
             "origin": {"x": 6400, "z": 6980},
             "axisDegrees": 0,
             "runtimePlanScale": 3,
-            "verticalDatumY": 168,
+            "verticalDatumY": 87,
             "footprintMin": {"x": -48, "z": -28},
             "footprintMax": {"x": 47, "z": 62},
             "playerSpawn": {"x": 0, "z": 20},
@@ -344,18 +344,17 @@ def audit_vertical(vertical: dict, camera: dict) -> tuple[list[str], dict]:
     datum = vertical.get("absoluteDatum", {})
     expected_datum = {
         "thresholdLocalTopY": 0,
-        "thresholdAbsoluteTopY": 168,
+        "thresholdAbsoluteTopY": 87,
         "waterLocalTopY": -21,
-        "waterAbsoluteTopY": 105,
+        "waterAbsoluteTopY": 24,
         "sampledBedLocalTopY": -23,
-        "sampledBedAbsoluteTopY": 99,
+        "sampledBedAbsoluteTopY": 18,
     }
     for key, expected in expected_datum.items():
         if datum.get(key) != expected:
             errors.append(f"absoluteDatum.{key} must be {expected}")
     expected_samples = {
-        ((6400, 6980), 99, 105),
-        ((6400, 7106), 99, 105),
+        ((6400, 7040), 18, 24),
     }
     actual_samples = set()
     for sample in datum.get("samplePoints", []):
@@ -365,7 +364,7 @@ def audit_vertical(vertical: dict, camera: dict) -> tuple[list[str], dict]:
                 (tuple(global_point), sample.get("bedTopY"), sample.get("waterTopY"))
             )
     if actual_samples != expected_samples:
-        errors.append("absolute datum must retain both water-anchored authored samples")
+        errors.append("absolute datum must retain the production bridge water-column sample")
 
     level_ids: set[str] = set()
     for level in vertical.get("levels", []):
@@ -376,8 +375,8 @@ def audit_vertical(vertical: dict, camera: dict) -> tuple[list[str], dict]:
         local_y, absolute_y = level.get("localTopY"), level.get("absoluteTopY")
         if not isinstance(local_y, int) or isinstance(local_y, bool):
             errors.append(f"{level_id}.localTopY must be an integer course")
-        elif absolute_y != 168 + 3 * local_y:
-            errors.append(f"{level_id}.absoluteTopY must equal 168 + 3 * localTopY")
+        elif absolute_y != 87 + 3 * local_y:
+            errors.append(f"{level_id}.absoluteTopY must equal 87 + 3 * localTopY")
         uncertainty = level.get("uncertaintyCourses")
         if not isinstance(uncertainty, int) or isinstance(uncertainty, bool) or uncertainty < 0:
             errors.append(f"{level_id}.uncertaintyCourses must be a non-negative integer")

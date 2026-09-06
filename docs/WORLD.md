@@ -77,6 +77,17 @@ or a newly generated continental road.
 Procedural systems may dress wilderness or realize measured damage. They may not
 invent a significant place or connection.
 
+The remaining structural references now have permanent allocations. Drowned
+Seal Gate and Violet Threshold mark two southern shore approaches; Terrace of
+the Twin Rites joins the eastern shallows. Hollow Choir, Sanctuary of the Last
+Light and Court of the Quiet Sign occupy separate northern heights. Court of
+the Open Sky, Arcade of the Leaning Pillars and Courts of the Three Crossings
+belong to eastern blossom country. Each keeps its own source composition and
+measured approaches. The violet opening is visual activity, not evidence of an
+operating transport network. Coordinates and production status remain owned by
+topology; [the reference ledger](../building-knowledge/sites/reference-precincts-2026-09.md)
+records the individual source distinctions and uncertainty.
+
 ## Tone
 
 The visual world stays pastel, high-key and readable, with long-lens isometric

@@ -80,6 +80,8 @@ Final evidence, 2026-09-06:
   settled at Y120. These are automated collision-backed approaches, not a claim
   of manual exploration or exhaustive traversal.
 - Final `verify-worldbuilding`, `verify-sculpture`, `verify-look-rendering` and
-  the coast repeat/overlap check passed. The packaged atlas audit reports five
-  domains and five sites, four of them production. Linux export and both actual
+  the coast repeat/overlap check passed. That earlier packaged atlas audit
+  reported five domains and five sites, four of them production. The subsequent
+  [reference-precinct export](reference-precincts-2026-09.md) has 14 of each.
+  Linux export and both actual
   packaged site capture runs completed without shader or runtime errors.

@@ -18,12 +18,10 @@ public static class Reference1ShallowsGateCauseway
 {
 	public const string BuilderId = "reference-1-gate-and-causeway-v1";
 	private const int RuntimePlanScale = 3;
-	// The measured water surface remains locked to the production atlas at TopY
-	// 105. At three runtime voxels per source course, threshold TopY must therefore
-	// be 105 - 3*(-21) = 168. AuthoredRuntimeHeight supplies headroom above the
-	// untouched 192-block natural-terrain envelope; moving the datum down would
-	// instead create an enormous false water/cliff seam around the reconstruction.
-	private const int MeasuredVerticalDatumY = 168;
+	// Source-relative levels are preserved. The retired compiled terrain used
+	// water 105 here; the accepted production terrain survey measures water 24.
+	// Retain the prior author-directed 3x plan scale: 87 + 3*(-21) = 24.
+	private const int MeasuredVerticalDatumY = 87;
 	private const int MeasuredWaterSurfaceLocalY = -21;
 	private const int MeasuredWaterBedLocalY = -23;
 	private const byte HydrologyDry = 0;
@@ -94,8 +92,15 @@ public static class Reference1ShallowsGateCauseway
 			// VoxelGrid deliberately rejects a terrain replacement after its 32-block
 			// tile has received an architectural voxel.
 			WritePlannedTerrainAndStairs();
+			// The bed remains terrain; the bridge is a separate solid deck above it.
+			// Describe the tidal columns before any tile receives sparse masonry.
+			for (int z = 3; z <= 35; z++)
+			for (int x = -7; x <= 7; x++)
+				WaterSurface(x, z, MeasuredWaterSurfaceLocalY, -23);
+			WriteNamed("causeway-open-underside", WriteCausewayOpenUnderside);
 			WriteAuthoredSurfaceWear();
-			WriteCausewayPavingJoints();
+			// The shared metre-scale paving shader owns the joints; the former
+			// three-metre coloured strips are superseded by the source calibration.
 
 			WriteNamed("gate-connected-body-west", WriteGateConnectedBodyWest);
 			WriteNamed("gate-connected-body-east", WriteGateConnectedBodyEast);
@@ -534,6 +539,12 @@ public static class Reference1ShallowsGateCauseway
 			}
 		}
 
+		private void WriteCausewayOpenUnderside()
+		{
+			foreach (var b in _plan.GetStructure("causeway-open-underside").Courses)
+				Fill(b[0],b[1],Y(b[2]),Y(b[3]),b[4],b[5],(byte)b[6]);
+		}
+
 		private void WriteCausewayPavingJoints()
 		{
 			// The source bridge reads as large fitted slabs rather than one blank white
@@ -750,7 +761,7 @@ public static class Reference1ShallowsGateCauseway
 
 		private void WriteCausewayWestSideSupports()
 		{
-			// The water plane is local -21 (absolute 105), while the measured bed is
+			// The water plane is local -21 (absolute 24), while the measured bed is
 			// local -23. Extending only these same traced X/Z support cells two blocks
 			// below the plan base is the conservative hidden continuation that prevents
 			// visibly floating piers; it adds no new footprint or support rhythm. The

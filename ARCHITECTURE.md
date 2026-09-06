@@ -79,6 +79,10 @@ window after natural terrain and before vegetation. Its vertical datum is
 translated onto the natural surface, but its authored proportions are not
 rescaled.
 
+A site with explicit `verticalDatumY` retains that absolute level instead.
+Shallows uses datum87 with the preserved author-directed 3x source transform,
+which places its measured sea at the production sea24.
+
 Original sites explicitly set `isOriginalDesign` and `designSourcePath`; reference
 sites retain their image contract. Tidekeeper’s Landing and Split Witness use
 site-specific voxel blueprints through `AuthoredSiteWriter`. That helper only
@@ -86,6 +90,18 @@ writes declared cells and checks exact occupied projections. It never chooses
 positions, masses or damage. Preserved terrain shapes remain untouched; written
 dry surfaces update voxel columns and hydrology together before placed geometry.
 Structures crossing a natural slope declare `measured-natural-foundation`.
+
+References 2–9 and 11 use `MeasuredReferenceSite`: each plan stores its own
+inclusive XYZ/material courses and air cuts. `MeasuredCourseSchedule` checks
+the final solid projection, material IDs and bounded course volume before
+construction. Only explicit tree records may use a ground-relative anchor.
+Reclamation repaints the current tread/terrace height. It cannot restore a
+parent terrace through a staircase. No helper chooses the site's composition.
+
+Overhead bridge decks remain sparse solids above wet terrain. Atlas hydrology
+retains the actual submerged bed; landing support follows an exposed solid
+deck when present. The controller's water callback finds solid ground at or
+below the waterline, so a high deck cannot disable swimming underneath it.
 
 `AuthoredSiteProps` attaches only the plan's explicit small-prop records, with a
 64-instance per-site limit. Meshes and finishes are shared within a site, grounded
@@ -104,6 +120,12 @@ contains a shared octahedral hull normal at hard face splits, while ordinary
 flat normals continue to light the stone. Re-entrant corners that have no outward
 average are pinned. UV1 carries metre-coordinate stone courses projected before
 the head's fallen rotation; UV2 must not be regenerated as a lightmap unwrap.
+
+Violet Threshold owns one animated opening, one local light and 36 GPU motes.
+`VioletThresholdEffect` attaches through the same fine-site lifecycle used by
+review, production startup and window replacement. Rose and amethyst mineral
+accents use the common rock shader; the active opening alone uses an unshaded
+local shader. It adds no transport behavior.
 
 ## Rendering
 

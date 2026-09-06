@@ -738,7 +738,9 @@ public partial class AtlasSectorReview : Node3D
 		// A direct atlas focus chooses the window, but when it names a production
 		// site the traveller still belongs at that site's authored review spawn.
 		// Spawning on the requested centre put Reference 12's player on a statue leg.
-		bool focusedAuthoredSite = _requestedFocus.HasValue &&
+		// A directed physical probe needs its requested stair/shore address. Normal
+		// site-focused play continues to use the authored presentation spawn.
+		bool focusedAuthoredSite = _playabilitySmoke == null && _requestedFocus.HasValue &&
 			_referenceSite.ContainsGlobal(_requestedFocus.Value.X, _requestedFocus.Value.Y);
 		int globalX = focusedAuthoredSite ? authored.X : _requestedFocus?.X ?? authored.X;
 		int globalZ = focusedAuthoredSite ? authored.Z : _requestedFocus?.Y ?? authored.Z;
@@ -1038,6 +1040,11 @@ public partial class AtlasSectorReview : Node3D
 		if (IsSite)
 		{
 			if (IsReferenceTopShot(shot)) return ReferenceTopFocus();
+			if (shot.Name.StartsWith("site_detail_", StringComparison.Ordinal))
+			{
+				BlockPoint spawn = _referenceSite.ToGlobal(_referenceSite.PlayerSpawn);
+				return _window.FocusAtGlobal(spawn.X, spawn.Z, StreamRadius) + _content.Position;
+			}
 			BlockPoint sitePoint = _referenceSite.ToGlobal(_referenceSite.ReferenceView.Focus);
 			Vector3 siteLocal = _window.FocusAtGlobal(sitePoint.X, sitePoint.Z, StreamRadius);
 			siteLocal.Y += _referenceSite.ReferenceView.HeightOffset *
@@ -1526,8 +1533,9 @@ public partial class AtlasSectorReview : Node3D
 		if (x < 0 || z < 0 || x >= _window.Data.Width || z >= _window.Data.Depth)
 			return false;
 		int index = z * _window.Data.Width + x;
-		if (_window.Data.Land[index] == 0) return false;
-		int ground = _window.Data.Height[index];
+		int? deck = AtlasRuntimeHandoff.DryBridgeSurface(_window, index);
+		if (_window.Data.Land[index] == 0 && deck == null) return false;
+		int ground = deck ?? _window.Data.Height[index];
 		// Match Navigation's actual dry-cell contract. The smoke route must not call
 		// a tree trunk or an authored wall a traversable terrain waypoint merely
 		// because the heightfield underneath it is connected.
@@ -1548,7 +1556,8 @@ public partial class AtlasSectorReview : Node3D
 	private int TraversalSurface(int x, int z, bool water)
 	{
 		int index = z * _window.Data.Width + x;
-		return water ? _window.Data.WaterSurface[index] : _window.Data.Height[index];
+		return water ? _window.Data.WaterSurface[index] :
+			AtlasRuntimeHandoff.DryBridgeSurface(_window, index) ?? _window.Data.Height[index];
 	}
 
 	public override void _Process(double delta)
@@ -2035,6 +2044,8 @@ public partial class AtlasSectorReview : Node3D
 				? AuthoredSiteProps.Build(window, site)
 				: Reference12SculptureDetail.Build(window, site, _inkLight, _inkDark);
 			if (detail != null) parent.AddChild(detail);
+			Node3D threshold = VioletThresholdEffect.Build(window,site);
+			if (threshold != null) parent.AddChild(threshold);
 		}
 	}
 

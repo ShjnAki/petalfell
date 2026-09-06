@@ -1,0 +1,868 @@
+{
+  "version": 2,
+  "siteId": "drowned-seal-gate",
+  "referencePath": "res://world-new/reference-2.png",
+  "basis": "Reference 2 source registration: traveller 962,512 (~26 px for 2 m), gate threshold 896,458, high western pylon crown 448,209 and broken eastern jetty end 1247,680. X projects down-right and Z down-left. Main composition is a sealed recessed portal cut into a coastal cliff, an asymmetric ring of broken connected cliff-walls, a side ascent behind the eastern pylon, and two separate ruined jetty arms over water. Source pixel estimates allow +/-2 voxels on occluded depths. Production allocation surveyed at 5760,7184: natural centre 27, shore water 24; authored cliffs rise above that shore without changing macro sources.",
+  "coordinateContract": {
+    "origin": {
+      "x": 0,
+      "z": 0
+    },
+    "playerSpawn": {
+      "x": 10,
+      "z": 10
+    },
+    "plotView": "source-facing",
+    "oneCellIsOneVoxel": true,
+    "runtimePlanScale": 1,
+    "runtimeMirrorX": false,
+    "sourceViewYawDegrees": 45,
+    "sourceViewPitchDegrees": 35.26439
+  },
+  "terrain": [
+    {
+      "id": "ordinary-atlas-context",
+      "role": "ordinary-atlas-context",
+      "surfaceY": 27,
+      "material": "natural",
+      "writeMode": "preserve-atlas",
+      "footprint": [-74, -62, 72, 82]
+    },
+    {
+      "id": "front-tidal-bed",
+      "role": "front-tidal-bed",
+      "surfaceY": 24,
+      "material": "atlas-water",
+      "writeMode": "author-water",
+      "polygon": [
+        [-66, 17],
+        [60, 17],
+        [60, 33],
+        [70, 33],
+        [70, 77],
+        [43, 77],
+        [43, 81],
+        [-46, 81],
+        [-46, 71],
+        [-71, 71],
+        [-71, 37],
+        [-66, 37]
+      ],
+      "bedY": 17
+    },
+    {
+      "id": "western-ledge",
+      "role": "western-ledge",
+      "surfaceY": 40,
+      "material": "reclaimed-meadow",
+      "writeMode": "author-surface",
+      "polygon": [
+        [-63, -23],
+        [-24, -23],
+        [-24, -7],
+        [-36, -7],
+        [-36, 20],
+        [-48, 20],
+        [-48, 28],
+        [-65, 28],
+        [-65, 6],
+        [-70, 6],
+        [-70, -11],
+        [-63, -11]
+      ]
+    },
+    {
+      "id": "eastern-ledge",
+      "role": "eastern-ledge",
+      "surfaceY": 46,
+      "material": "reclaimed-meadow",
+      "writeMode": "author-surface",
+      "polygon": [
+        [23, -36],
+        [53, -36],
+        [53, -26],
+        [66, -26],
+        [66, -3],
+        [57, -3],
+        [57, 20],
+        [43, 20],
+        [43, 28],
+        [27, 28],
+        [27, 6],
+        [23, 6]
+      ]
+    },
+    {
+      "id": "gate-court",
+      "role": "gate-court",
+      "surfaceY": 55,
+      "material": "worn-paving",
+      "writeMode": "author-surface",
+      "polygon": [
+        [-28, -29],
+        [24, -29],
+        [24, -16],
+        [35, -16],
+        [35, 6],
+        [28, 6],
+        [28, 24],
+        [16, 24],
+        [16, 29],
+        [-12, 29],
+        [-12, 25],
+        [-34, 25],
+        [-34, 3],
+        [-28, 3]
+      ]
+    },
+    {
+      "id": "gate-threshold",
+      "role": "gate-threshold",
+      "surfaceY": 61,
+      "material": "worn-paving",
+      "writeMode": "author-surface",
+      "footprint": [-9, -27, 10, -17]
+    },
+    {
+      "id": "rear-upper-shelf",
+      "role": "rear-upper-shelf",
+      "surfaceY": 73,
+      "material": "reclaimed-meadow",
+      "writeMode": "author-surface",
+      "polygon": [
+        [-29, -59],
+        [38, -59],
+        [38, -51],
+        [49, -51],
+        [49, -39],
+        [38, -39],
+        [38, -30],
+        [-16, -30],
+        [-16, -37],
+        [-34, -37],
+        [-34, -50],
+        [-29, -50]
+      ]
+    },
+    {
+      "id": "west-high-bench",
+      "role": "west-high-bench",
+      "surfaceY": 53,
+      "material": "reclaimed-meadow",
+      "writeMode": "author-surface",
+      "footprint": [-45, -11, -29, 2]
+    },
+    {
+      "id": "south-west-toe",
+      "role": "south-west-toe",
+      "surfaceY": 29,
+      "material": "sand",
+      "writeMode": "author-surface",
+      "footprint": [-63, 37, -50, 49]
+    },
+    {
+      "id": "east-shore-toe",
+      "role": "east-shore-toe",
+      "surfaceY": 31,
+      "material": "sand",
+      "writeMode": "author-surface",
+      "polygon": [
+        [51, 25],
+        [64, 25],
+        [64, 39],
+        [58, 39],
+        [58, 45],
+        [49, 45],
+        [49, 33],
+        [51, 33]
+      ]
+    },
+    {
+      "id": "west-exposed-rock",
+      "role": "west-exposed-rock",
+      "surfaceY": 35,
+      "material": "pale-stone",
+      "writeMode": "author-surface",
+      "footprint": [-65, 16, -59, 24]
+    },
+    {
+      "id": "west-stair-landing",
+      "role": "west-stair-landing",
+      "surfaceY": 40,
+      "material": "reclaimed-meadow",
+      "writeMode": "author-surface",
+      "footprint": [-48, -28, -36, -20]
+    },
+    {
+      "id": "west-upper-link",
+      "role": "west-upper-link",
+      "surfaceY": 53,
+      "material": "reclaimed-meadow",
+      "writeMode": "author-surface",
+      "footprint": [-47, -8, -33, -2]
+    }
+  ],
+  "structures": [
+    {
+      "id": "portal-approach",
+      "kind": "stair",
+      "fromTerrain": "gate-court",
+      "toTerrain": "gate-threshold",
+      "axis": [0, -1],
+      "fromLanding": [-6, -3, 7, -2],
+      "toLanding": [-6, -18, 7, -17],
+      "treads": [
+        {
+          "footprint": [-6, -5, 7, -4],
+          "topY": 55
+        },
+        {
+          "footprint": [-6, -7, 7, -6],
+          "topY": 56
+        },
+        {
+          "footprint": [-6, -9, 7, -8],
+          "topY": 57
+        },
+        {
+          "footprint": [-6, -11, 7, -10],
+          "topY": 58
+        },
+        {
+          "footprint": [-6, -13, 7, -12],
+          "topY": 59
+        },
+        {
+          "footprint": [-6, -15, 7, -14],
+          "topY": 60
+        },
+        {
+          "footprint": [-6, -17, 7, -16],
+          "topY": 61
+        }
+      ]
+    },
+    {
+      "id": "east-cliff-ascent",
+      "kind": "stair",
+      "fromTerrain": "gate-court",
+      "toTerrain": "rear-upper-shelf",
+      "axis": [0, -1],
+      "fromLanding": [19, -10, 25, -9],
+      "toLanding": [19, -49, 25, -48],
+      "treads": [
+        {
+          "footprint": [19, -12, 25, -11],
+          "topY": 55
+        },
+        {
+          "footprint": [19, -14, 25, -13],
+          "topY": 56
+        },
+        {
+          "footprint": [19, -16, 25, -15],
+          "topY": 57
+        },
+        {
+          "footprint": [19, -18, 25, -17],
+          "topY": 58
+        },
+        {
+          "footprint": [19, -20, 25, -19],
+          "topY": 59
+        },
+        {
+          "footprint": [19, -22, 25, -21],
+          "topY": 60
+        },
+        {
+          "footprint": [19, -24, 25, -23],
+          "topY": 61
+        },
+        {
+          "footprint": [19, -26, 25, -25],
+          "topY": 62
+        },
+        {
+          "footprint": [19, -28, 25, -27],
+          "topY": 63
+        },
+        {
+          "footprint": [19, -30, 25, -29],
+          "topY": 64
+        },
+        {
+          "footprint": [19, -32, 25, -31],
+          "topY": 65
+        },
+        {
+          "footprint": [19, -34, 25, -33],
+          "topY": 66
+        },
+        {
+          "footprint": [19, -36, 25, -35],
+          "topY": 67
+        },
+        {
+          "footprint": [19, -38, 25, -37],
+          "topY": 68
+        },
+        {
+          "footprint": [19, -40, 25, -39],
+          "topY": 69
+        },
+        {
+          "footprint": [19, -42, 25, -41],
+          "topY": 70
+        },
+        {
+          "footprint": [19, -44, 25, -43],
+          "topY": 71
+        },
+        {
+          "footprint": [19, -46, 25, -45],
+          "topY": 72
+        },
+        {
+          "footprint": [19, -48, 25, -47],
+          "topY": 73
+        }
+      ]
+    },
+    {
+      "id": "sealed-portal-core",
+      "kind": "measured-masonry",
+      "baseY": 61,
+      "footprints": [
+        [-10, -32, 10, -27]
+      ],
+      "courses": [
+        [-10, 10, 61, 90, -32, -27, 11],
+        [-6, 6, 62, 87, -27, -27, 10],
+        [-1, 0, 62, 87, -27, -27, 11],
+        [-5, -5, 80, 84, -27, -27, 11],
+        [-4, -2, 80, 80, -27, -27, 11],
+        [3, 5, 69, 69, -27, -27, 11],
+        [3, 3, 66, 68, -27, -27, 11],
+        [4, 5, 66, 66, -27, -27, 11],
+        [-10, -8, 72, 73, -27, -27, 12],
+        [-6, -2, 62, 87, -27, -27, 37],
+        [1, 6, 62, 87, -27, -27, 37],
+        [-5, -5, 80, 84, -27, -27, 11],
+        [-4, -2, 80, 80, -27, -27, 11],
+        [3, 5, 69, 69, -27, -27, 11],
+        [3, 3, 66, 68, -27, -27, 11],
+        [4, 5, 66, 66, -27, -27, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "western-portal-jamb",
+      "kind": "measured-masonry",
+      "baseY": 55,
+      "footprints": [
+        [-15, -34, -9, -25]
+      ],
+      "courses": [
+        [-15, -9, 55, 56, -34, -25, 10],
+        [-14, -10, 57, 59, -33, -26, 11],
+        [-13, -11, 60, 89, -32, -27, 11],
+        [-14, -10, 88, 90, -33, -26, 11],
+        [-13, -13, 64, 85, -27, -27, 10],
+        [-15, -14, 57, 58, -26, -25, 12],
+        [-11, -11, 70, 77, -26, -26, 11],
+        [-14, -13, 88, 90, -26, -25, 0],
+        [-13, -12, 60, 63, -27, -27, 9]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "eastern-portal-jamb",
+      "kind": "measured-masonry",
+      "baseY": 55,
+      "footprints": [
+        [9, -34, 15, -25]
+      ],
+      "courses": [
+        [9, 15, 55, 56, -34, -25, 10],
+        [10, 14, 57, 59, -33, -26, 11],
+        [11, 13, 60, 89, -32, -27, 11],
+        [10, 14, 88, 90, -33, -26, 11],
+        [13, 13, 65, 85, -27, -27, 10],
+        [14, 15, 55, 57, -26, -25, 9]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "gate-entablature",
+      "kind": "measured-masonry",
+      "baseY": 90,
+      "footprints": [
+        [-16, -35, 16, -25]
+      ],
+      "courses": [
+        [-16, 16, 90, 92, -35, -25, 11],
+        [-15, 15, 93, 93, -34, -26, 10],
+        [-16, 16, 94, 96, -35, -25, 11],
+        [-14, 14, 97, 97, -33, -27, 11],
+        [-16, -13, 96, 96, -27, -25, 0],
+        [-5, -3, 96, 97, -35, -33, 0],
+        [7, 9, 96, 97, -27, -25, 0],
+        [-9, -5, 91, 91, -25, -25, 12],
+        [3, 7, 94, 94, -25, -25, 10],
+        [-14, -12, 95, 97, -34, -32, 0],
+        [-2, 1, 96, 97, -26, -25, 0],
+        [11, 13, 94, 95, -25, -25, 12],
+        [-10, -8, 94, 94, -25, -25, 9],
+        [3, 5, 90, 91, -25, -25, 12]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "crest-sign-stone",
+      "kind": "measured-masonry",
+      "baseY": 73,
+      "footprints": [
+        [-9, -42, -2, -36]
+      ],
+      "courses": [
+        [-9, -2, 73, 74, -42, -36, 10],
+        [-8, -3, 75, 103, -41, -37, 11],
+        [-7, -4, 91, 100, -37, -37, 10],
+        [-7, -4, 99, 100, -37, -37, 11],
+        [-7, -7, 94, 99, -37, -37, 11],
+        [-4, -4, 94, 99, -37, -37, 11],
+        [-6, -4, 94, 95, -37, -37, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "west-connected-cliff-range",
+      "kind": "measured-masonry",
+      "baseY": 39,
+      "footprints": [
+        [-43, -37, -19, -29],
+        [-43, -28, -38, -13]
+      ],
+      "courses": [
+        [-43, -19, 39, 62, -37, -29, 11],
+        [-43, -38, 40, 63, -28, -13, 11],
+        [-43, -37, 63, 82, -37, -30, 11],
+        [-33, -27, 63, 76, -36, -30, 11],
+        [-25, -19, 63, 69, -35, -29, 11],
+        [-43, -40, 83, 84, -36, -33, 11],
+        [-43, -39, 51, 53, -29, -29, 10],
+        [-32, -29, 60, 61, -29, -29, 12],
+        [-26, -23, 45, 48, -29, -29, 9],
+        [-42, -41, 79, 82, -30, -30, 0]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "western-cliff-high-pylon",
+      "kind": "measured-masonry",
+      "baseY": 40,
+      "footprints": [
+        [-40, -21, -31, -12]
+      ],
+      "courses": [
+        [-40, -31, 40, 41, -21, -12, 10],
+        [-39, -32, 42, 43, -20, -13, 11],
+        [-38, -33, 44, 85, -19, -14, 11],
+        [-39, -32, 86, 87, -20, -13, 11],
+        [-37, -34, 88, 88, -18, -15, 11],
+        [-38, -37, 61, 65, -14, -14, 10],
+        [-35, -34, 73, 74, -14, -14, 12],
+        [-33, -33, 81, 85, -16, -14, 0]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "east-connected-cliff-range",
+      "kind": "measured-masonry",
+      "baseY": 46,
+      "footprints": [
+        [30, -47, 57, -40],
+        [49, -39, 57, -14]
+      ],
+      "courses": [
+        [30, 57, 46, 73, -47, -40, 11],
+        [49, 57, 46, 65, -39, -14, 11],
+        [30, 36, 74, 100, -46, -40, 11],
+        [40, 47, 74, 91, -46, -40, 11],
+        [50, 57, 74, 82, -46, -40, 11],
+        [49, 55, 66, 80, -32, -26, 11],
+        [50, 57, 66, 74, -21, -14, 11],
+        [30, 32, 101, 102, -45, -42, 11],
+        [45, 47, 87, 91, -42, -40, 0],
+        [53, 57, 60, 61, -14, -14, 10],
+        [49, 49, 51, 55, -25, -22, 9]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "east-inner-tall-remnant",
+      "kind": "measured-masonry",
+      "baseY": 44,
+      "footprints": [
+        [31, -28, 35, -22]
+      ],
+      "courses": [
+        [31, 35, 55, 56, -28, -22, 10],
+        [32, 34, 57, 87, -27, -23, 11],
+        [32, 33, 88, 90, -27, -24, 11],
+        [34, 34, 78, 81, -23, -23, 0],
+        [32, 32, 69, 71, -23, -23, 12],
+        [31, 35, 44, 54, -28, -22, 11],
+        [32, 32, 81, 85, -23, -23, 10],
+        [33, 33, 89, 90, -24, -24, 0],
+        [31, 32, 48, 50, -22, -22, 9]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "east-court-front-pier",
+      "kind": "measured-masonry",
+      "baseY": 46,
+      "footprints": [
+        [29, 8, 34, 14]
+      ],
+      "courses": [
+        [29, 34, 46, 47, 8, 14, 10],
+        [30, 33, 48, 62, 9, 13, 11],
+        [30, 31, 63, 65, 9, 11, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "west-court-survivor-a",
+      "kind": "measured-masonry",
+      "baseY": 55,
+      "footprints": [
+        [-25, 0, -21, 4]
+      ],
+      "courses": [
+        [-25, -21, 55, 56, 0, 4, 10],
+        [-24, -22, 57, 68, 1, 3, 11],
+        [-24, -23, 69, 70, 1, 2, 11],
+        [-22, -22, 60, 63, 3, 3, 9]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "west-court-survivor-b",
+      "kind": "measured-masonry",
+      "baseY": 55,
+      "footprints": [
+        [-16, 7, -12, 11]
+      ],
+      "courses": [
+        [-16, -12, 55, 56, 7, 11, 11],
+        [-15, -13, 57, 64, 8, 10, 11],
+        [-15, -14, 65, 66, 8, 9, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "western-jetty-open-deck",
+      "kind": "measured-masonry",
+      "baseY": 52,
+      "footprints": [
+        [-18, 25, -8, 56]
+      ],
+      "courses": [
+        [-18, -8, 52, 54, 25, 56, 11],
+        [-18, -17, 55, 56, 25, 34, 11],
+        [-9, -8, 55, 55, 27, 35, 11],
+        [-18, -16, 55, 57, 47, 51, 11],
+        [-10, -8, 55, 56, 49, 55, 11],
+        [-18, -17, 53, 54, 55, 56, 0],
+        [-15, -13, 54, 54, 38, 39, 19]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "western-jetty-water-piers",
+      "kind": "measured-masonry",
+      "baseY": 17,
+      "footprints": [
+        [-18, 28, -14, 33],
+        [-12, 28, -8, 33],
+        [-18, 47, -14, 52],
+        [-12, 47, -8, 52]
+      ],
+      "courses": [
+        [-18, -14, 17, 51, 28, 33, 11],
+        [-12, -8, 17, 51, 28, 33, 11],
+        [-18, -14, 17, 51, 47, 52, 11],
+        [-12, -8, 17, 51, 47, 52, 11],
+        [-18, -18, 22, 27, 47, 51, 9],
+        [-12, -8, 34, 35, 47, 47, 10]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "eastern-jetty-broken-span",
+      "kind": "measured-masonry",
+      "baseY": 53,
+      "footprints": [
+        [11, 22, 21, 57]
+      ],
+      "courses": [
+        [11, 21, 53, 55, 22, 57, 11],
+        [11, 12, 56, 57, 22, 35, 11],
+        [20, 21, 56, 56, 24, 40, 11],
+        [11, 14, 56, 58, 51, 54, 11],
+        [18, 21, 56, 57, 49, 56, 11],
+        [11, 12, 54, 55, 55, 57, 0],
+        [19, 21, 55, 55, 56, 57, 0]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "eastern-jetty-water-piers",
+      "kind": "measured-masonry",
+      "baseY": 17,
+      "footprints": [
+        [11, 27, 15, 32],
+        [17, 27, 21, 32],
+        [11, 49, 15, 54],
+        [17, 49, 21, 54]
+      ],
+      "courses": [
+        [11, 15, 17, 52, 27, 32, 11],
+        [17, 21, 17, 52, 27, 32, 11],
+        [11, 15, 17, 52, 49, 54, 11],
+        [17, 21, 17, 52, 49, 54, 11],
+        [11, 11, 20, 25, 49, 54, 9],
+        [21, 21, 36, 38, 50, 53, 12]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "water-stumps-west",
+      "kind": "measured-masonry",
+      "baseY": 17,
+      "footprints": [
+        [-32, 47, -29, 50],
+        [-24, 64, -21, 67],
+        [-5, 67, -2, 70]
+      ],
+      "courses": [
+        [-32, -29, 17, 38, 47, 50, 11],
+        [-24, -21, 17, 29, 64, 67, 11],
+        [-5, -2, 17, 27, 67, 70, 11],
+        [-31, -30, 39, 40, 48, 49, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "water-stumps-east",
+      "kind": "measured-masonry",
+      "baseY": 17,
+      "footprints": [
+        [32, 37, 35, 40],
+        [41, 51, 44, 54],
+        [30, 66, 34, 70],
+        [15, 75, 18, 78]
+      ],
+      "courses": [
+        [32, 35, 17, 42, 37, 40, 11],
+        [41, 44, 17, 33, 51, 54, 11],
+        [30, 34, 17, 26, 66, 70, 11],
+        [15, 18, 17, 28, 75, 78, 11],
+        [32, 33, 43, 44, 38, 39, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "west-cliff-stranded-blades",
+      "kind": "measured-masonry",
+      "baseY": 24,
+      "footprints": [
+        [-58, 3, -53, 9],
+        [-51, 14, -47, 19]
+      ],
+      "courses": [
+        [-58, -53, 24, 61, 3, 9, 11],
+        [-57, -54, 62, 63, 4, 7, 11],
+        [-51, -47, 24, 47, 14, 19, 11],
+        [-50, -48, 48, 49, 15, 17, 11],
+        [-58, -58, 38, 40, 5, 9, 10]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "threshold-west-collapse",
+      "kind": "measured-masonry",
+      "baseY": 55,
+      "footprints": [
+        [-20, -21, -16, -16],
+        [-18, -13, -14, -10],
+        [-13, -7, -10, -5]
+      ],
+      "courses": [
+        [-20, -16, 55, 57, -21, -16, 11],
+        [-19, -17, 58, 60, -20, -18, 11],
+        [-18, -14, 55, 56, -13, -10, 11],
+        [-13, -10, 55, 55, -7, -5, 12]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "threshold-east-collapse",
+      "kind": "measured-masonry",
+      "baseY": 55,
+      "footprints": [
+        [13, -20, 17, -16],
+        [14, -12, 19, -8],
+        [20, -7, 23, -5]
+      ],
+      "courses": [
+        [13, 17, 55, 57, -20, -16, 11],
+        [14, 16, 58, 59, -19, -17, 11],
+        [14, 19, 55, 56, -12, -8, 10],
+        [16, 18, 57, 58, -11, -9, 11],
+        [20, 23, 55, 56, -7, -5, 12]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "court-west-rubble",
+      "kind": "measured-masonry",
+      "baseY": 55,
+      "footprints": [
+        [-28, 12, -23, 16],
+        [-20, 18, -16, 21],
+        [-10, 17, -7, 20]
+      ],
+      "courses": [
+        [-28, -23, 55, 56, 12, 16, 11],
+        [-27, -25, 57, 58, 13, 15, 11],
+        [-20, -16, 55, 57, 18, 21, 11],
+        [-10, -7, 55, 56, 17, 20, 12]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "court-east-rubble",
+      "kind": "measured-masonry",
+      "baseY": 55,
+      "footprints": [
+        [19, 13, 23, 17],
+        [25, 19, 28, 22]
+      ],
+      "courses": [
+        [19, 23, 55, 56, 13, 17, 11],
+        [20, 22, 57, 58, 14, 16, 11],
+        [25, 28, 55, 56, 19, 22, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "west-ledge-blossom",
+      "kind": "measured-tree",
+      "baseY": 0,
+      "groundAt": [-59, -20],
+      "terrainFit": "measured-course-support",
+      "footprints": [
+        [-59, -20, -59, -20],
+        [-63, -22, -59, -19],
+        [-59, -23, -55, -20],
+        [-60, -19, -57, -16]
+      ],
+      "courses": [
+        [-59, -59, 0, 8, -20, -20, 23],
+        [-63, -59, 7, 10, -22, -19, 31],
+        [-59, -55, 8, 11, -23, -20, 30],
+        [-60, -57, 10, 13, -19, -16, 32]
+      ]
+    },
+    {
+      "id": "west-rear-blossom",
+      "kind": "measured-tree",
+      "baseY": 0,
+      "groundAt": [-50, -49],
+      "terrainFit": "measured-course-support",
+      "footprints": [
+        [-50, -49, -50, -49],
+        [-54, -51, -50, -47],
+        [-50, -53, -47, -49],
+        [-52, -49, -49, -46]
+      ],
+      "courses": [
+        [-50, -50, 0, 9, -49, -49, 23],
+        [-54, -50, 8, 11, -51, -47, 30],
+        [-50, -47, 9, 12, -53, -49, 31],
+        [-52, -49, 12, 14, -49, -46, 31]
+      ]
+    },
+    {
+      "id": "east-high-blossom",
+      "kind": "measured-tree",
+      "baseY": 0,
+      "groundAt": [57, -37],
+      "terrainFit": "measured-course-support",
+      "footprints": [
+        [57, -37, 57, -37],
+        [54, -41, 58, -37],
+        [58, -38, 61, -34],
+        [56, -37, 59, -33]
+      ],
+      "courses": [
+        [57, 57, 0, 8, -37, -37, 23],
+        [54, 58, 7, 10, -41, -37, 31],
+        [58, 61, 8, 11, -38, -34, 30],
+        [56, 59, 10, 12, -37, -33, 32]
+      ]
+    },
+    {
+      "id": "east-shore-blossom",
+      "kind": "measured-tree",
+      "baseY": 0,
+      "groundAt": [61, 12],
+      "terrainFit": "measured-course-support",
+      "footprints": [
+        [61, 12, 61, 12],
+        [58, 10, 61, 13],
+        [61, 9, 64, 12],
+        [60, 13, 62, 15]
+      ],
+      "courses": [
+        [61, 61, 0, 7, 12, 12, 23],
+        [58, 61, 6, 9, 10, 13, 31],
+        [61, 64, 7, 10, 9, 12, 30],
+        [60, 62, 9, 11, 13, 15, 31]
+      ]
+    }
+  ],
+  "surfacePatches": [
+    {
+      "id": "court-reclaimed-west",
+      "terrainId": "gate-court",
+      "material": "reclaimed-meadow",
+      "footprints": [
+        [-28, -22, -22, -14],
+        [-32, 4, -28, 11],
+        [-26, 19, -16, 24]
+      ]
+    },
+    {
+      "id": "court-reclaimed-east",
+      "terrainId": "gate-court",
+      "material": "reclaimed-meadow",
+      "footprints": [
+        [26, -5, 32, 3],
+        [22, 10, 26, 16],
+        [9, 23, 14, 27]
+      ]
+    }
+  ],
+  "surroundingTrees": [],
+  "acceptanceRules": {
+    "isolatedSurvivorMaximumFootprint": [4, 4],
+    "eachStairMustTouchBothNamedTerrains": true,
+    "significantGeometryMustAppearInThisPlan": true,
+    "generatorMayNotMoveOrAddStructures": true
+  }
+}

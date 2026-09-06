@@ -327,7 +327,11 @@ def audit(data: dict) -> list[str]:
         measured_foundation = (bool(data.get("designSourcePath")) and
                                structure.get("terrainFit") == "measured-natural-foundation" and
                                support_id is None)
-        if support_id not in terrain_by_id and not measured_foundation:
+        measured_courses = (bool(data.get("referencePath")) and
+                            kind in ("measured-masonry", "measured-tree") and
+                            structure.get("terrainFit") == "measured-course-support" and
+                            bool(structure.get("courses")) and support_id is None)
+        if support_id not in terrain_by_id and not measured_foundation and not measured_courses:
             errors.append(
                 f"structure '{structure_id}' must name an existing supportTerrain"
             )
@@ -404,6 +408,34 @@ def audit(data: dict) -> list[str]:
                     f"wall segment in '{structure_id}' is {width}x{depth}; "
                     f"thin dimension may not exceed {thin_wall_limit}"
                 )
+        if kind in ("measured-masonry", "measured-tree"):
+            occupied = set()
+            visits = 0
+            anchor = structure.get("groundAt", [])
+            if anchor and (kind != "measured-tree" or len(anchor) != 2 or tuple(anchor) not in cells):
+                errors.append(f"{structure_id}: invalid grounded tree anchor")
+            for b in structure.get("courses", []):
+                if (len(b) != 7 or not all(valid_int(v) for v in b) or
+                    b[0] > b[1] or b[2] > b[3] or b[4] > b[5] or
+                    b[2] < -256 or b[3] > 255 or b[6] not in (*range(38),40,41,42,50)):
+                    errors.append(f"{structure_id}: invalid course bounds/material")
+                    continue
+                visits += (b[1]-b[0]+1)*(b[3]-b[2]+1)*(b[5]-b[4]+1)
+                if visits > 500000:
+                    errors.append(f"{structure_id}: exceeds bounded course budget")
+                    break
+                course_cells = {(x,z) for x in range(b[0],b[1]+1) for z in range(b[4],b[5]+1)}
+                outside = course_cells-cells
+                if outside:
+                    errors.append(f"{structure_id}: course leaves top plan at {min(outside)}")
+                for x,z in course_cells:
+                    for y in range(b[2],b[3]+1):
+                        if b[6] != 0: occupied.add((x,y,z))
+                        else: occupied.discard((x,y,z))
+            final = {(x,z) for x,y,z in occupied}
+            if final != cells:
+                missing = sorted(cells-final)
+                errors.append(f"{structure_id}: final course projection differs; empty plan cells {missing[:6]}")
         if support_id in visible_terrain_cells:
             outside_support = cells - visible_terrain_cells[support_id]
             if outside_support:
@@ -465,6 +497,13 @@ def render(data: dict, runtime_facing: bool = False) -> str:
     contract = data.get("coordinateContract", {})
     runtime_scale = contract.get("runtimePlanScale", 1)
     x_sign = -1 if runtime_facing and contract.get("runtimeMirrorX") is True else 1
+    cells = set().union(*(shape_cells(item) for item in data.get("terrain", [])))
+    if cells:
+        min_x, max_x = min(p[0] for p in cells), max(p[0] for p in cells)
+        min_z, max_z = min(p[1] for p in cells), max(p[1] for p in cells)
+        scale = min(6.0, 1040 / (max_x-min_x+1), 660 / (max_z-min_z+1))
+        cx = width / 2 - (min_x+max_x+1) / 2 * x_sign * scale
+        cy = 440 + (min_z+max_z+1) / 2 * scale
     player = data.get("coordinateContract", {}).get("playerSpawn", {"x": 0, "z": 0})
     player_x = plot_x(player.get("x", 0), x_sign) * scale
     player_y = -player.get("z", 0) * scale
@@ -474,6 +513,9 @@ def render(data: dict, runtime_facing: bool = False) -> str:
         "text{font-family:Inter,ui-sans-serif,system-ui,sans-serif;fill:#3f3947}",
         ".title{font-size:25px;font-weight:750}.subtitle{font-size:14px;fill:#6a6272}",
         ".grid{stroke:#655e6d;stroke-opacity:.11;stroke-width:1}.axis{stroke:#514a59;stroke-opacity:.42;stroke-width:1.5}",
+        '[class^="terrain-"]{fill:#e4e6d3;stroke:#93977c;stroke-width:1.35}',
+        '.measured-masonry{fill:#e0d8ee;stroke:#8b73a5;stroke-width:1.3}',
+        '.measured-tree{fill:#e4bdd7;stroke:#b184a3;stroke-width:1.1}',
         ".terrain-surrounding-terrain{fill:#f5f4ef;stroke:#36a35a;stroke-width:2.2}",
         ".terrain-eroded-platform-shelf{fill:#d8dbaa;stroke:#87915c;stroke-width:1.35}",
         ".terrain-local-terrace-stack{fill:#d8dbaa;stroke:#87915c;stroke-width:1.35}",
@@ -481,7 +523,7 @@ def render(data: dict, runtime_facing: bool = False) -> str:
         ".terrain-intermittent-lower-apron{fill:#d2d5a0;stroke:#818a58;stroke-width:1.25}",
         ".terrain-lower-court{fill:#dfe3e6;stroke:#7e868c;stroke-width:1.7}",
         ".terrain-raised-platform{fill:#eadcf0;stroke:#d45be3;stroke-width:1.8}",
-        ".surface-patch{stroke-width:.8;stroke-opacity:.65}",
+        ".surface-patch{fill:#e6d1b5;stroke:#a28168;stroke-width:.8;stroke-opacity:.65}",
         ".surface-worn-paving{fill:#f2e8e8;stroke:#9f8797}",
         ".surface-warm-paving{fill:#e6d1b5;stroke:#a28168}",
         ".surface-cool-paving{fill:#c9c3db;stroke:#817994}",
@@ -498,9 +540,10 @@ def render(data: dict, runtime_facing: bool = False) -> str:
         ".legend{font-size:13px}.rule{font-size:13px;font-weight:700;fill:#554b5d}",
         "</style>",
         '<rect width="1200" height="930" fill="#faf9f5"/>',
+        '<defs><clipPath id="plot"><rect x="36" y="90" width="1128" height="694"/></clipPath></defs>',
         f'<text class="title" x="36" y="42">{html.escape(data["siteId"])} — canonical top view</text>',
         f'<text class="subtitle" x="36" y="67">{"Runtime-facing transformed footprint" if runtime_facing else "Overhead source-facing footprint"} · one source square = {runtime_scale}×{runtime_scale} runtime voxels · north is up</text>',
-        f'<g transform="translate({cx:.1f} {cy:.1f})">',
+        f'<g clip-path="url(#plot)"><g transform="translate({cx:.1f} {cy:.1f})">',
     ]
     for value in range(-80, 81, 10):
         css = "axis" if value == 0 else "grid"
@@ -560,11 +603,11 @@ def render(data: dict, runtime_facing: bool = False) -> str:
         f'<path class="player" d="M{player_x} {player_y - 18} L{player_x - 7} {player_y - 5} L{player_x + 7} {player_y - 5} Z"/>',
         f'<text class="label" x="{player_x + 12}" y="{player_y + 18}">PLAYER {player.get("x", 0)},{player.get("z", 0)}</text>',
         '</g>',
-        '<g transform="translate(38 810)">',
+        '</g><g transform="translate(38 810)">',
         '<rect class="terrain-surrounding-terrain" x="0" y="0" width="22" height="22"/><text class="legend" x="31" y="16">surrounding terrain</text>',
         '<rect class="terrain-local-terrace-stack" x="190" y="0" width="22" height="22"/><text class="legend" x="221" y="16">local block terraces</text>',
-        '<rect class="terrain-lower-court" x="440" y="0" width="22" height="22"/><text class="legend" x="471" y="16">lower court y109</text>',
-        '<rect class="terrain-raised-platform" x="620" y="0" width="22" height="22"/><text class="legend" x="651" y="16">raised platforms y114</text>',
+        '<rect class="terrain-lower-court" x="440" y="0" width="22" height="22"/><text class="legend" x="471" y="16">lower court</text>',
+        '<rect class="terrain-raised-platform" x="620" y="0" width="22" height="22"/><text class="legend" x="651" y="16">raised platforms</text>',
         '<rect class="connected-wall-run" x="835" y="0" width="22" height="22"/><text class="legend" x="866" y="16">thin ruin runs</text>',
         '<rect class="stair" x="1010" y="0" width="22" height="22"/><text class="legend" x="1041" y="16">stairs</text>',
         f'<text class="rule" x="0" y="58">Audit: exact integer {runtime_scale}:1 runtime scale; both stair endpoints and heights join named terrain; source-plan wall widths remain explicit.</text>',

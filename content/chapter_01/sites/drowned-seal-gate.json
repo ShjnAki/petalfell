@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "siteId": "drowned-seal-gate",
+  "builderId": "reference-2-measured-v1",
+  "referencePath": "res://world-new/reference-2.png",
+  "groundPlanPath": "res://content/chapter_01/sites/drowned-seal-gate-plan.json",
+  "origin": {
+    "x": 5760,
+    "z": 7184
+  },
+  "axisDegrees": 0,
+  "runtimePlanScale": 1,
+  "surroundingTreeThinningRadius": 28,
+  "surroundingTreeDensity": 0.8,
+  "footprintMin": {
+    "x": -74,
+    "z": -62
+  },
+  "footprintMax": {
+    "x": 72,
+    "z": 82
+  },
+  "playerSpawn": {
+    "x": 10,
+    "z": 10
+  },
+  "referenceView": {
+    "focus": {
+      "x": 0,
+      "z": 4
+    },
+    "distance": 360,
+    "yawDegrees": 45,
+    "pitchDegrees": 35.26439,
+    "heightOffset": 5,
+    "sourceWidth": 1672,
+    "sourceHeight": 941
+  }
+}

@@ -11,10 +11,22 @@
       "axisDegrees": 180,
       "planPath": "",
       "boundary": [
-        { "x": 5700, "z": 6100 },
-        { "x": 7050, "z": 6120 },
-        { "x": 7120, "z": 7380 },
-        { "x": 5580, "z": 7420 }
+        {
+          "x": 5700,
+          "z": 6100
+        },
+        {
+          "x": 7050,
+          "z": 6120
+        },
+        {
+          "x": 7120,
+          "z": 7380
+        },
+        {
+          "x": 5580,
+          "z": 7420
+        }
       ]
     },
     {
@@ -25,10 +37,22 @@
       "axisDegrees": 0,
       "planPath": "",
       "boundary": [
-        { "x": 9320, "z": 4120 },
-        { "x": 10280, "z": 4120 },
-        { "x": 10280, "z": 5080 },
-        { "x": 9320, "z": 5080 }
+        {
+          "x": 9320,
+          "z": 4120
+        },
+        {
+          "x": 10280,
+          "z": 4120
+        },
+        {
+          "x": 10280,
+          "z": 5080
+        },
+        {
+          "x": 9320,
+          "z": 5080
+        }
       ]
     },
     {
@@ -39,15 +63,27 @@
       "axisDegrees": 0,
       "planPath": "",
       "boundary": [
-        { "x": 10200, "z": 4200 },
-        { "x": 11000, "z": 4200 },
-        { "x": 11000, "z": 5000 },
-        { "x": 10200, "z": 5000 }
+        {
+          "x": 10200,
+          "z": 4200
+        },
+        {
+          "x": 11000,
+          "z": 4200
+        },
+        {
+          "x": 11000,
+          "z": 5000
+        },
+        {
+          "x": 10200,
+          "z": 5000
+        }
       ]
     },
     {
       "id": "tidekeepers-shore-domain",
-      "displayName": "Tidekeeper’s Shore",
+      "displayName": "Tidekeeper\u2019s Shore",
       "regionId": "shallows",
       "cultureId": "old-southern",
       "axisDegrees": 0,
@@ -96,6 +132,240 @@
           "z": 2070
         }
       ]
+    },
+    {
+      "id": "twin-rites-shore-domain",
+      "displayName": "Twin Rites Shore",
+      "regionId": "shallows",
+      "cultureId": "old-southern",
+      "axisDegrees": 0,
+      "planPath": "",
+      "boundary": [
+        {
+          "x": 6690,
+          "z": 7180
+        },
+        {
+          "x": 7020,
+          "z": 7180
+        },
+        {
+          "x": 7020,
+          "z": 7520
+        },
+        {
+          "x": 6690,
+          "z": 7520
+        }
+      ]
+    },
+    {
+      "id": "drowned-seal-domain",
+      "displayName": "Drowned Seal Headland",
+      "regionId": "shallows",
+      "cultureId": "old-southern",
+      "axisDegrees": 0,
+      "planPath": "",
+      "boundary": [
+        {
+          "x": 5560,
+          "z": 6980
+        },
+        {
+          "x": 5960,
+          "z": 6980
+        },
+        {
+          "x": 5960,
+          "z": 7390
+        },
+        {
+          "x": 5560,
+          "z": 7390
+        }
+      ]
+    },
+    {
+      "id": "open-sky-domain",
+      "displayName": "Open Sky Grove",
+      "regionId": "bloom-reach",
+      "cultureId": "old-eastern",
+      "axisDegrees": 0,
+      "planPath": "",
+      "boundary": [
+        {
+          "x": 9360,
+          "z": 5280
+        },
+        {
+          "x": 9760,
+          "z": 5280
+        },
+        {
+          "x": 9760,
+          "z": 5680
+        },
+        {
+          "x": 9360,
+          "z": 5680
+        }
+      ]
+    },
+    {
+      "id": "hollow-choir-domain",
+      "displayName": "Hollow Choir Precinct",
+      "regionId": "cold-shelf",
+      "cultureId": "old-northern",
+      "axisDegrees": 0,
+      "planPath": "",
+      "boundary": [
+        {
+          "x": 4072,
+          "z": 1448
+        },
+        {
+          "x": 4352,
+          "z": 1448
+        },
+        {
+          "x": 4352,
+          "z": 1728
+        },
+        {
+          "x": 4072,
+          "z": 1728
+        }
+      ]
+    },
+    {
+      "id": "violet-threshold-domain",
+      "displayName": "Violet Threshold Precinct",
+      "regionId": "shallows",
+      "cultureId": "old-southern",
+      "axisDegrees": 0,
+      "planPath": "",
+      "boundary": [
+        {
+          "x": 5912,
+          "z": 7940
+        },
+        {
+          "x": 6192,
+          "z": 7940
+        },
+        {
+          "x": 6192,
+          "z": 8220
+        },
+        {
+          "x": 5912,
+          "z": 8220
+        }
+      ]
+    },
+    {
+      "id": "sanctuary-of-the-last-light-domain",
+      "displayName": "Sanctuary of the Last Light Precinct",
+      "regionId": "cold-shelf",
+      "cultureId": "old-northern",
+      "axisDegrees": 0,
+      "planPath": "",
+      "boundary": [
+        {
+          "x": 4808,
+          "z": 1280
+        },
+        {
+          "x": 5088,
+          "z": 1280
+        },
+        {
+          "x": 5088,
+          "z": 1560
+        },
+        {
+          "x": 4808,
+          "z": 1560
+        }
+      ]
+    },
+    {
+      "id": "arcade-of-the-leaning-pillars-domain",
+      "displayName": "Arcade of the Leaning Pillars Precinct",
+      "regionId": "bloom-reach",
+      "cultureId": "old-eastern",
+      "axisDegrees": 0,
+      "planPath": "",
+      "boundary": [
+        {
+          "x": 10200,
+          "z": 5420
+        },
+        {
+          "x": 10480,
+          "z": 5420
+        },
+        {
+          "x": 10480,
+          "z": 5700
+        },
+        {
+          "x": 10200,
+          "z": 5700
+        }
+      ]
+    },
+    {
+      "id": "court-of-the-quiet-sign-domain",
+      "displayName": "Court of the Quiet Sign Precinct",
+      "regionId": "cold-shelf",
+      "cultureId": "old-northern",
+      "axisDegrees": 0,
+      "planPath": "",
+      "boundary": [
+        {
+          "x": 4980,
+          "z": 1768
+        },
+        {
+          "x": 5260,
+          "z": 1768
+        },
+        {
+          "x": 5260,
+          "z": 2048
+        },
+        {
+          "x": 4980,
+          "z": 2048
+        }
+      ]
+    },
+    {
+      "id": "courts-of-the-three-crossings-domain",
+      "displayName": "Courts of the Three Crossings Precinct",
+      "regionId": "bloom-reach",
+      "cultureId": "old-eastern",
+      "axisDegrees": 0,
+      "planPath": "",
+      "boundary": [
+        {
+          "x": 9640,
+          "z": 5940
+        },
+        {
+          "x": 9920,
+          "z": 5940
+        },
+        {
+          "x": 9920,
+          "z": 6220
+        },
+        {
+          "x": 9640,
+          "z": 6220
+        }
+      ]
     }
   ],
   "sites": [
@@ -105,16 +375,25 @@
       "domainId": "shallows-gateway-domain",
       "tier": "District",
       "archetype": "Monumental",
-      "status": "Blockout",
-      "centre": { "x": 6400, "z": 6980 },
+      "status": "Production",
+      "centre": {
+        "x": 6400,
+        "z": 6980
+      },
       "extentX": 336,
       "extentZ": 408,
       "orientationDegrees": 0,
       "age": 0.9,
       "planPath": "res://content/chapter_01/sites/shallows-gate-and-causeway-reference-1.json",
       "entrances": [
-        { "id": "south-landing", "routeNodeId": "reference-1-south" },
-        { "id": "north-exit", "routeNodeId": "reference-1-north" }
+        {
+          "id": "south-landing",
+          "routeNodeId": "reference-1-south"
+        },
+        {
+          "id": "north-exit",
+          "routeNodeId": "reference-1-north"
+        }
       ],
       "sightlineSiteIds": []
     },
@@ -125,7 +404,10 @@
       "tier": "Precinct",
       "archetype": "Shrine",
       "status": "Production",
-      "centre": { "x": 9800, "z": 4600 },
+      "centre": {
+        "x": 9800,
+        "z": 4600
+      },
       "extentX": 176,
       "extentZ": 160,
       "orientationDegrees": 0,
@@ -142,7 +424,10 @@
       "tier": "Precinct",
       "archetype": "Unexplained",
       "status": "Production",
-      "centre": { "x": 10600, "z": 4600 },
+      "centre": {
+        "x": 10600,
+        "z": 4600
+      },
       "extentX": 176,
       "extentZ": 136,
       "orientationDegrees": 0,
@@ -150,11 +435,13 @@
       "requiresRoute": false,
       "planPath": "res://content/chapter_01/sites/fallen-colossus-reference-12.json",
       "entrances": [],
-      "sightlineSiteIds": ["bloom-grove-court"]
+      "sightlineSiteIds": [
+        "bloom-grove-court"
+      ]
     },
     {
       "id": "tidekeepers-landing",
-      "displayName": "Tidekeeper’s Landing",
+      "displayName": "Tidekeeper\u2019s Landing",
       "domainId": "tidekeepers-shore-domain",
       "tier": "Precinct",
       "archetype": "Unexplained",
@@ -191,15 +478,235 @@
       "planPath": "res://content/chapter_01/sites/split-witness.json",
       "entrances": [],
       "sightlineSiteIds": []
+    },
+    {
+      "id": "terrace-of-the-twin-rites",
+      "displayName": "Terrace of the Twin Rites",
+      "domainId": "twin-rites-shore-domain",
+      "tier": "Precinct",
+      "archetype": "Shrine",
+      "status": "Production",
+      "centre": {
+        "x": 6832,
+        "z": 7340
+      },
+      "extentX": 112,
+      "extentZ": 128,
+      "orientationDegrees": 0,
+      "age": 0.94,
+      "requiresRoute": false,
+      "planPath": "res://content/chapter_01/sites/terrace-of-the-twin-rites.json",
+      "entrances": [],
+      "sightlineSiteIds": []
+    },
+    {
+      "id": "drowned-seal-gate",
+      "displayName": "Drowned Seal Gate",
+      "domainId": "drowned-seal-domain",
+      "tier": "GreatWork",
+      "archetype": "Drowned",
+      "status": "Production",
+      "centre": {
+        "x": 5760,
+        "z": 7184
+      },
+      "extentX": 168,
+      "extentZ": 184,
+      "orientationDegrees": 0,
+      "age": 0.98,
+      "requiresRoute": false,
+      "planPath": "res://content/chapter_01/sites/drowned-seal-gate.json",
+      "entrances": [],
+      "sightlineSiteIds": []
+    },
+    {
+      "id": "court-of-the-open-sky",
+      "displayName": "Court of the Open Sky",
+      "domainId": "open-sky-domain",
+      "tier": "Precinct",
+      "archetype": "Shrine",
+      "status": "Production",
+      "centre": {
+        "x": 9560,
+        "z": 5480
+      },
+      "extentX": 112,
+      "extentZ": 120,
+      "orientationDegrees": 0,
+      "age": 0.96,
+      "requiresRoute": false,
+      "planPath": "res://content/chapter_01/sites/court-of-the-open-sky.json",
+      "entrances": [],
+      "sightlineSiteIds": []
+    },
+    {
+      "id": "hollow-choir",
+      "displayName": "Hollow Choir",
+      "domainId": "hollow-choir-domain",
+      "tier": "Precinct",
+      "archetype": "Shrine",
+      "status": "Production",
+      "centre": {
+        "x": 4212,
+        "z": 1588
+      },
+      "extentX": 112,
+      "extentZ": 112,
+      "orientationDegrees": 0,
+      "age": 0.98,
+      "requiresRoute": false,
+      "planPath": "res://content/chapter_01/sites/hollow-choir.json",
+      "entrances": [],
+      "sightlineSiteIds": []
+    },
+    {
+      "id": "violet-threshold",
+      "displayName": "Violet Threshold",
+      "domainId": "violet-threshold-domain",
+      "tier": "Precinct",
+      "archetype": "Shrine",
+      "status": "Production",
+      "centre": {
+        "x": 6052,
+        "z": 8080
+      },
+      "extentX": 90,
+      "extentZ": 110,
+      "orientationDegrees": 0,
+      "age": 0.98,
+      "requiresRoute": false,
+      "planPath": "res://content/chapter_01/sites/violet-threshold.json",
+      "entrances": [],
+      "sightlineSiteIds": []
+    },
+    {
+      "id": "sanctuary-of-the-last-light",
+      "displayName": "Sanctuary of the Last Light",
+      "domainId": "sanctuary-of-the-last-light-domain",
+      "tier": "Precinct",
+      "archetype": "Shrine",
+      "status": "Production",
+      "centre": {
+        "x": 4948,
+        "z": 1420
+      },
+      "extentX": 90,
+      "extentZ": 90,
+      "orientationDegrees": 0,
+      "age": 0.98,
+      "requiresRoute": false,
+      "planPath": "res://content/chapter_01/sites/sanctuary-of-the-last-light.json",
+      "entrances": [],
+      "sightlineSiteIds": []
+    },
+    {
+      "id": "arcade-of-the-leaning-pillars",
+      "displayName": "Arcade of the Leaning Pillars",
+      "domainId": "arcade-of-the-leaning-pillars-domain",
+      "tier": "Precinct",
+      "archetype": "Shrine",
+      "status": "Production",
+      "centre": {
+        "x": 10340,
+        "z": 5560
+      },
+      "extentX": 100,
+      "extentZ": 100,
+      "orientationDegrees": 0,
+      "age": 0.98,
+      "requiresRoute": false,
+      "planPath": "res://content/chapter_01/sites/arcade-of-the-leaning-pillars.json",
+      "entrances": [],
+      "sightlineSiteIds": []
+    },
+    {
+      "id": "court-of-the-quiet-sign",
+      "displayName": "Court of the Quiet Sign",
+      "domainId": "court-of-the-quiet-sign-domain",
+      "tier": "Precinct",
+      "archetype": "Shrine",
+      "status": "Production",
+      "centre": {
+        "x": 5120,
+        "z": 1908
+      },
+      "extentX": 90,
+      "extentZ": 90,
+      "orientationDegrees": 0,
+      "age": 0.98,
+      "requiresRoute": false,
+      "planPath": "res://content/chapter_01/sites/court-of-the-quiet-sign.json",
+      "entrances": [],
+      "sightlineSiteIds": []
+    },
+    {
+      "id": "courts-of-the-three-crossings",
+      "displayName": "Courts of the Three Crossings",
+      "domainId": "courts-of-the-three-crossings-domain",
+      "tier": "Precinct",
+      "archetype": "Shrine",
+      "status": "Production",
+      "centre": {
+        "x": 9780,
+        "z": 6080
+      },
+      "extentX": 144,
+      "extentZ": 150,
+      "orientationDegrees": 0,
+      "age": 0.98,
+      "requiresRoute": false,
+      "planPath": "res://content/chapter_01/sites/courts-of-the-three-crossings.json",
+      "entrances": [],
+      "sightlineSiteIds": []
     }
   ],
   "routeNodes": [
-    { "id": "strand-west", "point": { "x": 5600, "z": 7360 } },
-    { "id": "strand-approach", "point": { "x": 6400, "z": 7360 } },
-    { "id": "strand-east", "point": { "x": 7120, "z": 7360 } },
-    { "id": "reference-1-south", "point": { "x": 6400, "z": 7106 }, "siteId": "shallows-gate-and-causeway", "entranceId": "south-landing" },
-    { "id": "reference-1-north", "point": { "x": 6400, "z": 6911 }, "siteId": "shallows-gate-and-causeway", "entranceId": "north-exit" },
-    { "id": "spine-north", "point": { "x": 6400, "z": 6100 } }
+    {
+      "id": "strand-west",
+      "point": {
+        "x": 5600,
+        "z": 7360
+      }
+    },
+    {
+      "id": "strand-approach",
+      "point": {
+        "x": 6400,
+        "z": 7360
+      }
+    },
+    {
+      "id": "strand-east",
+      "point": {
+        "x": 7120,
+        "z": 7360
+      }
+    },
+    {
+      "id": "reference-1-south",
+      "point": {
+        "x": 6400,
+        "z": 7106
+      },
+      "siteId": "shallows-gate-and-causeway",
+      "entranceId": "south-landing"
+    },
+    {
+      "id": "reference-1-north",
+      "point": {
+        "x": 6400,
+        "z": 6911
+      },
+      "siteId": "shallows-gate-and-causeway",
+      "entranceId": "north-exit"
+    },
+    {
+      "id": "spine-north",
+      "point": {
+        "x": 6400,
+        "z": 6100
+      }
+    }
   ],
   "routes": [
     {
@@ -211,10 +718,22 @@
       "width": 7,
       "construction": "drowned-coastal-road",
       "points": [
-        { "x": 5600, "z": 7360 },
-        { "x": 5850, "z": 7330 },
-        { "x": 6100, "z": 7390 },
-        { "x": 6400, "z": 7360 }
+        {
+          "x": 5600,
+          "z": 7360
+        },
+        {
+          "x": 5850,
+          "z": 7330
+        },
+        {
+          "x": 6100,
+          "z": 7390
+        },
+        {
+          "x": 6400,
+          "z": 7360
+        }
       ]
     },
     {
@@ -226,10 +745,22 @@
       "width": 7,
       "construction": "drowned-coastal-road",
       "points": [
-        { "x": 6400, "z": 7360 },
-        { "x": 6660, "z": 7400 },
-        { "x": 6900, "z": 7340 },
-        { "x": 7120, "z": 7360 }
+        {
+          "x": 6400,
+          "z": 7360
+        },
+        {
+          "x": 6660,
+          "z": 7400
+        },
+        {
+          "x": 6900,
+          "z": 7340
+        },
+        {
+          "x": 7120,
+          "z": 7360
+        }
       ]
     },
     {
@@ -241,10 +772,22 @@
       "width": 5,
       "construction": "drowned-paving",
       "points": [
-        { "x": 6400, "z": 7360 },
-        { "x": 6392, "z": 7240 },
-        { "x": 6400, "z": 7160 },
-        { "x": 6400, "z": 7106 }
+        {
+          "x": 6400,
+          "z": 7360
+        },
+        {
+          "x": 6392,
+          "z": 7240
+        },
+        {
+          "x": 6400,
+          "z": 7160
+        },
+        {
+          "x": 6400,
+          "z": 7106
+        }
       ]
     },
     {
@@ -256,9 +799,18 @@
       "width": 10,
       "construction": "masonry-causeway",
       "points": [
-        { "x": 6400, "z": 7106 },
-        { "x": 6400, "z": 6980 },
-        { "x": 6400, "z": 6911 }
+        {
+          "x": 6400,
+          "z": 7106
+        },
+        {
+          "x": 6400,
+          "z": 6980
+        },
+        {
+          "x": 6400,
+          "z": 6911
+        }
       ]
     },
     {
@@ -270,10 +822,22 @@
       "width": 8,
       "construction": "worn-stone",
       "points": [
-        { "x": 6400, "z": 6911 },
-        { "x": 6390, "z": 6640 },
-        { "x": 6380, "z": 6320 },
-        { "x": 6400, "z": 6100 }
+        {
+          "x": 6400,
+          "z": 6911
+        },
+        {
+          "x": 6390,
+          "z": 6640
+        },
+        {
+          "x": 6380,
+          "z": 6320
+        },
+        {
+          "x": 6400,
+          "z": 6100
+        }
       ]
     }
   ]

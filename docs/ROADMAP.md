@@ -25,6 +25,12 @@ open. The September 6 request expands active work to original man-made/natural
 sites, more props, rendering/outline refinement and from-scratch replacement
 colossus sculpture. These now take priority over the older allocation deferral.
 
+The subsequent recovered instruction adds the large `world-new` reference
+precincts while preserving that finish. Sources 2–9 and 11 now have permanent
+production allocations and individual plans; Reference 1 now uses the current
+sea datum at its existing address. Continue visual comparison and traversal of
+these destinations using the [current ledger](../building-knowledge/sites/reference-precincts-2026-09.md).
+
 ### Worldbuilding review
 
 - author review of the replacement Colossus and the original Tidekeeper’s
@@ -43,11 +49,11 @@ colossus sculpture. These now take priority over the older allocation deferral.
 ### 2. Shallows Gate and Causeway — Reference 1
 
 - use the measured top plan and isometric source;
-- choose/confirm its permanent compatible atlas location;
-- transcribe terrain shelves, water cuts, bridge, stairs, gate, walls, pillars,
-  damage and surrounding vegetation block by block;
+- refine the gate's heavy massing and the source-traced outer shore silhouette
+  at its permanent address, retaining the earlier author-directed threefold scale;
 - compare at the locked source angle plus top, four rotations and four scales;
-- promote only after the author accepts the site.
+- record visual acceptance only when the author accepts the site; playable
+  production registration is a separate implemented fact.
 
 ### 3. Existing site fidelity
 
@@ -85,10 +91,10 @@ old fixture implementations are not production specifications.
 
 ## Open questions
 
-- Which permanent atlas coordinate best fits Reference 1 after terrain and
-  hydrology are viewed together?
-- Which remaining references establish the minimum structural vocabulary before
-  allocating the wider chapter site set?
+- Which measured changes best recover Reference 1's silhouette at its preserved
+  threefold scale and permanent 6400,6980 address?
+- Which source-specific broken profiles, rubble and ground transitions need
+  correction first in the nine new reference precincts?
 - Which lighting parameters close reference parity without crushing night ink?
 
 Everything else should be answered by the current owning documents or direct

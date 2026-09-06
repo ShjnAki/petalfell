@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "siteId": "terrace-of-the-twin-rites",
+  "builderId": "reference-11-measured-v1",
+  "referencePath": "res://world-new/reference-11.png",
+  "groundPlanPath": "res://content/chapter_01/sites/terrace-of-the-twin-rites-plan.json",
+  "origin": {
+    "x": 6832,
+    "z": 7340
+  },
+  "axisDegrees": 0,
+  "runtimePlanScale": 1,
+  "surroundingTreeThinningRadius": 28,
+  "surroundingTreeDensity": 0.8,
+  "footprintMin": {
+    "x": -44,
+    "z": -42
+  },
+  "footprintMax": {
+    "x": 46,
+    "z": 52
+  },
+  "playerSpawn": {
+    "x": 12,
+    "z": 5
+  },
+  "referenceView": {
+    "focus": {
+      "x": 4,
+      "z": 3
+    },
+    "distance": 228,
+    "yawDegrees": 45,
+    "pitchDegrees": 35.26439,
+    "heightOffset": 2,
+    "sourceWidth": 1672,
+    "sourceHeight": 941
+  }
+}

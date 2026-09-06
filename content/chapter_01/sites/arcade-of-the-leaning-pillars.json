@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "siteId": "arcade-of-the-leaning-pillars",
+  "builderId": "reference-7-measured-v1",
+  "referencePath": "res://world-new/reference-7.png",
+  "groundPlanPath": "res://content/chapter_01/sites/arcade-of-the-leaning-pillars-plan.json",
+  "origin": {
+    "x": 10340,
+    "z": 5560
+  },
+  "axisDegrees": 0,
+  "runtimePlanScale": 1,
+  "surroundingTreeThinningRadius": 28,
+  "surroundingTreeDensity": 0.8,
+  "footprintMin": {
+    "x": -40,
+    "z": -40
+  },
+  "footprintMax": {
+    "x": 39,
+    "z": 40
+  },
+  "playerSpawn": {
+    "x": 4,
+    "z": 16
+  },
+  "referenceView": {
+    "focus": {
+      "x": 0,
+      "z": 0
+    },
+    "distance": 195,
+    "yawDegrees": 45,
+    "pitchDegrees": 35.26439,
+    "heightOffset": 3,
+    "sourceWidth": 1672,
+    "sourceHeight": 941
+  }
+}

@@ -19,7 +19,7 @@
   },
   "provisionalVerticalContract": {
     "status": "candidate",
-    "datum": "One measured source course expands to three runtime voxels: bridge-and-gate threshold TopY is local 0 / absolute 168; authored water remains local -21 / absolute 105",
+    "datum": "Preserve 3x source scale. Threshold TopY87, sea24, submerged bed18; source-relative levels remain 0,-21,-23.",
     "reason": "The locked 1672x941 review rig and vertical schedule now own the first integer silhouette blockout. Candidate course values remain provisional until unique authored geometry is captured and compared; a passing audit or build cannot promote them.",
     "unsolved": [
       "gate course heights and roof thickness",
@@ -668,6 +668,24 @@
       "measurementComponentIds": ["east-precinct-envelope","east-north-ruin-group"],
       "envelope": [22,-14,25,-12],
       "cells": [[22,-12],[22,-13],[23,-13],[23,-14],[24,-14],[25,-14]]
+    },
+    {
+      "id": "causeway-open-underside",
+      "kind": "measured-masonry",
+      "baseY": -1,
+      "terrainFit": "measured-course-support",
+      "measurementComponentIds": [
+        "causeway-deck"
+      ],
+      "footprints": [
+        [-7,3,7,35]
+      ],
+      "courses": [
+        [-7,7,-23,-2,3,35,0],
+        [-7,7,-1,-1,3,35,19]
+      ],
+      "notes": "The deck is a supported span, not a solid stamped embankment. Clear the source-owned underside down to the tidal bed, retaining one three-voxel course of deck. Existing side piers and abutments own the load-bearing lines; no new pier rhythm.",
+      "verticalStatus": "provisional"
     }
   ],
   "keepOpenRegions": [
@@ -687,8 +705,8 @@
       "id": "causeway-clear-processional-axis",
       "measurementComponentIds": ["causeway-clear-processional-axis"],
       "bounds": [-6,0,6,36],
-      "allowedStructureIds": ["causeway-north-deck-plinth","causeway-south-east-post","causeway-mid-rubble","south-processional-stair"],
-      "reason": "Only the three named deliberate source masses and the measured stair transition may touch the thirteen-cell clear deck; no pillar scatter."
+      "allowedStructureIds": ["causeway-north-deck-plinth","causeway-south-east-post","causeway-mid-rubble","south-processional-stair", "causeway-open-underside"],
+      "reason": "Only the three named deliberate source masses and the measured stair transition may touch the thirteen-cell clear deck; no pillar scatter. The underside record retains only the floor course below local Y0; physical tests require clear headroom and an open tidal underside."
     }
   ],
   "treeExclusionRegions": [
@@ -728,7 +746,7 @@
       "gate-hidden-passage-continuation": ["gate-hidden-passage-continuation"],
       "gate-west-buttress-group": ["gate-west-attached-buttress"],
       "gate-east-buttress-group": ["gate-east-attached-buttress"],
-      "causeway-deck": ["causeway-deck"],
+      "causeway-deck": ["causeway-deck", "causeway-open-underside"],
       "causeway-clear-processional-axis": ["causeway-clear-processional-axis","causeway-north-deck-plinth","causeway-south-east-post","causeway-mid-rubble"],
       "causeway-west-parapet": ["causeway-west-parapet-north","causeway-west-parapet-middle","causeway-west-parapet-south"],
       "causeway-east-parapet": ["causeway-east-parapet-north","causeway-east-parapet-middle","causeway-east-parapet-south"],

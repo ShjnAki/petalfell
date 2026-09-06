@@ -417,6 +417,7 @@ public sealed class ReferenceSiteGroundPlan
 		AuditOptionalSupport(structure, projection, terrainById, visibleTerrainCells,
 			strictSubset: false, errors);
 		structure.SetProjectionCells(projection);
+		errors.AddRange(Sites.MeasuredCourseSchedule.Audit(structure, projection));
 	}
 
 	private static void AuditRubbleCluster(ReferenceGroundPlanStructure rubble,
@@ -794,6 +795,11 @@ public sealed class ReferenceGroundPlanStructure
 	/// <summary>Exact occupied XZ projection used only by rubble-cluster structures.</summary>
 	public List<List<int>> Cells { get; set; } = new();
 	public ReferenceGroundPlanOpening Opening { get; set; }
+	/// <summary>Site-authored inclusive voxel ranges [x0,x1,y0,y1,z0,z1,material].
+	/// These serialize measured courses, never a procedural architectural recipe.</summary>
+	public List<List<int>> Courses { get; set; } = new();
+	/// <summary>Only source-owned vegetation uses courses relative to its exact ground anchor.</summary>
+	public List<int> GroundAt { get; set; } = new();
 
 	private HashSet<ReferenceGroundPlanCell> _projectionCells = new();
 	/// <summary>

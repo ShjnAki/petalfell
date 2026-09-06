@@ -47,6 +47,15 @@ pixels as hard voxel boundaries and do not invent a replacement macro planner.
 No site builder chooses its own location. No reusable structure stamp designs a
 production site.
 
+The September reference expansion stores the nine new sites as explicit
+`measured-masonry` and `measured-tree` course lists in their L3 plans. Each
+inclusive range names its material; air cuts participate in the final occupied
+projection. Tree anchors use the post-terrace ground, with no placement scatter.
+`verify-reference-sites` adds production hydrology validation, supported spawn,
+connected footing and real stair collision checks to the plan audit. Its Shallows
+probe also distinguishes seabed, waterline and overhead deck. See the
+[site ledger](../building-knowledge/sites/reference-precincts-2026-09.md).
+
 The September 6 worldbuilding request also authorizes original man-made and
 natural landmarks. An original site must declare its design source and permanent
 L2 location, then follow the same plan, terrain integration and review workflow.

@@ -61,6 +61,9 @@ public static class Palette
 	public static readonly Color WaterWarm = C(0xe3c4c9);
 	public static readonly Color WaterSheen = C(0xe8e2f5);
 	public static readonly Color WaterEdge = C(0x5c5378);
+	// Reference 5's local active threshold. These do not recolour the world.
+	public static readonly Color PortalViolet = C(0x852cff);
+	public static readonly Color PortalRim = C(0xe8bbff);
 	public const float WaterLevel = 24.35f;
 
 	/* ---------------- ink ---------------- */
@@ -301,6 +304,8 @@ public static class Palette
 	public const byte LEAF_CREAM = 33;
 	public const byte LEAF_MINT = 34;
 	public const byte LEAF_ROSE = 35;
+	public const byte STONE_ROSE = 36;
+	public const byte STONE_AMETHYST = 37;
 	public const byte LANTERN = 40;
 	public const byte CRYSTAL = 41;
 	/// <summary>A lit window. The reason a village reads as inhabited at dusk.</summary>
@@ -423,6 +428,8 @@ public static class Palette
 		Def(STONE, 0xc9c3db, 0xbcb5cf, 0xa79fbc, pattern: PatternRock);
 		Def(STONE_PALE, 0xddd9eb, 0xd0cae1, 0xbbb4d0, pattern: PatternRock);
 		Def(STONE_WARM, 0xd5c5d2, 0xc8b7c6, 0xb19fad, pattern: PatternRock);
+		Def(STONE_ROSE, 0xe8b5d1, 0xd89bbb, 0xbd83a6, pattern: PatternRock);
+		Def(STONE_AMETHYST, 0xcfb7ea, 0xbda1dc, 0xa78cc7, pattern: PatternRock);
 		Def(PATH, 0xe4dce7, 0xd5cddd, 0xc2bacd, pattern: PatternTrodden);
 
 		Def(PAVING, 0xdcd6e8, 0xcfc8de, 0xbbb3cc, pattern: PatternRock);

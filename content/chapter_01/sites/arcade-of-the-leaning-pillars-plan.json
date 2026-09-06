@@ -1,0 +1,631 @@
+{
+  "version": 2,
+  "siteId": "arcade-of-the-leaning-pillars",
+  "referencePath": "res://world-new/reference-7.png",
+  "basis": "Reference 7. Traveller 778,584 is scale; low altar 831,445, arcade corner 841,167, left front carved pier 481,410, right rear pier 960,292, leaning foreground columns at 563,658 and1050,673. L-shaped high pointed arcade behind a low square altar, two visibly leaning survivors in front, exposed floor strips and two dry excavations. Site survey36, surrounding34..40. Every offset in the leaning shafts and each peaked arch course is explicit; no symmetric temple completion.",
+  "coordinateContract": {
+    "origin": {
+      "x": 0,
+      "z": 0
+    },
+    "playerSpawn": {
+      "x": 4,
+      "z": 16
+    },
+    "plotView": "source-facing",
+    "oneCellIsOneVoxel": true,
+    "runtimePlanScale": 1,
+    "runtimeMirrorX": false,
+    "sourceViewYawDegrees": 45,
+    "sourceViewPitchDegrees": 35.26439
+  },
+  "terrain": [
+    {
+      "id": "ordinary-atlas-context",
+      "role": "ordinary-atlas-context",
+      "surfaceY": 36,
+      "material": "natural",
+      "writeMode": "preserve-atlas",
+      "footprint": [-40, -40, 39, 40]
+    },
+    {
+      "id": "reclaimed-precinct",
+      "role": "reclaimed-precinct",
+      "surfaceY": 39,
+      "material": "reclaimed-meadow",
+      "writeMode": "author-surface",
+      "polygon": [
+        [-34, -29],
+        [-25, -29],
+        [-25, -35],
+        [16, -35],
+        [16, -27],
+        [31, -27],
+        [31, -11],
+        [36, -11],
+        [36, 24],
+        [29, 24],
+        [29, 32],
+        [12, 32],
+        [12, 37],
+        [-25, 37],
+        [-25, 28],
+        [-34, 28]
+      ]
+    },
+    {
+      "id": "south-approach",
+      "role": "south-approach",
+      "surfaceY": 36,
+      "material": "reclaimed-meadow",
+      "writeMode": "author-surface",
+      "polygon": [
+        [-24, 34],
+        [12, 34],
+        [12, 40],
+        [-29, 40],
+        [-29, 32],
+        [-24, 32]
+      ]
+    },
+    {
+      "id": "altar-foot",
+      "role": "altar-foot",
+      "surfaceY": 40,
+      "material": "worn-paving",
+      "writeMode": "author-surface",
+      "footprint": [-8, -8, 11, 8]
+    },
+    {
+      "id": "altar-crown",
+      "role": "altar-crown",
+      "surfaceY": 42,
+      "material": "worn-paving",
+      "writeMode": "author-surface",
+      "footprint": [-5, -5, 8, 4]
+    },
+    {
+      "id": "western-excavation",
+      "role": "western-excavation",
+      "surfaceY": 35,
+      "material": "pale-stone",
+      "writeMode": "author-surface",
+      "footprint": [-24, 17, -13, 26]
+    },
+    {
+      "id": "eastern-excavation",
+      "role": "eastern-excavation",
+      "surfaceY": 35,
+      "material": "pale-stone",
+      "writeMode": "author-surface",
+      "footprint": [18, 5, 28, 14]
+    },
+    {
+      "id": "front-middle-excavation",
+      "role": "front-middle-excavation",
+      "surfaceY": 36,
+      "material": "pale-stone",
+      "writeMode": "author-surface",
+      "footprint": [7, 22, 12, 27]
+    },
+    {
+      "id": "east-raised-broken-slab",
+      "role": "east-raised-broken-slab",
+      "surfaceY": 40,
+      "material": "worn-paving",
+      "writeMode": "author-surface",
+      "footprint": [15, 16, 27, 26]
+    },
+    {
+      "id": "western-root-shelf",
+      "role": "western-root-shelf",
+      "surfaceY": 38,
+      "material": "reclaimed-meadow",
+      "writeMode": "author-surface",
+      "footprint": [-38, 12, -30, 29]
+    },
+    {
+      "id": "eastern-root-shelf",
+      "role": "eastern-root-shelf",
+      "surfaceY": 38,
+      "material": "reclaimed-meadow",
+      "writeMode": "author-surface",
+      "footprint": [31, -10, 38, 12]
+    }
+  ],
+  "structures": [
+    {
+      "id": "entry-broken-stair",
+      "kind": "stair",
+      "fromTerrain": "south-approach",
+      "toTerrain": "reclaimed-precinct",
+      "axis": [0, -1],
+      "fromLanding": [-5, 38, 5, 39],
+      "toLanding": [-5, 32, 5, 33],
+      "treads": [
+        {
+          "footprint": [-5, 38, 5, 39],
+          "topY": 36
+        },
+        {
+          "footprint": [-5, 37, 5, 37],
+          "topY": 37
+        },
+        {
+          "footprint": [-5, 35, 5, 36],
+          "topY": 38
+        },
+        {
+          "footprint": [-5, 34, 5, 34],
+          "topY": 39
+        }
+      ]
+    },
+    {
+      "id": "altar-short-flight",
+      "kind": "stair",
+      "fromTerrain": "reclaimed-precinct",
+      "toTerrain": "altar-crown",
+      "axis": [0, -1],
+      "fromLanding": [-3, 9, 6, 10],
+      "toLanding": [-3, 3, 6, 4],
+      "treads": [
+        {
+          "footprint": [-3, 9, 6, 10],
+          "topY": 39
+        },
+        {
+          "footprint": [-3, 8, 6, 8],
+          "topY": 40
+        },
+        {
+          "footprint": [-3, 7, 6, 7],
+          "topY": 41
+        },
+        {
+          "footprint": [-3, 5, 6, 6],
+          "topY": 42
+        }
+      ]
+    },
+    {
+      "id": "arcade-front-west-carved-pier",
+      "kind": "measured-masonry",
+      "baseY": 39,
+      "footprints": [
+        [-19, 8, -13, 14]
+      ],
+      "courses": [
+        [-19, -13, 39, 40, 8, 14, 11],
+        [-18, -14, 41, 42, 9, 13, 11],
+        [-17, -15, 43, 51, 10, 12, 11],
+        [-17, -17, 44, 50, 13, 13, 10],
+        [-15, -15, 44, 50, 13, 13, 10],
+        [-18, -14, 52, 52, 9, 13, 37],
+        [-19, -13, 53, 54, 8, 14, 11],
+        [-19, -18, 54, 54, 13, 14, 0],
+        [-16, -15, 43, 45, 12, 12, 9]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "arcade-middle-west-carved-pier",
+      "kind": "measured-masonry",
+      "baseY": 39,
+      "footprints": [
+        [-19, -7, -13, -1]
+      ],
+      "courses": [
+        [-19, -13, 39, 40, -7, -1, 11],
+        [-18, -14, 41, 42, -6, -2, 11],
+        [-17, -15, 43, 54, -5, -3, 11],
+        [-17, -17, 44, 53, -2, -2, 10],
+        [-15, -15, 44, 53, -2, -2, 10],
+        [-18, -14, 55, 55, -6, -2, 37],
+        [-19, -13, 56, 57, -7, -1, 11],
+        [-19, -18, 57, 57, -2, -1, 0]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "arcade-rear-corner-pier",
+      "kind": "measured-masonry",
+      "baseY": 39,
+      "footprints": [
+        [-19, -24, -13, -18]
+      ],
+      "courses": [
+        [-19, -13, 39, 40, -24, -18, 11],
+        [-18, -14, 41, 42, -23, -19, 11],
+        [-17, -15, 43, 57, -22, -20, 11],
+        [-18, -14, 58, 58, -23, -19, 11],
+        [-19, -13, 59, 60, -24, -18, 11],
+        [-17, -17, 45, 55, -19, -19, 10],
+        [-18, -18, 44, 54, -21, -20, 10]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "arcade-eastern-carved-pier",
+      "kind": "measured-masonry",
+      "baseY": 39,
+      "footprints": [
+        [5, -24, 11, -18]
+      ],
+      "courses": [
+        [5, 11, 39, 40, -24, -18, 11],
+        [6, 10, 41, 42, -23, -19, 11],
+        [7, 9, 43, 54, -22, -20, 11],
+        [7, 7, 44, 53, -19, -19, 10],
+        [9, 9, 44, 53, -19, -19, 10],
+        [6, 10, 55, 55, -23, -19, 37],
+        [5, 11, 56, 57, -24, -18, 11],
+        [10, 11, 57, 57, -19, -18, 0]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "arcade-low-left-pointed-span",
+      "kind": "measured-masonry",
+      "baseY": 53,
+      "footprints": [
+        [-18, -1, -14, 8]
+      ],
+      "courses": [
+        [-18, -14, 53, 54, -1, 8, 11],
+        [-18, -14, 55, 55, 0, 7, 11],
+        [-17, -14, 56, 56, 1, 6, 11],
+        [-17, -15, 57, 58, 3, 4, 11],
+        [-16, -15, 53, 53, 2, 5, 0],
+        [-18, -18, 54, 54, 6, 7, 0],
+        [-16, -14, 55, 55, 0, 1, 12]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "arcade-high-left-pointed-span",
+      "kind": "measured-masonry",
+      "baseY": 56,
+      "footprints": [
+        [-18, -18, -14, -7]
+      ],
+      "courses": [
+        [-18, -14, 56, 57, -18, -7, 11],
+        [-18, -14, 58, 58, -17, -8, 11],
+        [-17, -14, 59, 59, -16, -9, 11],
+        [-17, -15, 60, 61, -14, -11, 11],
+        [-16, -15, 56, 56, -14, -11, 0],
+        [-18, -18, 58, 58, -9, -8, 0],
+        [-17, -16, 61, 61, -14, -14, 0]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "arcade-high-rear-pointed-span",
+      "kind": "measured-masonry",
+      "baseY": 56,
+      "footprints": [
+        [-13, -23, 5, -19]
+      ],
+      "courses": [
+        [-13, 5, 56, 57, -23, -19, 11],
+        [-12, 4, 58, 58, -23, -19, 11],
+        [-10, 2, 59, 59, -23, -19, 11],
+        [-8, 0, 60, 60, -22, -19, 11],
+        [-6, -3, 61, 62, -22, -20, 11],
+        [-7, -2, 56, 56, -20, -19, 0],
+        [3, 5, 57, 57, -19, -19, 0],
+        [-13, -11, 57, 57, -19, -19, 9],
+        [-8, -7, 60, 60, -19, -19, 0]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "altar-mosaic-and-offering",
+      "kind": "measured-masonry",
+      "baseY": 42,
+      "footprints": [
+        [-5, -5, 8, 4]
+      ],
+      "courses": [
+        [-5, 8, 42, 42, -5, 4, 11],
+        [-4, 7, 42, 42, -4, 3, 12],
+        [-3, 6, 42, 42, -3, 2, 11],
+        [-1, 3, 42, 42, -1, 1, 37],
+        [0, 2, 43, 44, -1, 1, 11],
+        [0, 0, 44, 44, 1, 1, 0]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "west-leaning-survivor",
+      "kind": "measured-masonry",
+      "baseY": 39,
+      "footprints": [
+        [-22, 27, -16, 33],
+        [-18, 26, -13, 29],
+        [-18, 27, -14, 30],
+        [-15, 31, -13, 33]
+      ],
+      "courses": [
+        [-22, -16, 39, 40, 27, 33, 11],
+        [-21, -17, 41, 42, 28, 32, 11],
+        [-20, -18, 43, 46, 29, 31, 11],
+        [-19, -17, 47, 50, 28, 30, 11],
+        [-18, -16, 51, 53, 27, 29, 11],
+        [-18, -14, 54, 55, 26, 30, 11],
+        [-17, -13, 56, 56, 26, 29, 11],
+        [-18, -18, 44, 46, 31, 31, 37],
+        [-17, -17, 48, 50, 30, 30, 37],
+        [-16, -16, 51, 53, 29, 29, 37],
+        [-22, -21, 41, 42, 27, 28, 11],
+        [-15, -13, 39, 40, 31, 33, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "east-leaning-survivor",
+      "kind": "measured-masonry",
+      "baseY": 39,
+      "footprints": [
+        [23, 26, 29, 32],
+        [20, 24, 24, 28],
+        [20, 29, 22, 31]
+      ],
+      "courses": [
+        [23, 29, 39, 40, 26, 32, 11],
+        [24, 28, 41, 42, 27, 31, 11],
+        [24, 26, 43, 46, 27, 29, 11],
+        [23, 25, 47, 49, 26, 28, 11],
+        [22, 24, 50, 52, 25, 27, 11],
+        [20, 24, 53, 54, 24, 28, 11],
+        [24, 24, 44, 46, 29, 29, 37],
+        [23, 23, 47, 49, 28, 28, 37],
+        [22, 22, 50, 51, 27, 27, 37],
+        [20, 22, 39, 40, 29, 31, 11],
+        [28, 29, 41, 42, 26, 27, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "east-back-weathered-tower",
+      "kind": "measured-masonry",
+      "baseY": 39,
+      "footprints": [
+        [20, -26, 25, -21]
+      ],
+      "courses": [
+        [20, 25, 39, 40, -26, -21, 11],
+        [21, 24, 41, 53, -25, -22, 11],
+        [21, 23, 54, 56, -24, -22, 11],
+        [20, 21, 45, 46, -21, -21, 11],
+        [24, 25, 48, 49, -22, -22, 10],
+        [21, 21, 55, 56, -22, -22, 0]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "north-broken-enclosure",
+      "kind": "measured-masonry",
+      "baseY": 39,
+      "footprints": [
+        [-28, -27, -20, -24],
+        [13, -28, 22, -25]
+      ],
+      "courses": [
+        [-28, -20, 39, 41, -27, -24, 11],
+        [-26, -24, 42, 44, -27, -25, 11],
+        [13, 22, 39, 41, -28, -25, 11],
+        [17, 20, 42, 43, -27, -25, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "east-broken-enclosure",
+      "kind": "measured-masonry",
+      "baseY": 39,
+      "footprints": [
+        [28, -19, 31, -10],
+        [28, -8, 31, -2]
+      ],
+      "courses": [
+        [28, 31, 39, 41, -19, -10, 11],
+        [29, 31, 42, 44, -19, -16, 11],
+        [28, 31, 39, 40, -8, -2, 11],
+        [28, 29, 41, 42, -6, -4, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "west-pit-lining",
+      "kind": "measured-masonry",
+      "baseY": 35,
+      "footprints": [
+        [-25, 16, -23, 26],
+        [-23, 25, -12, 27]
+      ],
+      "courses": [
+        [-25, -23, 35, 38, 16, 26, 11],
+        [-23, -12, 35, 38, 25, 27, 11],
+        [-25, -24, 39, 40, 16, 18, 11],
+        [-17, -15, 39, 39, 26, 27, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "east-pit-lining",
+      "kind": "measured-masonry",
+      "baseY": 35,
+      "footprints": [
+        [18, 4, 29, 5],
+        [27, 5, 29, 15]
+      ],
+      "courses": [
+        [18, 29, 35, 39, 4, 5, 11],
+        [27, 29, 35, 39, 5, 15, 11],
+        [27, 28, 40, 41, 6, 8, 11],
+        [19, 21, 40, 40, 4, 5, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "altar-east-offering-stumps",
+      "kind": "measured-masonry",
+      "baseY": 39,
+      "footprints": [
+        [14, -1, 16, 1],
+        [15, 7, 17, 9]
+      ],
+      "courses": [
+        [14, 16, 39, 40, -1, 1, 11],
+        [15, 15, 41, 42, 0, 0, 11],
+        [15, 17, 39, 40, 7, 9, 11],
+        [16, 16, 41, 41, 8, 8, 12]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "collapsed-arch-crown-rubble",
+      "kind": "measured-masonry",
+      "baseY": 39,
+      "footprints": [
+        [-24, 3, -20, 7],
+        [-12, -16, -9, -12],
+        [11, -19, 15, -15]
+      ],
+      "courses": [
+        [-24, -20, 39, 40, 3, 7, 11],
+        [-23, -22, 41, 43, 4, 5, 11],
+        [-12, -9, 39, 40, -16, -12, 11],
+        [-11, -10, 41, 42, -15, -14, 12],
+        [11, 15, 39, 40, -19, -15, 11],
+        [12, 13, 41, 42, -18, -17, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "front-broken-wall-end",
+      "kind": "measured-masonry",
+      "baseY": 39,
+      "footprints": [
+        [-10, 31, -7, 35],
+        [10, 30, 15, 33]
+      ],
+      "courses": [
+        [-10, -7, 39, 41, 31, 35, 11],
+        [-10, -9, 42, 43, 31, 32, 11],
+        [10, 15, 39, 40, 30, 33, 11],
+        [13, 15, 41, 42, 30, 31, 11]
+      ],
+      "terrainFit": "measured-course-support"
+    },
+    {
+      "id": "west-arcade-blossom",
+      "kind": "measured-tree",
+      "baseY": 0,
+      "groundAt": [-31, 7],
+      "terrainFit": "measured-course-support",
+      "footprints": [
+        [-31, 7, -31, 7],
+        [-35, 4, -31, 8],
+        [-31, 6, -27, 10],
+        [-33, 8, -30, 11],
+        [-30, 4, -28, 6]
+      ],
+      "courses": [
+        [-31, -31, 0, 9, 7, 7, 23],
+        [-35, -31, 8, 11, 4, 8, 30],
+        [-31, -27, 9, 12, 6, 10, 31],
+        [-33, -30, 11, 14, 8, 11, 32],
+        [-30, -28, 12, 14, 4, 6, 31]
+      ]
+    },
+    {
+      "id": "rear-grove-blossom",
+      "kind": "measured-tree",
+      "baseY": 0,
+      "groundAt": [-25, -33],
+      "terrainFit": "measured-course-support",
+      "footprints": [
+        [-25, -33, -25, -33],
+        [-28, -36, -25, -32],
+        [-25, -34, -21, -30],
+        [-27, -32, -24, -29]
+      ],
+      "courses": [
+        [-25, -25, 0, 8, -33, -33, 23],
+        [-28, -25, 7, 10, -36, -32, 31],
+        [-25, -21, 8, 11, -34, -30, 30],
+        [-27, -24, 10, 13, -32, -29, 31]
+      ]
+    },
+    {
+      "id": "east-grove-blossom",
+      "kind": "measured-tree",
+      "baseY": 0,
+      "groundAt": [32, -27],
+      "terrainFit": "measured-course-support",
+      "footprints": [
+        [32, -27, 32, -27],
+        [28, -30, 32, -26],
+        [32, -29, 35, -25],
+        [31, -26, 34, -23]
+      ],
+      "courses": [
+        [32, 32, 0, 9, -27, -27, 23],
+        [28, 32, 8, 11, -30, -26, 30],
+        [32, 35, 9, 12, -29, -25, 31],
+        [31, 34, 11, 14, -26, -23, 32]
+      ]
+    },
+    {
+      "id": "front-grove-blossom",
+      "kind": "measured-tree",
+      "baseY": 0,
+      "groundAt": [12, 34],
+      "terrainFit": "measured-course-support",
+      "footprints": [
+        [12, 34, 12, 34],
+        [8, 31, 12, 35],
+        [12, 33, 16, 37],
+        [11, 35, 14, 38]
+      ],
+      "courses": [
+        [12, 12, 0, 8, 34, 34, 23],
+        [8, 12, 7, 10, 31, 35, 31],
+        [12, 16, 8, 11, 33, 37, 30],
+        [11, 14, 10, 13, 35, 38, 32]
+      ]
+    }
+  ],
+  "surfacePatches": [
+    {
+      "id": "processional-floor-fragments",
+      "terrainId": "reclaimed-precinct",
+      "material": "worn-paving",
+      "footprints": [
+        [-10, 10, -5, 27],
+        [-12, -8, -9, 0],
+        [12, -8, 15, 1],
+        [-12, -13, 11, -9],
+        [8, 12, 17, 15]
+      ]
+    },
+    {
+      "id": "altar-edge-reclamation",
+      "terrainId": "altar-foot",
+      "material": "reclaimed-meadow",
+      "footprints": [
+        [-8, -8, -6, -6],
+        [9, 5, 11, 8]
+      ]
+    }
+  ],
+  "surroundingTrees": [],
+  "acceptanceRules": {
+    "isolatedSurvivorMaximumFootprint": [4, 4],
+    "eachStairMustTouchBothNamedTerrains": true,
+    "significantGeometryMustAppearInThisPlan": true,
+    "generatorMayNotMoveOrAddStructures": true
+  }
+}

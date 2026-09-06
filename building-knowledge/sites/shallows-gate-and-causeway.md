@@ -1,56 +1,52 @@
 # Shallows Gate and Causeway (Reference 1) evidence ledger
 
-- **Lifecycle:** `active`
-- **Evidence summary:** source identity, the source-facing measurement audit,
-  the strict L3 ground-plan audit, complete measurement coverage, keep-open
-  checks, and source-tree/exclusion separation are `mechanically verified`;
-  horizontal registration, integer bounds, the unmirrored runtime transform,
-  locked-camera residuals, current atlas water/bed datum, and the canonical
-  topology registration are `mechanically verified`; the inclusive authored
-  context, three explicit water painters, four substantial source-traced shelf
-  and shoreline continuations,
-  and source-audit ownership counts are `mechanically verified`; hierarchy is
-  `observed/source-measured`; the named measurement, exact L3-cell,
-  locked-camera, vertical-course overlays, and v2 3D capture matrix have been
-  `visually reviewed`; the v2 matrix proves registration but also rejects
-  preserve-atlas site context and the later 3x3 pedestal correction. The full v4
-  locked/top context set has also been `visually reviewed`: it preserves the
-  broad registration, but its pale/maroon dry-ground quilt, broad rectangular
-  shoreline treatment, sealed gate passage, blanket front masses, stepped roof
-  cap, and tower-like buttress strips are rejected evidence, not proof for the
-  current builder. The v5 top/locked set confirms that the named dry styles no
-  longer produce that quilt, but rejects its painter-erased east lower court,
-  broad elevated east slab, and six-course southern pit. The v6 locked/top set
-  verifies that the east foreground court now survives at bridge level, the
-  exact stair climbs to a smaller north shelf, and the southern stair exits onto
-  connected land. It also rejects the current gate as too solid/coarse, the
-  flanking ribs as too tall/heavy, and the outer shore/cliff silhouette as a
-  blockout rather than a source trace. Gate courses, hidden support bases,
-  precinct survivor heights, and the broad outer context remain `candidate`;
-  nothing is `author-accepted`
-- **Scope:** `site-specific` to the next `reference-1.png` gate-and-causeway
-  reconstruction
-- **Last verified:** 2026-08-30 by source inspection, pixel comparison,
-  source-measurement audit, strict generic and Reference 1 plan audits, exact
-  cell-overlay inspection, locked-camera/course overlay inspection, v2 matrix
-  inspection, v4 and v5 top/context inspection, atlas sampling, current
-  topology/world audit, current Python plan/camera audits, the current successful
-  `dotnet build --no-restore`, and original-size v6 locked/top comparison
-- **Supersedes:** none; rejected generic portal and southern tooling-fixture
-  readings are retained below
-- **Superseded by:** none
-- **Owning sources:**
-  [`reference-1.png`](../../world-new/reference-1.png),
-  [`reference-1-top.png`](../../world-new/reference-1-top.png),
-  [`shallows-gate-and-causeway-reference-1-measurement.json`](../../content/chapter_01/sites/shallows-gate-and-causeway-reference-1-measurement.json),
-  [`shallows-gate-and-causeway-reference-1-plan.json`](../../content/chapter_01/sites/shallows-gate-and-causeway-reference-1-plan.json),
-  [`shallows-gate-and-causeway-reference-1-camera.json`](../../content/chapter_01/sites/shallows-gate-and-causeway-reference-1-camera.json),
-  [`shallows-gate-and-causeway-reference-1-vertical.json`](../../content/chapter_01/sites/shallows-gate-and-causeway-reference-1-vertical.json),
-  [`shallows-gate-and-causeway-reference-1.json`](../../content/chapter_01/sites/shallows-gate-and-causeway-reference-1.json),
-  [`reference-1-plan-overlay.py`](../../tools/reference-1-plan-overlay.py),
-  [`reference-1-isometric-calibration.py`](../../tools/reference-1-isometric-calibration.py),
-  [`topology.json`](../../content/chapter_01/topology.json), and
-  [`shallows-gateway-domain.json`](../../content/chapter_01/domains/shallows-gateway-domain.json)
+- **Lifecycle:** active
+- **Scope:** site-specific, reference1 and its measured overhead source.
+- **Last verified:** 2026-09-06, recovered large-site construction instruction.
+- **Evidence summary:** production terrain, hydrology, exact bridge travel and
+  three collision surfaces mechanically verified. The full 28-view current
+  matrix was visually reviewed at reduced size, including all clock samples,
+  four distances/quarters, top and four player-scale details. Whole-site parity
+  remains candidate; nothing is author-accepted.
+
+## Current production registration
+
+The permanent centre remains 6400,6980. The earlier author-directed 3x scale is
+preserved, including extent336x408 and entrances6400,7106 / 6400,6911. The current
+production sea is24, so absolute TopY=87+3*localY. Deck/threshold is87, south
+landing69 and seabed18. The old compiled-terrain 168/105/99 registration and older
+126/105/103 notes below are historical, not current runtime instructions.
+
+The source deck is now sparse solid geometry above tidal bed data. Bed, water
+and walking height stay separate; the high deck cannot disable swimming below.
+The measured roof projection remains [-12,-20,12,-8]. An attempted extension
+failed the strict source-envelope audit and was removed. The complete strict
+L3 audit passes 46 structures, ten terrain/27 component coverage groups and
+20 source tree anchors. Camera and vertical audits retain RMS17.45px over seven
+landmarks; this is registration evidence, not shape fidelity.
+
+`verify-reference-sites --site=shallows-gate-and-causeway` checks bed18 / sea24 /
+deck87, exact travel at6400,7040, open clearance below the deck, the controller's
+water column and real physics surfaces at18,84,87. A real controller traversed
+34.13 blocks across Y69..87 from the southern bridge approach. The default source
+spawn is in the middle of a large flat span; a 48-step probe cannot reach a
+six-block elevation change from that centre. Directed playability probes now
+honour their requested address; normal site-focused play keeps the source spawn.
+
+Current visual evidence is `shots/big-sites-2026-09-06/shallows-final-v2/`.
+The earlier `shallows-final` set contains the overextended roof and is superseded.
+The player-scale detail ring now focuses on the traveller instead of placing its
+camera inside the high gate. Current captures show the open bridge underside and
+separate precincts, but the gate still reads too heavy, broad terrain shelves
+remain abrupt, and threefold trees dominate distant views. These are explicit
+fidelity limits, not an accepted reconstruction. Review alongside reference1
+and reference1-top before further site-owned corrections.
+
+## Historical August 30 evidence
+
+The following record retains earlier source measurements and rejected attempts.
+Its status claims and absolute coordinates describe those historical revisions;
+the production registration above supersedes them.
 
 ## Authority and coordinate frame
 

@@ -211,6 +211,28 @@ vertical silhouette; the locked view cannot expose every hidden face; four
 rotations do not prove playability or collision unless the playable runtime is
 tested separately. `--review-site` capture mode is nonplayable.
 
+## September 6 large-site review
+
+`python3 -B tools/build-reference-sites-review.py` builds
+`shots/big-sites-2026-09-06/review.html` from ten explicit source/capture pairs.
+It requires 235 raw frames: nine 23-view matrices for References 2–9 and 11,
+plus 28 views in the final `shallows-final-v2` matrix. Each ordinary matrix
+contains locked day/night, five clock phases, four distances and four quarters;
+Shallows adds its top view and four detail quarters.
+
+All 235 frames were inspected in reduced matrices, with selected frames at
+full size. The exported game's additional Violet Threshold day/night pair was
+inspected at full size. Site arrangements and shared day-cycle rendering work;
+coarse stone breaks, sparse fine rubble, squared reclamation and abrupt ground
+transitions remain visible comparison gaps. No site gained author acceptance.
+The superseded `shallows-final` roof candidate is excluded from this gallery.
+
+Generation and required-file checks pass. Browser interaction inspection was
+blocked by the browser connection's trust configuration; no scene-control or
+playback success is claimed for this gallery. Collision and real-controller
+results are recorded separately in the
+[precinct ledger](../sites/reference-precincts-2026-09.md).
+
 ## Known failures
 
 - One hero screenshot concealed hollow or malformed reverse geometry. The full

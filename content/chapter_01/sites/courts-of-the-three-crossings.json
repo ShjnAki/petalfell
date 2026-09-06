@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "siteId": "courts-of-the-three-crossings",
+  "builderId": "reference-9-measured-v1",
+  "referencePath": "res://world-new/reference-9.png",
+  "groundPlanPath": "res://content/chapter_01/sites/courts-of-the-three-crossings-plan.json",
+  "origin": {
+    "x": 9780,
+    "z": 6080
+  },
+  "axisDegrees": 0,
+  "runtimePlanScale": 1,
+  "surroundingTreeThinningRadius": 28,
+  "surroundingTreeDensity": 0.8,
+  "footprintMin": {
+    "x": -59,
+    "z": -64
+  },
+  "footprintMax": {
+    "x": 62,
+    "z": 61
+  },
+  "playerSpawn": {
+    "x": 0,
+    "z": 0
+  },
+  "referenceView": {
+    "focus": {
+      "x": 0,
+      "z": -1
+    },
+    "distance": 256,
+    "yawDegrees": 45,
+    "pitchDegrees": 35.26439,
+    "heightOffset": 3,
+    "sourceWidth": 1672,
+    "sourceHeight": 941
+  }
+}
+

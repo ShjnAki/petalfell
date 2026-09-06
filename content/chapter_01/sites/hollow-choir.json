@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "siteId": "hollow-choir",
+  "builderId": "reference-4-measured-v1",
+  "referencePath": "res://world-new/reference-4.png",
+  "groundPlanPath": "res://content/chapter_01/sites/hollow-choir-plan.json",
+  "origin": {
+    "x": 4212,
+    "z": 1588
+  },
+  "axisDegrees": 0,
+  "runtimePlanScale": 1,
+  "surroundingTreeThinningRadius": 28,
+  "surroundingTreeDensity": 0.8,
+  "footprintMin": {
+    "x": -43,
+    "z": -38
+  },
+  "footprintMax": {
+    "x": 44,
+    "z": 49
+  },
+  "playerSpawn": {
+    "x": 6,
+    "z": 13
+  },
+  "referenceView": {
+    "focus": {
+      "x": 0,
+      "z": 2
+    },
+    "distance": 235,
+    "yawDegrees": 45,
+    "pitchDegrees": 35.26439,
+    "heightOffset": 4,
+    "sourceWidth": 1672,
+    "sourceHeight": 941
+  }
+}

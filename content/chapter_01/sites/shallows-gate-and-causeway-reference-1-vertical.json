@@ -7,18 +7,24 @@
   "overheadReferencePath": "res://world-new/reference-1-top.png",
   "overheadSourceSha256": "2c2a32995758cf1c8a2e6a0f3e60b73566f382c570c023c68414eab8ce818534",
   "cameraCalibrationPath": "res://content/chapter_01/sites/shallows-gate-and-causeway-reference-1-camera.json",
-  "basis": "Integer source-relative courses measured through the locked Reference 1 review rig. The author's scale correction expands every source-plan course to exactly three runtime voxels while the player remains unchanged. Absolute threshold TopY 168 is derived from the unchanged authored water TopY 105: 168 + 3*(-21) = 105. The v5 P1 correction still restricts the candidate east local-8 plateau north of the stair top, preserves the local-0 east court south of it, and extends the exact local-6 landing as a candidate connected southern approach. Candidate geometry values may not be promoted by a build alone.",
+  "basis": "Source-relative courses retain the earlier author-directed threefold scale. Production sea is 24, so threshold TopY87 = 24 - 3*(-21), and the source-owned submerged bed is18. The old 168/105/99 absolute registration belonged to retired compiled terrain. Levels remain measured/candidate geometry, not visual acceptance.",
   "absoluteDatum": {
-    "formula": "absolute TopY = 168 + 3 * local Y",
+    "formula": "absolute TopY = 87 + 3 * local Y",
     "thresholdLocalTopY": 0,
-    "thresholdAbsoluteTopY": 168,
+    "thresholdAbsoluteTopY": 87,
     "waterLocalTopY": -21,
-    "waterAbsoluteTopY": 105,
+    "waterAbsoluteTopY": 24,
     "sampledBedLocalTopY": -23,
-    "sampledBedAbsoluteTopY": 99,
+    "sampledBedAbsoluteTopY": 18,
     "samplePoints": [
-      { "global": [6400,6980], "bedTopY": 99, "waterTopY": 105 },
-      { "global": [6400,7106], "bedTopY": 99, "waterTopY": 105 }
+      {
+        "global": [
+          6400,
+          7040
+        ],
+        "bedTopY": 18,
+        "waterTopY": 24
+      }
     ],
     "certainty": "author-directed-integer-scale-with-mechanically-derived-water-anchored-datum"
   },
@@ -26,133 +32,205 @@
     {
       "id": "gate-threshold-and-causeway-deck",
       "localTopY": 0,
-      "absoluteTopY": 168,
+      "absoluteTopY": 87,
       "uncertaintyCourses": 0,
-      "anchor": { "x": 0, "z": 0 },
+      "anchor": {
+        "x": 0,
+        "z": 0
+      },
       "certainty": "locked-local-datum"
     },
     {
       "id": "west-main-shelf",
       "localTopY": 0,
-      "absoluteTopY": 168,
+      "absoluteTopY": 87,
       "uncertaintyCourses": 1,
-      "anchor": { "x": -25, "z": 0 },
+      "anchor": {
+        "x": -25,
+        "z": 0
+      },
       "certainty": "candidate/locked-overlay"
     },
     {
       "id": "east-lower-court-and-stair-toe",
       "localTopY": 0,
-      "absoluteTopY": 168,
+      "absoluteTopY": 87,
       "uncertaintyCourses": 1,
-      "anchor": { "x": 30, "z": 2 },
+      "anchor": {
+        "x": 30,
+        "z": 2
+      },
       "certainty": "candidate/source-top-and-v5-correction",
       "extent": "visible east precinct support at z>=-7"
     },
     {
       "id": "east-main-shelf",
       "localTopY": 8,
-      "absoluteTopY": 192,
+      "absoluteTopY": 111,
       "uncertaintyCourses": 2,
-      "anchor": { "x": 32, "z": -9 },
+      "anchor": {
+        "x": 32,
+        "z": -9
+      },
       "certainty": "candidate/locked-overlay",
       "extent": "north plateau at z<=-8 plus exact stair landing"
     },
     {
       "id": "west-lower-apron",
       "localTopY": -4,
-      "absoluteTopY": 156,
+      "absoluteTopY": 75,
       "uncertaintyCourses": 2,
-      "anchor": { "x": -24, "z": 15 },
+      "anchor": {
+        "x": -24,
+        "z": 15
+      },
       "certainty": "candidate/visible-shelf"
     },
     {
       "id": "south-processional-landing",
       "localTopY": -6,
-      "absoluteTopY": 150,
+      "absoluteTopY": 69,
       "uncertaintyCourses": 0,
-      "anchor": { "x": 0, "z": 43 },
+      "anchor": {
+        "x": 0,
+        "z": 43
+      },
       "certainty": "observed/source-measured-six-rise-connection-with-candidate-southern-approach"
     },
     {
       "id": "water-surface",
       "localTopY": -21,
-      "absoluteTopY": 105,
+      "absoluteTopY": 24,
       "uncertaintyCourses": 0,
-      "anchor": { "x": 0, "z": 30 },
+      "anchor": {
+        "x": 0,
+        "z": 30
+      },
       "certainty": "mechanically-verified-current-atlas-sample"
     },
     {
       "id": "sampled-water-bed",
       "localTopY": -23,
-      "absoluteTopY": 99,
+      "absoluteTopY": 18,
       "uncertaintyCourses": 0,
-      "anchor": { "x": 0, "z": 30 },
+      "anchor": {
+        "x": 0,
+        "z": 30
+      },
       "certainty": "author-directed-integer-scale-with-authored-water-bed"
     }
   ],
   "courseSpans": [
     {
       "id": "south-threshold-to-water-drop",
-      "at": { "x": -9, "z": 30 },
+      "at": {
+        "x": -9,
+        "z": 30
+      },
       "fromLocalY": -21,
       "toLocalY": 0,
-      "candidateRange": [20,22],
+      "candidateRange": [
+        20,
+        22
+      ],
       "certainty": "candidate/visible-course-count"
     },
     {
       "id": "causeway-slab-thickness",
-      "at": { "x": 7, "z": 20 },
+      "at": {
+        "x": 7,
+        "z": 20
+      },
       "fromLocalY": -2,
       "toLocalY": 0,
-      "candidateRange": [1,3],
+      "candidateRange": [
+        1,
+        3
+      ],
       "certainty": "candidate/visible-edge"
     },
     {
       "id": "causeway-side-support",
-      "at": { "x": 8, "z": 26 },
+      "at": {
+        "x": 8,
+        "z": 26
+      },
       "fromLocalY": -21,
       "toLocalY": 0,
-      "candidateRange": [20,23],
+      "candidateRange": [
+        20,
+        23
+      ],
       "certainty": "candidate/base-obscured-by-water"
     },
     {
       "id": "gate-passage-clearance",
-      "at": { "x": 0, "z": -4 },
+      "at": {
+        "x": 0,
+        "z": -4
+      },
       "fromLocalY": 0,
       "toLocalY": 14,
-      "candidateRange": [13,15],
+      "candidateRange": [
+        13,
+        15
+      ],
       "certainty": "candidate/locked-overlay"
     },
     {
       "id": "gate-connected-body",
-      "at": { "x": 10, "z": -8 },
+      "at": {
+        "x": 10,
+        "z": -8
+      },
       "fromLocalY": 0,
       "toLocalY": 22,
-      "candidateRange": [20,23],
+      "candidateRange": [
+        20,
+        23
+      ],
       "certainty": "candidate/visible-course-count"
     },
     {
       "id": "gate-roof-parapet",
-      "at": { "x": 0, "z": -14 },
+      "at": {
+        "x": 0,
+        "z": -14
+      },
       "fromLocalY": 22,
       "toLocalY": 24,
-      "candidateRange": [2,3],
+      "candidateRange": [
+        2,
+        3
+      ],
       "certainty": "candidate/visible-roof-courses"
     },
     {
       "id": "gate-attached-buttress",
-      "at": { "x": 12, "z": -4 },
+      "at": {
+        "x": 12,
+        "z": -4
+      },
       "fromLocalY": 0,
       "toLocalY": 18,
-      "candidateRange": [16,20],
+      "candidateRange": [
+        16,
+        20
+      ],
       "certainty": "candidate/partly-occluded"
     },
     {
       "id": "east-high-shelf-above-water",
-      "at": { "x": 32, "z": -9 },
+      "at": {
+        "x": 32,
+        "z": -9
+      },
       "fromLocalY": -21,
       "toLocalY": 8,
-      "candidateRange": [27,31],
+      "candidateRange": [
+        27,
+        31
+      ],
       "certainty": "candidate/visible-cliff-face"
     }
   ],
@@ -160,34 +238,94 @@
     {
       "id": "south-processional-stair",
       "x": 0,
-      "from": { "z": 42, "localTopY": -6 },
-      "to": { "z": 36, "localTopY": 0 },
+      "from": {
+        "z": 42,
+        "localTopY": -6
+      },
+      "to": {
+        "z": 36,
+        "localTopY": 0
+      },
       "treads": [
-        { "z": 42, "localTopY": -6 },
-        { "z": 41, "localTopY": -5 },
-        { "z": 40, "localTopY": -4 },
-        { "z": 39, "localTopY": -3 },
-        { "z": 38, "localTopY": -2 },
-        { "z": 37, "localTopY": -1 },
-        { "z": 36, "localTopY": 0 }
+        {
+          "z": 42,
+          "localTopY": -6
+        },
+        {
+          "z": 41,
+          "localTopY": -5
+        },
+        {
+          "z": 40,
+          "localTopY": -4
+        },
+        {
+          "z": 39,
+          "localTopY": -3
+        },
+        {
+          "z": 38,
+          "localTopY": -2
+        },
+        {
+          "z": 37,
+          "localTopY": -1
+        },
+        {
+          "z": 36,
+          "localTopY": 0
+        }
       ],
       "certainty": "observed/source-measured"
     },
     {
       "id": "east-side-stair",
       "x": 32,
-      "from": { "z": 0, "localTopY": 0 },
-      "to": { "z": -8, "localTopY": 8 },
+      "from": {
+        "z": 0,
+        "localTopY": 0
+      },
+      "to": {
+        "z": -8,
+        "localTopY": 8
+      },
       "treads": [
-        { "z": 0, "localTopY": 0 },
-        { "z": -1, "localTopY": 1 },
-        { "z": -2, "localTopY": 2 },
-        { "z": -3, "localTopY": 3 },
-        { "z": -4, "localTopY": 4 },
-        { "z": -5, "localTopY": 5 },
-        { "z": -6, "localTopY": 6 },
-        { "z": -7, "localTopY": 7 },
-        { "z": -8, "localTopY": 8 }
+        {
+          "z": 0,
+          "localTopY": 0
+        },
+        {
+          "z": -1,
+          "localTopY": 1
+        },
+        {
+          "z": -2,
+          "localTopY": 2
+        },
+        {
+          "z": -3,
+          "localTopY": 3
+        },
+        {
+          "z": -4,
+          "localTopY": 4
+        },
+        {
+          "z": -5,
+          "localTopY": 5
+        },
+        {
+          "z": -6,
+          "localTopY": 6
+        },
+        {
+          "z": -7,
+          "localTopY": 7
+        },
+        {
+          "z": -8,
+          "localTopY": 8
+        }
       ],
       "certainty": "candidate/visible-eight-rise-reading"
     }

@@ -7,6 +7,9 @@ from pathlib import Path
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("output", type=Path)
+parser.add_argument("--title", default="Light, material, atmosphere.")
+parser.add_argument("--reference-label", default="Style reference")
+parser.add_argument("--comparison-note", default="Compare surface finish, light and depth. The accepted atlas owns geography; a style reference may show a different setting. These images do not establish author acceptance.")
 parser.add_argument("--scene", nargs=3, action="append", required=True,
                     metavar=("NAME", "CAPTURE_DIRECTORY", "REFERENCE_IMAGE"))
 parser.add_argument("--scene-note", nargs=2, action="append", default=[],
@@ -76,5 +79,9 @@ function frame(index){const s=scenes[selected],f=s.frames[index];$('game').src=f
 function scene(index){selected=index;const s=scenes[index];[...$('scenes').children].forEach((b,i)=>b.setAttribute('aria-pressed',i===index));$('ref').src=s.reference;$('ref-link').href=s.reference;$('revision').textContent='Capture set: '+s.revision+' · '+s.frames.length+' raw views';$('scene-note').textContent=s.note;$('frames').replaceChildren(...s.frames.map((f,i)=>button(f.name.replaceAll('_',' '),()=>frame(i))));frame(Math.max(0,s.frames.findIndex(f=>f.name==='reference_match_day'||f.name==='look_noon')));$('motion').hidden=!s.videos.length;$('video').pause();$('videos').replaceChildren(...s.videos.map(v=>button(v.name,()=>{$('video').src=v.src})));if(s.videos.length)$('video').src=s.videos[0].src;$('time').textContent='0.00 s';$('play').textContent='Play motion'}
 $('scenes').replaceChildren(...scenes.map((s,i)=>button(s.name,()=>scene(i))));$('play').onclick=()=>{$('video').play();$('play').textContent='Restart motion';$('video').currentTime=0};$('video').ontimeupdate=()=>{$('time').textContent=$('video').currentTime.toFixed(2)+' s'};scene(0);
 </script></html>'''
+import html
+template = template.replace("Light, material, atmosphere.", html.escape(args.title))
+template = template.replace("Style reference", html.escape(args.reference_label))
+template = template.replace("Compare surface finish, light and depth. The accepted atlas owns geography; a style reference may show a different setting. These images do not establish author acceptance.", html.escape(args.comparison_note))
 output.write_text(template.replace("__SCENES__", json.dumps(scenes).replace("<", "\\u003c")))
 print(output)

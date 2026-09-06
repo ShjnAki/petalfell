@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "siteId": "court-of-the-quiet-sign",
+  "builderId": "reference-8-measured-v1",
+  "referencePath": "res://world-new/reference-8.png",
+  "groundPlanPath": "res://content/chapter_01/sites/court-of-the-quiet-sign-plan.json",
+  "origin": {
+    "x": 5120,
+    "z": 1908
+  },
+  "axisDegrees": 0,
+  "runtimePlanScale": 1,
+  "surroundingTreeThinningRadius": 28,
+  "surroundingTreeDensity": 0.8,
+  "footprintMin": {
+    "x": -35,
+    "z": -35
+  },
+  "footprintMax": {
+    "x": 36,
+    "z": 35
+  },
+  "playerSpawn": {
+    "x": 6,
+    "z": 12
+  },
+  "referenceView": {
+    "focus": {
+      "x": 0,
+      "z": -1
+    },
+    "distance": 165,
+    "yawDegrees": 45,
+    "pitchDegrees": 35.26439,
+    "heightOffset": 2,
+    "sourceWidth": 1672,
+    "sourceHeight": 941
+  }
+}

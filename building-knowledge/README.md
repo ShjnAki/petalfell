@@ -52,6 +52,7 @@ For any reference-site plan, builder, material, or comparison-tool change:
 | [Bloom Grove Court evidence ledger](sites/bloom-grove-court.md) | Site-specific constraints, rejected readings, and current evidence gaps | Reference 10 only |
 | [Shallows Gate and Causeway evidence ledger](sites/shallows-gate-and-causeway.md) | Reference 1 source calibration, measured plan hierarchy, placement hypothesis, and rejected fixture readings | Reference 1 only; source audit before implementation |
 | [Fallen Colossus evidence ledger](sites/fallen-colossus.md) | Reference 12 authored sculpture, broad worn slab precinct, current evidence and rejected readings | Reference 12 only; current build unaccepted |
+| [September reference precincts](sites/reference-precincts-2026-09.md) | Individual source distinctions, explicit course schedules, supported volumes and physical stair checks | References 2–9 and 11; production, visually unaccepted |
 
 | [Original shore and ridge destinations](sites/original-worldbuilding-2026-09.md) | Explicit original plans, measured natural roots, small props and production review | Tidekeeper’s Landing and Split Witness |
 

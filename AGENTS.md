@@ -82,9 +82,12 @@ Current permanent sites:
 - **Fallen Colossus / Reference 12** — production terrain-integrated precinct
   using authored voxel foundations and from-scratch stepped sculpture GLBs;
   not accepted as a complete site.
-- **Shallows Gate and Causeway / Reference 1** — next structural transcription;
-  its measured source plan is authoring data, not permission to use a generic
-  ruin kit.
+- **Shallows Gate and Causeway / Reference 1** — production structural
+  transcription at the earlier threefold scale, now registered to sea level 24;
+  not accepted as a complete site.
+- **References 2–9 and 11** — nine individually planned production precincts;
+  addresses, source distinctions and current evidence are in
+  [`building-knowledge/sites/reference-precincts-2026-09.md`](building-knowledge/sites/reference-precincts-2026-09.md).
 - **Tidekeeper’s Landing** — original production shore worksite at 6484,7528,
   with a design brief, measured levels, broken landings and authored props.
 - **Split Witness** — original production rock cleft at 4424,1928, with buried
@@ -144,6 +147,7 @@ Core headless checks:
 ./tools/world-authoring.sh verify-camera-auto-zoom
 ./tools/world-authoring.sh verify-camera-obstruction
 ./tools/world-authoring.sh verify-sculpture
+./tools/world-authoring.sh verify-reference-sites
 ./tools/world-authoring.sh verify-atlas-map-transport
 ./tools/world-authoring.sh preview-site-plan bloom-grove-court ../shots/bloom.svg
 ```

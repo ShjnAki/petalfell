@@ -64,6 +64,18 @@ is cheaper and more reliable than moving a finished facade by eye.
 
 ## Fine geometry
 
+The September 6 reference expansion uses explicit course schedules for sources
+2–9 and 11. A `measured-masonry` or `measured-tree` mass owns inclusive
+`[x0,x1,y0,y1,z0,z1,material]` ranges, including air cuts. These are literal
+voxel coordinates, not parameters for a shared ruin kit. The audited final solid
+projection must equal the ground plan after all cuts. Each mass is bounded to
+500,000 course visits before allocation. Only source-owned trees may use
+`groundAt` for translation to their measured anchor's current terrain surface.
+
+The full-world source spawn must resolve without displacement. Physical tread
+raycasts and connected-volume checks supplement the plan audit; neither proves
+source likeness. See the [site ledger](../building-knowledge/sites/reference-precincts-2026-09.md).
+
 The original Tidekeeper’s Landing and Split Witness now exercise this workflow
 without replacing an existing reference composition. Each owns a design JSON,
 explicit ground plan, voxel blueprint and small prop records. The landing uses
@@ -127,10 +139,12 @@ not accepted until inspected; only an explicit author decision is
 
 1. Preserve and correct Bloom Grove Court against Reference 10.
 2. Preserve and correct Fallen Colossus against Reference 12.
-3. Build Shallows Gate and Causeway from Reference 1 as the next complete
-   transcription.
-4. Allocate further references only after these establish reliable structure,
-   sculpture and monumental-water workflows.
+3. Refine the production Shallows Gate and Causeway against both Reference 1
+   views, preserving its permanent address and author-directed threefold scale.
+4. Review the nine production transcriptions of References 2–9 and 11 using
+   their individual plans and the [September precinct ledger](../building-knowledge/sites/reference-precincts-2026-09.md).
+   Coarse masonry and terrain transitions remain open; production registration
+   and mechanical validation do not imply visual acceptance.
 
 The retired generic ruin kit and summit monument remain historical code only.
 They are not production authoring tools.

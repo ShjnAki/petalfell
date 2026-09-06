@@ -39,8 +39,11 @@ resolves a supported landing and closes the map on success.
   site anchors. Static collision uses the actual mesh, including the open foot
   gap, instead of three oversized boxes. The original GLBs remain historical
   assets; production loads only the `fallen-colossus-authored-*` replacements.
-- **Shallows Gate and Causeway** is measured/planned from Reference 1 but is not
-  yet promoted as a finished production transcription.
+- **Shallows Gate and Causeway** now builds in production at its existing
+  6400,6980 address and earlier threefold scale. Its absolute threshold is 87,
+  registered to the current sea at 24. The deck has an explicit open underside
+  above tidal water. It remains
+  unaccepted visual work.
 - **Tidekeeper’s Landing**, at 6484,7528, is an original production shore worksite.
   Three connected stairs descend from the cut working yard through 31/29/27/25
   landings to the existing sea. A broken gauge wall, hollow catchment trough,
@@ -60,6 +63,64 @@ No original site is compared against an unrelated reference image.
 The terrain foundation is accepted; the completed visual fidelity of individual
 sites is not.
 
+## Additional reference precincts
+
+The recovered September 6 instruction adds the large `world-new` reference sites
+while retaining the current renderer and terrain foundation. Nine separate
+metre-scale plans now build in production:
+
+| Source | Site | Permanent atlas address |
+|---|---|---|
+| 2 | Drowned Seal Gate | 5760,7184 |
+| 3 | Court of the Open Sky | 9560,5480 |
+| 4 | Hollow Choir | 4212,1588 |
+| 5 | Violet Threshold | 6052,8080 |
+| 6 | Sanctuary of the Last Light | 4948,1420 |
+| 7 | Arcade of the Leaning Pillars | 10340,5560 |
+| 8 | Court of the Quiet Sign | 5120,1908 |
+| 9 | Courts of the Three Crossings | 9780,6080 |
+| 11 | Terrace of the Twin Rites | 6832,7340 |
+
+Each plan owns its terrace polygons, exact treads, individual solid courses,
+air cuts, rubble, surface reclamation and grounded blossom trees. The shared
+`MeasuredReferenceSite` writes only these ranges. It contains no architectural
+layout, ruin, arch or damage generator. Violet Threshold has one site-owned
+animated opening, a local shadow-casting violet light and 36 motes, rebuilt with
+the same atlas window lifecycle as the existing sculpture details.
+
+`verify-reference-sites` exercises actual production windows, exact source
+spawns, connected masonry and physics raycasts against the normal chunk
+collision at every stair's central treads. Initial failures exposed floating
+footings and walls blocking treads; the individual plans were corrected. Surface
+reclamation now preserves each tread's actual height. See the
+[reference precinct ledger](building-knowledge/sites/reference-precincts-2026-09.md)
+for the latest validation and visual evidence. Production status is not author
+acceptance or a claim of pixel parity.
+
+The current Linux export and its own atlas audit pass with 14 permanent domains
+and 14 sites. The nine new plans and the strict Reference 1 plan/camera/vertical
+audits pass. Production collision checks cover all nine source spawns, connected
+foundations, 181 central stair-tread raycasts and three separate Shallows bridge
+surfaces. The bridge retains bed18, sea24 and deck87, with clear space beneath
+the deck and a water query that reads the bed rather than the overhead bridge.
+
+Real-controller probes pass at the Shallows approach (34.13 blocks, Y69..87),
+Violet Threshold (32.83 land blocks, Y25..34, then 14.05 swimming blocks) and
+Court of the Open Sky (19.24 blocks, Y44..54). These are bounded routes, not
+exhaustive exploration. Focused repeat/overlap checks cover the eastern,
+northern and shore site groups, including the final Shallows geometry. Original
+site props, shared rendering and walking handoff regression checks also pass.
+
+The [reference-site gallery](shots/big-sites-2026-09-06/review.html) contains
+235 current raw views: nine 23-view matrices and a 28-view Shallows matrix.
+Every frame was inspected in reduced matrices, with selected frames inspected
+at full size. The final exported Violet Threshold day/night pair was also
+inspected at full size. This confirms rendering and structural review, not
+source parity. Fine masonry, rubble density, reclamation masks and transitions
+into ordinary terrain still need refinement. Gallery generation and file
+completeness passed; browser control testing was blocked by the browser
+connection's trust configuration.
+
 ## September 6 worldbuilding validation
 
 The original destinations and replacement Colossus were exported to the Linux
@@ -77,8 +138,9 @@ also passes its geometry, clock, reflection and bounded-detail checks.
 Both new addresses pass deterministic repeat and neighbouring-window overlap
 checks. Real-controller land probes moved 33.65 blocks across Y25..31 at the
 landing and 29.27 blocks across Y120..134 on the northern approach. These are
-bounded automated routes, not exhaustive exploration. The package audit now
-reports five domains/five sites; four sites run in production.
+bounded automated routes, not exhaustive exploration. The subsequent reference
+precinct export includes these sites; its current registration count and checks
+are recorded above.
 
 ## Shared rendering revision
 
@@ -319,8 +381,10 @@ separate.
 
 ## Open work
 
-1. Finish Reference 1 as the next exact site transcription.
-2. Continue improving Bloom and Fallen Colossus only against their references.
+1. Refine the source-specific masonry, ground transitions and detail of the
+   implemented reference precincts, including Reference 1's heavy massing.
+2. Continue comparing Bloom and Fallen Colossus against their references; obtain
+   author review of individual sites before recording visual acceptance.
 3. Traverse the accepted atlas for localized collision/route issues.
 4. Continue reference comparison of materials, lighting and atmosphere, including
    source-specific wear and shape fidelity.

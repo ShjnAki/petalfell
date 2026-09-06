@@ -111,6 +111,10 @@ case "$command_name" in
 		exec godot-mono --headless --path "$project_dir" \
 		  --script res://tools/terrain-survey.gd -- "$atlas_point" "$survey_output"
 		;;
+	verify-reference-sites)
+		exec godot-mono --headless --path "$project_dir" \
+		  --script res://tools/reference-sites-smoke.gd -- "${@:2}"
+		;;
 	review-site)
 		site_id="${2:?usage: $0 review-site <site-id>}"
 		exec godot-mono --path "$project_dir" -- --review-site "$site_id"

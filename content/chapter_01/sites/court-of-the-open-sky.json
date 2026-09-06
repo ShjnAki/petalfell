@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "siteId": "court-of-the-open-sky",
+  "builderId": "reference-3-measured-v1",
+  "referencePath": "res://world-new/reference-3.png",
+  "groundPlanPath": "res://content/chapter_01/sites/court-of-the-open-sky-plan.json",
+  "origin": {
+    "x": 9560,
+    "z": 5480
+  },
+  "axisDegrees": 0,
+  "runtimePlanScale": 1,
+  "surroundingTreeThinningRadius": 28,
+  "surroundingTreeDensity": 0.8,
+  "footprintMin": {
+    "x": -46,
+    "z": -44
+  },
+  "footprintMax": {
+    "x": 48,
+    "z": 49
+  },
+  "playerSpawn": {
+    "x": 9,
+    "z": 10
+  },
+  "referenceView": {
+    "focus": {
+      "x": 0,
+      "z": 0
+    },
+    "distance": 228,
+    "yawDegrees": 45,
+    "pitchDegrees": 35.26439,
+    "heightOffset": 2,
+    "sourceWidth": 1672,
+    "sourceHeight": 941
+  }
+}

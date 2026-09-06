@@ -158,9 +158,11 @@ public static class ProductionTerrainWindow
 			ReferenceSiteGroundPlan groundPlan = ReferenceSiteGroundPlan.Load(site);
 			ReferenceGroundPlanTerrain datum = groundPlan.Terrain.FirstOrDefault(shape =>
 				shape.WriteMode == "preserve-atlas" && shape.SurfaceY.HasValue);
-			if (datum?.SurfaceY == null)
+			if (!site.VerticalDatumY.HasValue && datum?.SurfaceY == null)
 				throw new InvalidOperationException($"site '{site.SiteId}' has no natural terrain datum");
-			int verticalOffset = naturalTop - datum.SurfaceY.Value;
+			// A measured absolute datum (the water-registered Shallows Gate) already
+			// owns its Y transform. Natural-datum sites retain their existing translation.
+			int verticalOffset = site.VerticalDatumY.HasValue ? 0 : naturalTop - datum.SurfaceY.Value;
 			ReferenceSiteStatistics statistics = ReferenceSiteBuilder.Build(window, site,
 				verticalOffset);
 			terrain.SyncAuthoredTerrain();

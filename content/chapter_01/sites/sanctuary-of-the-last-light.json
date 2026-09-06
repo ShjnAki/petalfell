@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "siteId": "sanctuary-of-the-last-light",
+  "builderId": "reference-6-measured-v1",
+  "referencePath": "res://world-new/reference-6.png",
+  "groundPlanPath": "res://content/chapter_01/sites/sanctuary-of-the-last-light-plan.json",
+  "origin": {
+    "x": 4948,
+    "z": 1420
+  },
+  "axisDegrees": 0,
+  "runtimePlanScale": 1,
+  "surroundingTreeThinningRadius": 28,
+  "surroundingTreeDensity": 0.8,
+  "footprintMin": {
+    "x": -34,
+    "z": -32
+  },
+  "footprintMax": {
+    "x": 34,
+    "z": 35
+  },
+  "playerSpawn": {
+    "x": 9,
+    "z": 17
+  },
+  "referenceView": {
+    "focus": {
+      "x": 0,
+      "z": 0
+    },
+    "distance": 166,
+    "yawDegrees": 45,
+    "pitchDegrees": 35.26439,
+    "heightOffset": 3,
+    "sourceWidth": 1672,
+    "sourceHeight": 941
+  }
+}

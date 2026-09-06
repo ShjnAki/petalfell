@@ -285,8 +285,8 @@ public sealed class AtlasSectorWindow
 
 	/// <summary>
 	/// Resolve the current materialised atlas water column in permanent global
-	/// coordinates. Grid height is intentional here: a reference site's pier or
-	/// bridge support can replace the compiled bed after the sector was loaded.
+	/// coordinates. Solid voxels at the waterline distinguish a submerged pier
+	/// from a bridge deck above open water; the highest-column cache cannot.
 	/// The +0.35 matches BuildWater's visible plane exactly.
 	/// </summary>
 	public bool TryWaterColumnAtGlobal(int globalX, int globalZ,
@@ -308,7 +308,11 @@ public sealed class AtlasSectorWindow
 			surfaceY = 0f;
 			return false;
 		}
-		bedY = Grid.HeightAt(x, z);
+		// A deck above the water is not its bed. Read the highest solid surface
+		// at/below the waterline; this also keeps submerged piers non-swimmable.
+		int bed = Math.Min(water, Grid.Height - 1);
+		while (bed >= 0 && !Grid.SolidAt(x, bed, z)) bed--;
+		bedY = bed + 1;
 		surfaceY = water + 0.35f;
 		return true;
 	}

@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "siteId": "violet-threshold",
+  "builderId": "reference-5-measured-v1",
+  "referencePath": "res://world-new/reference-5.png",
+  "groundPlanPath": "res://content/chapter_01/sites/violet-threshold-plan.json",
+  "origin": {
+    "x": 6052,
+    "z": 8080
+  },
+  "axisDegrees": 0,
+  "runtimePlanScale": 1,
+  "surroundingTreeThinningRadius": 28,
+  "surroundingTreeDensity": 0.8,
+  "footprintMin": {
+    "x": -35,
+    "z": -36
+  },
+  "footprintMax": {
+    "x": 35,
+    "z": 48
+  },
+  "playerSpawn": {
+    "x": 0,
+    "z": 10
+  },
+  "referenceView": {
+    "focus": {
+      "x": 0,
+      "z": 1
+    },
+    "distance": 165,
+    "yawDegrees": 45,
+    "pitchDegrees": 35.26439,
+    "heightOffset": 2,
+    "sourceWidth": 1672,
+    "sourceHeight": 941
+  }
+}

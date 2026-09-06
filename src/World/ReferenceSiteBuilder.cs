@@ -12,6 +12,11 @@ public static class ReferenceSiteBuilder
 	public static ReferenceSiteStatistics Build(AtlasSectorWindow window,
 		ReferenceSiteDefinition site, int verticalOffset = 0) => site.BuilderId switch
 	{
+		"reference-2-measured-v1" or "reference-3-measured-v1" or
+		"reference-4-measured-v1" or "reference-5-measured-v1" or
+		"reference-6-measured-v1" or "reference-7-measured-v1" or
+		"reference-8-measured-v1" or "reference-9-measured-v1" or
+		"reference-11-measured-v1" => MeasuredReferenceSite.Build(window, site, verticalOffset),
 		TidekeepersLanding.BuilderId => TidekeepersLanding.Build(window, site, verticalOffset),
 		SplitWitness.BuilderId => SplitWitness.Build(window, site, verticalOffset),
 		Reference10GroveCourt.BuilderId => Reference10GroveCourt.Build(window, site,

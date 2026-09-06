@@ -25,9 +25,9 @@ internal sealed class AuthoredSiteWriter
 		_site = site;
 		_offset = offset;
 		Plan = ReferenceSiteGroundPlan.Load(site);
-		if (!site.IsOriginalDesign || site.RuntimePlanScale != 1 ||
+		if (site.RuntimePlanScale != 1 ||
 		    Plan.CoordinateContract.RuntimeMirrorX != false)
-			throw new InvalidOperationException("Original voxel blueprints require an explicit unmirrored metre plan");
+			throw new InvalidOperationException("Authored voxel ranges require an explicit unmirrored metre plan");
 	}
 
 	public void Terrain()
@@ -35,8 +35,14 @@ internal sealed class AuthoredSiteWriter
 		foreach (var patch in Plan.Terrain)
 		{
 			if (patch.WriteMode == "preserve-atlas") continue;
+			if (patch.WriteMode == "author-water")
+			{
+				foreach (var cell in patch.EffectiveCells)
+					Water(cell.X, cell.Z, patch.SurfaceY!.Value, patch.BedY!.Value);
+				continue;
+			}
 			if (patch.WriteMode != "author-surface")
-				throw new InvalidOperationException("These original landmarks do not author new water bodies");
+				throw new InvalidOperationException($"Unsupported authored terrain mode '{patch.WriteMode}'");
 			foreach (var cell in patch.EffectiveCells)
 				Surface(cell.X, cell.Z, patch.SurfaceY!.Value, Material(patch.Material));
 		}
@@ -46,7 +52,8 @@ internal sealed class AuthoredSiteWriter
 					Surface(cell.X, cell.Z, tread.TopY!.Value, Palette.PAVING);
 		foreach (var patch in Plan.SurfacePatches)
 			foreach (var cell in patch.EffectiveCells)
-				Surface(cell.X, cell.Z, Plan.GetTerrain(patch.TerrainId).SurfaceY!.Value,
+				// Surface wear changes material, never a stair's measured height.
+				Surface(cell.X, cell.Z, Ground(cell.X,cell.Z),
 					Material(patch.Material));
 	}
 
@@ -86,6 +93,20 @@ internal sealed class AuthoredSiteWriter
 		return _window.Grid.Top[lz*_window.Grid.Size+lx]-_offset;
 	}
 
+	public int PlannedGround(int x, int z)
+	{
+		int top = Ground(x,z);
+		var cell = new ReferenceGroundPlanCell(x,z);
+		foreach (var patch in Plan.Terrain)
+			if (patch.WriteMode != "preserve-atlas" && patch.EffectiveCells.Contains(cell))
+				top = patch.WriteMode == "author-water" ? patch.BedY!.Value : patch.SurfaceY!.Value;
+		foreach (var stair in Plan.Structures.Where(s => s.Kind == "stair"))
+			foreach (var tread in stair.Treads)
+				if (x >= tread.Footprint[0] && x <= tread.Footprint[2] &&
+				    z >= tread.Footprint[1] && z <= tread.Footprint[3]) top = tread.TopY!.Value;
+		return top;
+	}
+
 	public void Put(int x, int y, int z, byte material)
 	{
 		var cell = new ReferenceGroundPlanCell(x, z);
@@ -113,7 +134,10 @@ internal sealed class AuthoredSiteWriter
 			throw new InvalidOperationException("A dry authored landing must stay above the existing sea and inside the window");
 		var data = _window.Data;
 		int i = lz*data.Width+lx;
-		_window.Grid.RedescribeUnedited(lx, lz, y, cap, Palette.STONE, Palette.STONE_PALE);
+		bool natural = !_site.IsOriginalDesign && cap is
+			Palette.GRASS_STONE or Palette.SNOW or Palette.SAND;
+		_window.Grid.RedescribeUnedited(lx, lz, y, cap,
+			natural ? Palette.SOIL : Palette.STONE, Palette.STONE_PALE);
 		data.Height[i] = (ushort)y;
 		data.WaterSurface[i] = 0;
 		data.Land[i] = 1;
@@ -121,6 +145,22 @@ internal sealed class AuthoredSiteWriter
 		data.Hydrology[i] = 0;
 		data.Wetness[i] = 0;
 		data.Surface[i] = (byte)AtlasTerrainSurface.Cap;
+		SurfaceCells++;
+	}
+
+	private void Water(int x, int z, int surface, int bed)
+	{
+		(int lx, int lz) = Local(x,z);
+		int top = surface+_offset, bottom = bed+_offset;
+		if (bottom < 1 || bottom >= top || top >= _window.Grid.Height)
+			throw new InvalidOperationException("Authored water leaves its finite bed/surface envelope");
+		int i = lz*_window.Data.Width+lx;
+		_window.Grid.RedescribeUnedited(lx,lz,bottom,Palette.SAND,Palette.STONE,Palette.STONE_PALE);
+		var data = _window.Data;
+		data.Height[i]=(ushort)bottom;
+		data.WaterSurface[i]=(ushort)top;
+		data.Water[i]=255; data.Land[i]=0; data.Hydrology[i]=3; data.Wetness[i]=255;
+		data.Surface[i]=(byte)AtlasTerrainSurface.Underwater;
 		SurfaceCells++;
 	}
 
@@ -146,6 +186,8 @@ internal sealed class AuthoredSiteWriter
 		"pale-stone" => Palette.STONE_PALE,
 		"moss-stone" => Palette.MOSS_STONE,
 		"reclaimed-meadow" => Palette.GRASS_STONE,
-		_ => throw new InvalidOperationException($"Unknown original-site material '{id}'")
+		"snow" => Palette.SNOW,
+		"sand" => Palette.SAND,
+		_ => throw new InvalidOperationException($"Unknown authored-site material '{id}'")
 	};
 }
