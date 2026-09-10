@@ -34,6 +34,39 @@ view, terrain levels, exact treads, individually named courses and local tree
 anchors. Visible-source interpretation is still candidate where the single
 perspective view cannot determine hidden depth or exact dimensions.
 
+## September 10 southern stonework
+
+The author selected refinement of existing southern stonework, not new sculptures
+or changes to Fallen Colossus. Violet Threshold's `west-great-rune-stone` and
+`eastern-rune-stone`, and Twin Rites' `east-runestone` and
+`western-tall-survivor`, retain their registered positions and occupied top-plan
+projections. Their own course lists add shallow face incisions, limited crown
+chips and branching basal moss. The source images remain the composition
+contract; these are candidate detail refinements, not an accepted reconstruction.
+
+Moss courses must use palette material 9 (`MOSS_STONE`), not material 12
+(`STONE_WARM`). The first review exposed a warm-stone assignment where growth
+was intended; only the newly authored growth records were corrected. Existing
+warm-stone courses remain unchanged. Fine moss leaves come from the ordinary
+material-masked detail pass, never from an independently scattered site overlay.
+
+The lowered southern natural terrain does not move measured water or stairs:
+Violet Threshold, Twin Rites, Drowned Seal Gate and Tidekeeper’s Landing now pin
+their preceding absolute registrations. No footprint, stair run, source camera,
+site address or Colossus asset is changed. Both edited sites pass exact-spawn,
+connected-solid and physical-tread checks (16 and 34 treads respectively).
+
+Visual evidence on September 10: `/tmp/petalfell-south-threshold-v2/` and
+`/tmp/petalfell-south-twin-rites-final/` each contain 23 raw views. All clock and
+four-distance/four-quarter views were inspected in the labelled
+`/tmp/petalfell-threshold-{lighting,quarters}-v2.png` and
+`/tmp/petalfell-twin-rites-{lighting,quarters}.png` matrices; both sites' play-r3
+views were also inspected at full size. Recesses and basal moss remain confined
+to the named stones, and the original approaches and silhouette remain readable.
+The matrices establish stonework review, not exact source parity or acceptance;
+broad terrain skirts and coarse masonry remain limitations. The coast was
+recaptured separately after the subsequent Shallows boundary-loading fix.
+
 ## Construction and checks
 
 `MeasuredReferenceSite` writes inclusive ranges from each site's JSON. There is

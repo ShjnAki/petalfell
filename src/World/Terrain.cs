@@ -418,6 +418,12 @@ public sealed class Terrain
 						authoredElevation) / Step;
 					sum += _productionGrammar.TerraceOffsetAt(globalX, globalZ,
 						authoredElevation);
+					float southern = Plan.AtlasGuide.SouthernReliefAt(wx, wz, authoredElevation);
+					if (southern > 0f)
+					{
+						float lowland = ProductionTerrainGuide.LowlandHeight(Base + sum * Step, southern);
+						sum = (Rng.Lerp(lowland, _productionGrammar.MarshHeightAt(globalX, globalZ), southern * .8f) - Base) / Step;
+					}
 				}
 				else sum = (authoredElevation - 0.34f) * MacroRelief;
 
@@ -562,13 +568,21 @@ public sealed class Terrain
 			float wz = _nEdge.Fbm(gx * .011f - 83f, gz * .011f + 211f, 3) * 10f;
 			bool wet = Plan.AtlasGuide.AuthoredWetAt(qx + wx, qz + wz);
 			bool ocean = Plan.AtlasGuide.LandAt(qx + wx, qz + wz) < .5f;
-			int x0 = cx * EdgeGrid, z0 = cz * EdgeGrid;
-			for (int z = z0; z < Math.Min(Size, z0 + EdgeGrid); z++)
-			for (int x = x0; x < Math.Min(Size, x0 + EdgeGrid); x++)
+			float marsh = wet ? 0f : Plan.AtlasGuide.SouthernReliefAt(qx, qz,
+				Plan.AtlasGuide.GuidedLandElevationAt(qx, qz, default));
+			int x0 = cx * EdgeGrid, z0 = cz * EdgeGrid, stride = marsh > 0f ? 2 : EdgeGrid;
+			for (int sz = z0; sz < Math.Min(Size, z0 + EdgeGrid); sz += stride)
+			for (int sx = x0; sx < Math.Min(Size, x0 + EdgeGrid); sx += stride)
 			{
-				int i = z * Size + x;
-				wetGuide[i] = wet;
-				oceanGuide[i] = ocean;
+				bool localWet = wet || _productionGrammar.MarshWaterAt(GlobalX(sx + 1) + wx,
+					GlobalZ(sz + 1) + wz, marsh);
+				for (int z = sz; z < Math.Min(Size, sz + stride); z++)
+				for (int x = sx; x < Math.Min(Size, sx + stride); x++)
+				{
+					int i = z * Size + x;
+					wetGuide[i] = localWet;
+					oceanGuide[i] = ocean;
+				}
 			}
 		}
 
@@ -583,6 +597,7 @@ public sealed class Terrain
 		int[] toOcean = DistanceTo(oceanGuide, target: true, HydrologyReach);
 		var riverFrames = new ProductionRiverBankFrame[cellW * cellW];
 		var riverFrameKnown = new bool[riverFrames.Length];
+		var bankSource = (short[])Level.Clone();
 		for (int z = 0; z < Size; z++)
 		for (int x = 0; x < Size; x++)
 		{
@@ -597,6 +612,9 @@ public sealed class Terrain
 					  Rng.Smoothstep(8f, 52f, edge) * 12f +
 					  Rng.Smoothstep(42f, 72f, edge) * 13f
 					: 1f + Rng.Smoothstep(0f, 20f, edge) * (13f + trench * 8f);
+				float southern = Plan.AtlasGuide.SouthernInfluenceAt(x, z) *
+					(1f - Rng.Smoothstep(56f, 96f, edge));
+				depth = Rng.Lerp(depth, 1f + Rng.Smoothstep(0f, 56f, edge) * 6f, southern);
 				int depthCourse = 1 + (int)MathF.Floor(depth / Step + .5f) * Step;
 				int breakup = edge > 8f
 					? CellStep(x, z, 21, .16f, .16f, EdgeGrid * 2) * Step +
@@ -691,6 +709,20 @@ public sealed class Terrain
 				if (gap <= 20) Wet[i] = 1;
 				if (Level[i] <= Sea) Land[i] = 0;
 			}
+		}
+		for (int z = 0; z < Size; z++)
+		for (int x = 0; x < Size; x++)
+		{
+			int i = z * Size + x, gap = toWet[i];
+			if (wetGuide[i] || gap > HydrologyReach) continue;
+			float marsh = Plan.AtlasGuide.SouthernInfluenceAt(x, z) *
+				(1f - Rng.Smoothstep(Sea + 18f, Sea + 40f, bankSource[i]));
+			if (marsh <= 0f) continue;
+			float wander = _nEdge.Fbm(GlobalX(x) / 64f + 51f, GlobalZ(z) / 64f, 2) * 4f;
+			float bankHeight = Sea + 2f + Math.Max(0f, gap + wander - 2f) / 8f;
+			float blend = marsh * (1f - Rng.Smoothstep(64f, 92f, gap));
+			Level[i] = (short)MathF.Round(Rng.Lerp(Level[i], Math.Min(bankSource[i], bankHeight), blend));
+			if (gap < 24f * marsh) Wet[i] = 1;
 		}
 	}
 
@@ -1410,6 +1442,12 @@ public sealed class Terrain
 		float sum = (height - Base) / Step +
 			_productionGrammar.MountainReliefAt(globalX, globalZ, elevation) / Step +
 			_productionGrammar.TerraceOffsetAt(globalX, globalZ, elevation);
+		float southern = Plan.AtlasGuide.SouthernReliefAt(localX, localZ, elevation);
+		if (southern > 0f)
+		{
+			float lowland = ProductionTerrainGuide.LowlandHeight(Base + sum * Step, southern);
+			sum = (Rng.Lerp(lowland, _productionGrammar.MarshHeightAt(globalX, globalZ), southern * .8f) - Base) / Step;
+		}
 		return Rng.ClampI(Base + Step * (int)MathF.Floor(sum + .5f), 2,
 			Plan.AtlasGuide.WorldHeight - 7);
 	}
@@ -1482,13 +1520,18 @@ public sealed class Terrain
 			// pale beach. Keep the proven column grammar, but let the mapped biome choose
 			// its one appropriate wet cap: saturated fen uses mud while coast, lake and
 			// river country retain the original sand.
-			byte wetCap = biome == Biome.Wetland ? Palette.MUD : Palette.SAND;
+			float southern = Plan.AtlasGuide?.SouthernInfluenceAt(x, z) ?? 0f;
+			byte wetCap = biome == Biome.Wetland || biome == Biome.Shore && tone < Rng.Lerp(-1f, .20f, southern)
+				? Palette.MUD : Palette.SAND;
 			if (Land[i] == 0) cap = wetCap;
-			else if (h <= Sea + 2 && (sandField > 0.15f || Wet[i] == 1)) cap = wetCap;
+			else if (h <= Sea + 2 && (sandField > 0.15f || Wet[i] == 1))
+				cap = biome is Biome.Shore or Biome.Wetland && tone > Rng.Lerp(1f, -.22f, southern)
+					? Palette.MOSS : wetCap;
 			else if (biome == Biome.SnowyHills)
 				cap = rockField > 0.43f || tone < -0.24f ? Palette.SCREE : Palette.SNOW;
 			else if (biome == Biome.Wetland)
-				cap = Wet[i] == 1 || tone < -0.08f ? Palette.MUD : Palette.MOSS;
+				cap = Wet[i] == 1 && tone < Rng.Lerp(1f, -.18f, southern) ||
+					tone < Rng.Lerp(-.08f, -.20f, southern) ? Palette.MUD : Palette.MOSS;
 			else if (biome == Biome.Highland && rockField > 0.16f)
 				cap = tone > 0.08f ? Palette.STONE_PALE : Palette.SCREE;
 			else if (rockField > 0.42f)
@@ -1521,6 +1564,7 @@ public sealed class Terrain
 			byte substrate = grassCap
 				? (stoneSubstrate ? Palette.STONE : Palette.SOIL)
 				: cap;
+			if (cap == Palette.MOSS && tone < Rng.Lerp(-1f, .8f, southern)) substrate = Palette.SOIL;
 
 			// A standard Step-high riser exposes exactly two stripes: the grass
 			// cap and its geological substrate (soil or stone). Deeper stone still

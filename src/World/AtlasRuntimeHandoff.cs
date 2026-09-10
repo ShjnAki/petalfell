@@ -672,7 +672,7 @@ public static class AtlasRuntimeHandoff
 		int localX = globalX - window.Data.OriginX;
 		int localZ = globalZ - window.Data.OriginZ;
 		return new AtlasRuntimeLanding(globalX, globalZ, localX, localZ,
-			window.Grid.HeightAt(localX, localZ), exactCell, searchRadius);
+			LandingSurfaceAt(window, localX, localZ), exactCell, searchRadius);
 	}
 
 	private static string LandingRejection(AtlasSectorWindow window, int globalX,
@@ -685,7 +685,7 @@ public static class AtlasRuntimeHandoff
 		int x = globalX - data.OriginX;
 		int z = globalZ - data.OriginZ;
 		int index = z * data.Width + x;
-		int ground = grid.HeightAt(x, z);
+		int ground = LandingSurfaceAt(window, x, z);
 		if (ground < 1 || ground + 2 >= grid.Height) return "vertical-bounds";
 		byte cap = grid.At(x, ground - 1, z);
 		if (!TraversableTop(cap)) return "blocked-material";
@@ -702,7 +702,7 @@ public static class AtlasRuntimeHandoff
 				return "window-edge";
 			int xx = x + dx, zz = z + dz;
 			int neighbour = zz * data.Width + xx;
-			int neighbourGround = grid.HeightAt(xx, zz);
+			int neighbourGround = LandingSurfaceAt(window, xx, zz);
 			if (Math.Abs(neighbourGround - ground) > 1) return "ledge";
 			if (neighbourGround < 1 || !TraversableTop(grid.At(xx, neighbourGround - 1, zz)))
 				return "blocked-neighbour";
@@ -711,6 +711,17 @@ public static class AtlasRuntimeHandoff
 				return "water-neighbour";
 		}
 		return null;
+	}
+
+	private static int LandingSurfaceAt(AtlasSectorWindow window, int x, int z)
+	{
+		var grid = window.Grid;
+		int top = grid.HeightAt(x, z), natural = grid.Top[z * grid.Size + x];
+		if (ProductionTerrainGuide.SouthernLatitudeAt(grid.OriginZ + z) > 0f && top >= natural + 4 &&
+			grid.At(x, top - 1, z) is >= Palette.LEAF_PINK and <= Palette.LEAF_ROSE &&
+			!grid.SolidAt(x, natural, z) && !grid.SolidAt(x, natural + 1, z) && !grid.SolidAt(x, natural + 2, z))
+			return natural;
+		return top;
 	}
 
 	private static bool TraversableTop(byte material) =>

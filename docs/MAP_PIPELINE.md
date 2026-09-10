@@ -70,6 +70,18 @@ heights and a terrain image for allocation. Surveys and captures are derived
 evidence, not replacement atlas sources. New topology allocations are edited
 explicitly; no survey or builder writes them.
 
+The September 10 southern relief revision pins the existing absolute shore
+registrations: Tidekeeper’s Landing datum29, Drowned Seal Gate datum27,
+Violet Threshold datum17 and Twin Rites datum36. Their existing authored courses,
+stair levels and water planes do not follow newly lowered surrounding terrain.
+Violet Threshold and Twin Rites refine named runestone/support courses directly
+in their plans; no shared stonework generator chooses the recesses or moss.
+The author also approved fixing Shallows' boundary omission: evaluate its unchanged
+full plan in a temporary bounded production context, retain all strict checks,
+and copy only active-window-owned columns and sparse edits. This derived clipping
+changes neither the source registration nor the composition. Focused terrain
+verification now compares both east-west and north-south ownership.
+
 ## Fast iteration
 
 Use a focused production window; do not generate the continent:

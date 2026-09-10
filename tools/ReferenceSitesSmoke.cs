@@ -108,6 +108,7 @@ public partial class ReferenceSitesSmoke : Node3D
 			{
 				tested++;
 				await CheckShallowsBridge(map);
+				await CheckShallowsBridge(map, clipped: true);
 			}
 			if (tested == 0) _errors.Add("No measured reference site matched " + requested);
 			foreach (string error in _errors) GD.PushError("[reference-sites-smoke] "+error);
@@ -116,9 +117,9 @@ public partial class ReferenceSitesSmoke : Node3D
 		catch (Exception ex) { GD.PushError("[reference-sites-smoke] "+ex); GetTree().Quit(1); }
 	}
 
-	private async System.Threading.Tasks.Task CheckShallowsBridge(MapDefinition map)
+	private async System.Threading.Tasks.Task CheckShallowsBridge(MapDefinition map, bool clipped = false)
 	{
-		var bounds = AtlasRuntimeHandoff.WindowAround(map.CanonicalAtlas,6400,6980,2);
+		var bounds = AtlasRuntimeHandoff.WindowAround(map.CanonicalAtlas,6400,clipped ? 7360 : 6980,2);
 		var window = ProductionTerrainWindow.Build(map,map.DefaultSeed,bounds).Window;
 		window.Data.Validate(map.CanonicalAtlas.BiomeCatalog.Profiles.Count);
 		int x=6400-window.Data.OriginX,z=7040-window.Data.OriginZ,index=z*window.Data.Width+x;
@@ -147,6 +148,6 @@ public partial class ReferenceSitesSmoke : Node3D
 				_errors.Add("Shallows: physical bridge/bed surface missing at "+ray.Y);
 		}
 		collision.Free();
-		GD.Print("[reference-sites-smoke] Shallows bridge: bed/water/deck separation, exact travel, underside clearance and 3 physical surfaces checked");
+		GD.Print($"[reference-sites-smoke] Shallows bridge ({(clipped ? "clipped" : "complete")} window): bed/water/deck separation, exact travel, underside clearance and 3 physical surfaces checked");
 	}
 }

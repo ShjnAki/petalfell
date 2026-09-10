@@ -5,7 +5,7 @@ using Petalfell.Core;
 
 namespace Petalfell.World;
 
-public enum Species : byte { Deer, Rabbit, Goat, Bird, Butterfly, Fish }
+public enum Species : byte { Deer, Rabbit, Goat, Bird, Butterfly, Fish, Heron }
 
 /// <summary>
 /// Ambient wildlife.
@@ -31,6 +31,10 @@ public enum Species : byte { Deer, Rabbit, Goat, Bird, Butterfly, Fish }
 public partial class Fauna : Node3D
 {
 	private const int Population = 16;
+	public const int MarshPopulation = 6;
+	public const float MarshSpawnRadius = 288f;
+	public const float MarshRetentionRadius = 384f;
+	private int PopulationLimit => _window == null ? Population : MarshPopulation;
 	private const int BirdPopulation = 3;
 	private const float SpawnNear = 26f;
 	private const float SpawnFar = 74f;
@@ -41,6 +45,18 @@ public partial class Fauna : Node3D
 	private ShaderMaterial _inkLight, _inkDark;
 	private Rng _rng;
 	private double _retry;
+	private Func<AtlasSectorWindow> _window;
+	private readonly HashSet<long> _habitats = new();
+	private int _seed;
+	public IReadOnlyList<Critter> Live => _live;
+
+	public void Setup(Func<AtlasSectorWindow> window, ShaderMaterial inkLight, ShaderMaterial inkDark, int seed)
+	{
+		_window = window;
+		_inkLight = inkLight;
+		_inkDark = inkDark;
+		_seed = seed;
+	}
 
 	public void Setup(Terrain terrain, ShaderMaterial inkLight, ShaderMaterial inkDark, int seed)
 	{
@@ -54,15 +70,16 @@ public partial class Fauna : Node3D
 
 	public void Advance(Vector3 player, double delta)
 	{
-		if (_terrain == null) return;
+		if (_terrain == null && _window == null) return;
 
 		for (int i = _live.Count - 1; i >= 0; i--)
 		{
 			var c = _live[i];
-			if (!IsInstanceValid(c)) { _live.RemoveAt(i); continue; }
+			if (!IsInstanceValid(c)) { _habitats.Remove(c.HabitatKey); _live.RemoveAt(i); continue; }
 			float d = new Vector2(c.GlobalPosition.X - player.X, c.GlobalPosition.Z - player.Z).Length();
-			if (d > Cull)
+			if (d > (_window == null ? Cull : MarshRetentionRadius) || !c.HabitatValid())
 			{
+				_habitats.Remove(c.HabitatKey);
 				_live.RemoveAt(i);
 				c.QueueFree();
 				continue;
@@ -75,13 +92,14 @@ public partial class Fauna : Node3D
 		// quarter second the meadow the player is walking into stays empty for the
 		// four seconds they are looking at it.
 		_retry -= delta;
-		if (_live.Count >= Population || _retry > 0.0) return;
+		if (_live.Count >= PopulationLimit || _retry > 0.0) return;
 		_retry = 0.12;
-		for (int i = 0; i < 3 && _live.Count < Population; i++) TrySpawn(player);
+		for (int i = 0; i < 3 && _live.Count < PopulationLimit; i++) TrySpawn(player);
 	}
 
 	private void TrySpawn(Vector3 player)
 	{
+		if (_window != null) { TrySpawnAtlas(player); return; }
 		int S = _terrain.Size;
 		for (int attempt = 0; attempt < 12; attempt++)
 		{
@@ -123,6 +141,87 @@ public partial class Fauna : Node3D
 			_live.Add(critter);
 			return;
 		}
+	}
+
+	private void TrySpawnAtlas(Vector3 player)
+	{
+		var window = _window();
+		if (window == null) return;
+		const int spacing = 24;
+		int cx = Mathf.FloorToInt(player.X / spacing), cz = Mathf.FloorToInt(player.Z / spacing);
+		for (int ring = 1; ring <= (int)(MarshSpawnRadius / spacing); ring++)
+		for (int dz = -ring; dz <= ring; dz++)
+		for (int dx = -ring; dx <= ring; dx++)
+		{
+			if (Math.Abs(dx) != ring && Math.Abs(dz) != ring) continue;
+			int cellX = cx + dx, cellZ = cz + dz;
+			long key = ((long)cellX << 32) | (uint)cellZ;
+			if (_habitats.Contains(key)) continue;
+			int seed = unchecked(_seed ^ cellX * 374761393 ^ cellZ * 668265263 ^ 0x5EA7);
+			var rng = new Rng(seed);
+			if (!rng.Chance(.11f * ProductionTerrainGuide.SouthernLatitudeAt(cellZ * spacing))) continue;
+			var point = new Vector3((cellX + rng.Range(.2f, .8f)) * spacing, 0f,
+				(cellZ + rng.Range(.2f, .8f)) * spacing);
+			float distance = new Vector2(point.X - player.X, point.Z - player.Z).Length();
+			if (distance < 18f || distance > MarshSpawnRadius) continue;
+			int x = Mathf.FloorToInt(point.X) - window.Data.OriginX;
+			int z = Mathf.FloorToInt(point.Z) - window.Data.OriginZ;
+			if (x < 2 || z < 2 || x >= window.Data.Width - 2 || z >= window.Data.Depth - 2) continue;
+			int i = z * window.Data.Width + x;
+			int depth = window.Data.WaterSurface[i] - window.Grid.Top[i];
+			Species species = depth >= 2 ? Species.Fish : rng.Chance(.70f) ? Species.Heron : Species.Butterfly;
+			int count = 0;
+			foreach (var animal in _live) if (animal.Kind == species) count++;
+			if (count >= (species == Species.Fish ? 3 : species == Species.Heron ? 2 : 1)) continue;
+			if (!TryAtlasHabitat(window, species, point, out float ground, out float water)) continue;
+			point.Y = species == Species.Fish ? water - .8f : species == Species.Butterfly ? ground + 1.9f : ground;
+			var critter = new Critter { HabitatKey = key };
+			AddChild(critter);
+			critter.GlobalPosition = point;
+			critter.Setup(species, _window, _inkLight, _inkDark, seed);
+			_live.Add(critter);
+			_habitats.Add(key);
+			return;
+		}
+	}
+
+	internal static bool TryAtlasHabitat(AtlasSectorWindow window, Species species, Vector3 at,
+		out float ground, out float water)
+	{
+		ground = water = 0f;
+		if (window == null || ProductionTerrainGuide.SouthernLatitudeAt(at.Z) <= 0f) return false;
+		var data = window.Data;
+		var grid = window.Grid;
+		int x = Mathf.FloorToInt(at.X) - data.OriginX, z = Mathf.FloorToInt(at.Z) - data.OriginZ;
+		if (x < 2 || z < 2 || x >= data.Width - 2 || z >= data.Depth - 2) return false;
+		string detail = window.GroundDetailSetAt(x, z);
+		if (detail is not ("reed-root-moss" or "sand-reed-petal")) return false;
+		int i = z * data.Width + x, bed = grid.Top[i];
+		water = data.WaterSurface[i] > 0 ? data.WaterSurface[i] + .35f : 0f;
+		ground = bed;
+		float depth = water - bed;
+		if (species == Species.Fish)
+		{
+			if (depth < 1.8f || depth > 9f) return false;
+			for (int dz = -1; dz <= 1; dz++)
+			for (int dx = -1; dx <= 1; dx++)
+				if (data.WaterSurface[(z + dz) * data.Width + x + dx] != data.WaterSurface[i] ||
+					grid.SolidAt(x + dx, Mathf.FloorToInt(water - .8f), z + dz)) return false;
+			return true;
+		}
+		if (species == Species.Heron && (depth > 1.8f || water == 0f && data.Wetness[i] < 160)) return false;
+		if (water == 0f && grid.Cap[i] is not (Palette.MOSS or Palette.MUD or Palette.SAND) &&
+			!Palette.IsGrassSurface(grid.Cap[i])) return false;
+		if (bed > Terrain.Sea + 10 || grid.MeshHeightAt(x, z) > bed) return false;
+		if (species == Species.Butterfly) ground = Math.Max(bed, water);
+		for (int dz = -1; dz <= 1; dz++)
+		for (int dx = -1; dx <= 1; dx++)
+		{
+			if (Math.Abs(grid.Top[(z + dz) * data.Width + x + dx] - bed) > 1) return false;
+			for (int y = Mathf.FloorToInt(ground); y <= MathF.Ceiling(ground + 3f); y++)
+				if (grid.SolidAt(x + dx, y, z + dz)) return false;
+		}
+		return true;
 	}
 
 	private int LiveBirdCount()
@@ -194,6 +293,27 @@ public partial class Critter : Node3D
 	private float _vy;
 	private bool _airborne;
 	private float _groundY;
+	private Func<AtlasSectorWindow> _window;
+	private float _waterSurface = Palette.WaterLevel;
+	public long HabitatKey { get; set; }
+
+	public bool HabitatValid() => _window == null ||
+		Fauna.TryAtlasHabitat(_window(), _kind, GlobalPosition, out _, out _);
+
+	public void Setup(Species kind, Func<AtlasSectorWindow> window, ShaderMaterial inkLight,
+		ShaderMaterial inkDark, int seed)
+	{
+		_kind = kind;
+		_window = window;
+		_inkLight = inkLight;
+		_inkDark = inkDark;
+		_rng = new Rng(seed);
+		_phase = _rng.Next() * 6f;
+		_yaw = _rng.Next() * Mathf.Tau;
+		if (!Fauna.TryAtlasHabitat(window(), kind, GlobalPosition, out _groundY, out _waterSurface))
+			throw new InvalidOperationException("Wildlife spawn has no matching southern habitat");
+		Build();
+	}
 
 	public void Setup(Species kind, Terrain terrain, ShaderMaterial inkLight,
 		ShaderMaterial inkDark, int seed)
@@ -240,6 +360,7 @@ public partial class Critter : Node3D
 			case Species.Bird: Flyer(new Tone(0xdfe6f2), new Tone(0xb9c2d8), 0.55f); break;
 			case Species.Butterfly: Flyer(new Tone(0xf8ccda), new Tone(0xdccef1), 0.34f); break;
 			case Species.Fish: Swimmer(new Tone(0xa9c2d8)); break;
+			case Species.Heron: Wader(); break;
 		}
 	}
 
@@ -297,6 +418,26 @@ public partial class Critter : Node3D
 		}
 	}
 
+	private void Wader()
+	{
+		var pale = new Tone(0xe5dedb);
+		var wing = new Tone(0xaeb9cc);
+		var leg = new Tone(0x8c8e84);
+		Box(_body, 1.4f, 1.5f, 3.0f, pale, new Vector3(0, 1.25f, 0));
+		Box(_body, 1.55f, .65f, 2.5f, wing, new Vector3(0, 1.45f, -.08f), outlined: false);
+		_head = Pivot(_body, new Vector3(0, 1.42f, .32f));
+		Box(_head, .65f, 2.1f, .75f, pale, new Vector3(0, .25f, .08f));
+		Box(_head, .9f, .85f, 1.1f, pale, new Vector3(0, .61f, .15f));
+		Box(_head, .3f, .3f, 1.7f, new Tone(0xd4b793), new Vector3(0, .58f, .50f), outlined: false);
+		for (int side = -1; side <= 1; side += 2)
+		{
+			var pivot = Pivot(_body, new Vector3(side * .12f, 1.14f, 0));
+			Box(pivot, .24f, 3.65f, .24f, leg, new Vector3(0, -.55f, 0), outlined: false);
+			Box(pivot, .42f, .16f, 1.0f, leg, new Vector3(0, -1.11f, .08f), outlined: false);
+			_limbs.Add(pivot);
+		}
+	}
+
 	private void Swimmer(Tone tone)
 	{
 		Box(_body, 0.75f, 1.0f, 2.2f, tone, Vector3.Zero);
@@ -324,7 +465,7 @@ public partial class Critter : Node3D
 			Position = at,
 		};
 		var mat = new ShaderMaterial { Shader = GD.Load<Shader>("res://shaders/character.gdshader") };
-		mat.SetShaderParameter("albedo", tone.Linear);
+		mat.SetShaderParameter("albedo", Palette.ShaderRgba(tone.Linear));
 		mat.SetShaderParameter("sun_dir", Palette.SunDir);
 		mesh.MaterialOverride = mat;
 		parent.AddChild(mesh);
@@ -352,6 +493,7 @@ public partial class Critter : Node3D
 		Species.Bird => 7.5f,
 		Species.Butterfly => 1.8f,
 		Species.Fish => 2.6f,
+		Species.Heron => .85f,
 		_ => 2f,
 	};
 
@@ -458,7 +600,8 @@ public partial class Critter : Node3D
 		{
 			float want = _kind switch
 			{
-				Species.Fish => Palette.WaterLevel - 1.1f,
+				Species.Fish => _window == null ? Palette.WaterLevel - 1.1f :
+					Math.Clamp(_waterSurface - .8f, _groundY + .4f, _waterSurface - .4f),
 				Species.Bird => _groundY + 10f,
 				_ => _groundY + 1.9f,
 			};
@@ -541,6 +684,13 @@ public partial class Critter : Node3D
 				_body.Position = new Vector3(0, Mathf.Sin(_phase * 2f) * 0.02f, 0);
 				break;
 			}
+			case Species.Heron:
+			{
+				for (int i = 0; i < _limbs.Count; i++)
+					_limbs[i].Rotation = new Vector3(Mathf.Sin(_phase + i * Mathf.Pi) * cadence * .24f, 0, 0);
+				if (_head != null) _head.Rotation = new Vector3(Mathf.Sin(_phase * .35f) * .10f, 0, 0);
+				break;
+			}
 			case Species.Fish:
 			{
 				if (_limbs.Count >= 1)
@@ -589,6 +739,13 @@ public partial class Critter : Node3D
 	/// <summary>Is this somewhere the creature can be, and how high is the ground?</summary>
 	private bool Legal(Vector3 at, out float ground)
 	{
+		if (_window != null)
+		{
+			if (!Fauna.TryAtlasHabitat(_window(), _kind, at, out ground, out float surface)) return false;
+			if (_kind == Species.Heron && Math.Abs(ground - _groundY) > .35f) return false;
+			_waterSurface = surface;
+			return true;
+		}
 		int S = _terrain.Size;
 		int x = (int)MathF.Floor(at.X), z = (int)MathF.Floor(at.Z);
 		ground = at.Y;

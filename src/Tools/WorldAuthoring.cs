@@ -194,6 +194,15 @@ public static class WorldAuthoring
 					ProductionWalkingTransferAudit walkingTransfer =
 						AuditProductionWalkingTransfer(first, neighbour,
 							AtlasRuntimeHandoff.DefaultWalkingTriggerMargin);
+					int neighbourMinZ = bounds.MinSectorZ + (bounds.MinSectorZ > 0 ? -1 : 1);
+					var verticalBounds = new AtlasMosaicBounds(bounds.MinSectorX, neighbourMinZ,
+						bounds.MaxSectorX, neighbourMinZ + bounds.Span - 1);
+					AtlasPreparedWindow verticalNeighbour = ProductionTerrainWindow.Build(map,
+						map.DefaultSeed, verticalBounds,
+						message => GD.PrintErr($"[production-terrain-verify] {message}"));
+					ProductionOverlapAudit verticalOverlap = CompareProductionOverlap(first,
+						verticalNeighbour, AtlasRuntimeHandoff.DefaultWalkingTriggerMargin);
+					GD.Print($"[production-terrain-verify] north/south overlap {verticalOverlap.SafeCells} cells with {verticalBounds}");
 
 					GD.Print($"[production-terrain-verify] {x},{z} bounds {bounds} " +
 					         $"repeat {firstHash}; landing {landing.GlobalX},{landing.GlobalZ}," +

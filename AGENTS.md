@@ -1,6 +1,6 @@
 # Petalfell — agent guide
 
-Petalfell is a pastel voxel exploration game in Godot 4.7.1 Mono/C#. The world
+Petalfell is a pastel voxel exploration game in Godot 4.7.2 Mono/C#. The world
 is quiet, enormous and mostly abandoned; walking to a place is the reward.
 
 Read this file before editing. Then read the owning document for the change:
@@ -106,6 +106,17 @@ production deliberately reuses it. Code is sunset only when no production path
 depends on it; archive such code with a non-`.cs` extension and document why.
 Do not confuse “old origin” with “unused.”
 
+The September 10 mushroom-marsh reference supersedes the tree-heavy southern
+pass: low broken islets, shallow marsh water and large pale-stemmed pink/purple
+mushrooms are the target. Wildlife is sparse (six total, at most two herons) with
+288/384-block spawn/retention ranges. The southern revision uses a smooth
+geographic/region mask; Shore also occurs in the north, so biome identity alone
+must not scope southern edits.
+Shallows boundary loading evaluates its complete unchanged plan in a temporary
+bounded production context, then copies only active-window-owned cells. Do not
+weaken the source builder's full-plan assertions to implement clipping. Focused
+terrain verification checks both east-west and north-south neighbours.
+
 ## Documentation discipline
 
 Update the owning document with every implemented change. `CURRENT_STATE.md`
@@ -166,13 +177,14 @@ workspace 5. Use the launcher in
 [`building-knowledge/rendering/capture-overlay-and-acceptance.md`](building-knowledge/rendering/capture-overlay-and-acceptance.md).
 Headless commands are unaffected.
 
-On NixOS, if the Godot SDK path changed:
+On Arch/Omarchy, after installing or updating Godot Mono:
 
 ```bash
 bash tools/setup-nuget.sh
 ```
 
-Playable Linux build:
+Playable Linux build (requires matching Godot .NET export templates installed
+through the editor’s Manage Export Templates dialog):
 
 ```bash
 ./tools/build-linux.sh && ./tools/run-linux.sh

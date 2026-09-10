@@ -497,14 +497,17 @@ public static class GroundDetail
 		{
 			int index = z * data.Width + x;
 			int surface = data.WaterSurface[index];
-			if (surface == 0 || surface - data.Height[index] < 2) continue;
+			if (surface == 0 || surface - data.Height[index] < 2 ||
+				window.Grid.SolidAt(x, surface, z) || window.Grid.SolidAt(x, surface + 1, z)) continue;
 
 			int gx = data.OriginX + x, gz = data.OriginZ + z;
 			var rng = new Draw(gx, gz, 0x0FA7);
 			float fx = x + 0.5f, fz = z + 0.5f, y = surface + 0.38f;
 			string detailSet = window.GroundDetailSetAt(x, z);
-			bool permitsPads = detailSet.Contains("reed", StringComparison.Ordinal) ||
-				detailSet.Contains("moss", StringComparison.Ordinal);
+			float marsh = detailSet is "reed-root-moss" or "sand-reed-petal"
+				? ProductionTerrainGuide.SouthernLatitudeAt(gz) : 0f;
+			bool permitsPads = (detailSet.Contains("reed", StringComparison.Ordinal) ||
+				detailSet.Contains("moss", StringComparison.Ordinal)) && (marsh <= 0f || surface - data.Height[index] <= 8);
 			bool permitsPetals = detailSet.Contains("petal", StringComparison.Ordinal) ||
 				detailSet.Contains("flower", StringComparison.Ordinal);
 			if (!permitsPads && !permitsPetals) continue;
@@ -513,9 +516,10 @@ public static class GroundDetail
 			// draw vary instances inside them; absolute coordinates preserve chunk and
 			// seam determinism.
 			float drift = _waterDrift.Fbm01(gx / 42f, gz / 42f, 3);
-			if (drift < 0.64f) continue;
-			float clump = Rng.Smoothstep(0.64f, 0.88f, drift);
-			float padChance = permitsPads ? 0.003f + clump * 0.022f : 0f;
+			float threshold = Rng.Lerp(.64f, .50f, marsh);
+			if (drift < threshold) continue;
+			float clump = Rng.Smoothstep(threshold, 0.88f, drift);
+			float padChance = permitsPads ? (0.003f + clump * 0.022f) * Rng.Lerp(1f, 5f, marsh) : 0f;
 			if (rng.Chance(padChance))
 			{
 				var pad = rng.Pick(PadColors);
@@ -926,6 +930,55 @@ public static class GroundDetail
 		}
 	}
 
+	private static void SmallMushrooms(Field field, int gx, int gz, float x, float y, float z)
+	{
+		var rng = new Draw(gx, gz, 0xF061);
+		float patch = _meadow.Fbm01(gx / 22f + 47f, gz / 22f, 2);
+		if (!rng.Chance(ProductionTerrainGuide.SouthernLatitudeAt(gz) * .08f *
+			Rng.Smoothstep(.40f, .66f, patch))) return;
+		Color stem = Palette.Get(Palette.PLASTER).Top;
+		Color cap = Palette.Get(patch > .54f ? Palette.LEAF_LILAC : Palette.LEAF_ROSE).Top;
+		int count = rng.Int(2, 4);
+		for (int i = 0; i < count; i++)
+		{
+			float px = x + rng.Range(-.18f, .18f), pz = z + rng.Range(-.18f, .18f);
+			float height = rng.Range(.18f, .40f), width = rng.Range(.28f, .50f);
+			field.Box(px, y - .02f, pz, .075f, height, .075f, stem);
+			field.Box(px, y + height - .04f, pz, width, .10f, width, stem);
+			field.Box(px, y + height + .02f, pz, width * .84f, .11f, width * .84f, cap);
+		}
+	}
+
+	private static bool ReedClearance(VoxelGrid grid, int x, int z, int bed, int surface)
+	{
+		for (int y = bed; y <= surface + 2; y++)
+			if (grid.At(x, y, z) != Palette.AIR) return false;
+		return true;
+	}
+
+	private static void WetlandReeds(Field field, int gx, int gz, float x, float z, int bed, int surface)
+	{
+		float patch = _meadow.Fbm01(gx / 38f + 17f, gz / 38f - 29f, 3);
+		float density = Rng.Smoothstep(.48f, .72f, patch) * .045f *
+			ProductionTerrainGuide.SouthernLatitudeAt(gz);
+		var rng = new Draw(gx, gz, 0x7EED);
+		if (!rng.Chance(density)) return;
+		int count = rng.Int(2, 4);
+		for (int k = 0; k < count; k++)
+		{
+			float px = x + rng.Range(-.12f, .12f), pz = z + rng.Range(-.12f, .12f);
+			float root = bed - .025f, height = surface - root + rng.Range(.65f, 1.35f);
+			float phase = rng.Next() * Mathf.Tau;
+			field.Grass(px, root, pz, .22f, height * .94f, ReedBase, ReedTip,
+				phase, rng.Range(-.18f, .18f), rng.Range(-.18f, .18f));
+			field.Tuft(px, root, pz, .055f, height, ReedBase, ReedTip, phase, sway: .65f);
+			int headStart = field.Det.Count;
+			field.Box(px, root + height - .12f, pz, .12f, .24f, .12f,
+				k % 2 == 0 ? FlowerTops[0] : ReedTip, sway: .65f, phase: phase);
+			for (int i = headStart; i < field.Det.Count; i += 2) field.Det[i] = .65f;
+		}
+	}
+
 	/// <summary>
 	/// Sub-voxel detail for a compiled atlas window. The authored biome profile
 	/// chooses the vocabulary; the visible cap and water depth decide what can
@@ -951,9 +1004,21 @@ public static class GroundDetail
 		{
 			int index = z * data.Width + x;
 			int h = grid.HeightAt(x, z);
+			int natural = grid.Top[index];
+			if (data.OriginZ + z > 5000 && natural < h && grid.At(x, h - 1, z) is >= Palette.LEAF_PINK and <= Palette.LEAF_ROSE &&
+				grid.At(x, natural, z) == Palette.AIR && grid.At(x, natural + 1, z) == Palette.AIR)
+				h = natural;
 			if (h <= 0 || h >= grid.Height || grid.At(x, h, z) != Palette.AIR) continue;
 			int water = data.WaterSurface[index];
-			if (water > 0 && h <= water) continue;
+			if (water > 0 && h <= water)
+			{
+				byte bed = grid.At(x, h - 1, z);
+				if (water - h <= 3 && bed is Palette.MUD or Palette.SAND or Palette.MOSS &&
+					window.GroundDetailSetAt(x, z).Contains("reed", StringComparison.Ordinal) &&
+					ReedClearance(grid, x, z, h, water))
+					WetlandReeds(f, data.OriginX + x, data.OriginZ + z, x + .5f, z + .5f, h, water);
+				continue;
+			}
 
 			byte cap = grid.At(x, h - 1, z);
 			bool grassy = Palette.IsGrassSurface(cap) || cap is Palette.MOSS or Palette.BLOSSOM_DRIFT;
@@ -974,6 +1039,11 @@ public static class GroundDetail
 			var rng = new Draw(gx, gz, 0x5EED);
 			float y = h, fx = x + 0.5f, fz = z + 0.5f;
 			string detailSet = window.GroundDetailSetAt(x, z);
+			if (grassy && detailSet is "reed-root-moss" or "sand-reed-petal")
+				SmallMushrooms(f, gx, gz, fx, y, fz);
+			if ((grassy || muddy) && h <= Terrain.Sea + 6 && data.Wetness[index] >= 160 &&
+				detailSet is "reed-root-moss" or "sand-reed-petal")
+				WetlandReeds(f, gx, gz, fx, fz, h, h);
 			if (cap == Palette.PAVING && detailSet.Contains("petal", StringComparison.Ordinal))
 				PavingPetals(f, gx, gz, fx, y, fz);
 
@@ -1014,10 +1084,12 @@ public static class GroundDetail
 				}
 
 				bool flowers = detailSet.Contains("flower", StringComparison.Ordinal) ||
-					detailSet.Contains("petal", StringComparison.Ordinal);
+					detailSet.Contains("petal", StringComparison.Ordinal) ||
+					detailSet == "reed-root-moss" && ProductionTerrainGuide.SouthernLatitudeAt(gz) > 0f;
 				float flowerField = _flowers.Fbm01(gx * 0.028f, gz * 0.028f, 3);
 				float flowerBand = Rng.Smoothstep(0.45f, 0.70f, flowerField);
-				if (flowers && rng.Chance(flowerBand * 0.34f))
+				if (flowers && rng.Chance(flowerBand * 0.34f *
+					(detailSet == "reed-root-moss" ? ProductionTerrainGuide.SouthernLatitudeAt(gz) : 1f)))
 				{
 					Color petals = rng.Pick(FlowerTops);
 					int count = rng.Int(2, 4);

@@ -34,6 +34,8 @@ internal sealed class ProductionTerrainGrammar
 	private readonly Noise2D _mountainPrimary;
 	private readonly Noise2D _mountainSecondary;
 	private readonly Noise2D _mountainShoulder;
+	private readonly Noise2D _marshIslands;
+	private readonly Noise2D _marshBasins;
 
 	private readonly record struct Disc(float X, float Z, float Radius, float Offset,
 		float AxisX, float AxisZ, float WarpAmplitude, float Sign);
@@ -51,6 +53,8 @@ internal sealed class ProductionTerrainGrammar
 		_mountainPrimary = new Noise2D(unchecked(seed ^ Rng.StableHash("atlas:legacy:mountain-primary")));
 		_mountainSecondary = new Noise2D(unchecked(seed ^ Rng.StableHash("atlas:legacy:mountain-secondary")));
 		_mountainShoulder = new Noise2D(unchecked(seed ^ Rng.StableHash("atlas:legacy:mountain-shoulder")));
+		_marshIslands = new Noise2D(unchecked(seed ^ Rng.StableHash("production:marsh-islets")));
+		_marshBasins = new Noise2D(unchecked(seed ^ Rng.StableHash("production:marsh-basins")));
 	}
 
 	/// <summary>
@@ -176,6 +180,16 @@ internal sealed class ProductionTerrainGrammar
 			globalZ / 280f, 3) * 5f;
 		return Rng.Clamp(((spine - .48f) * 38f + shoulder) * high, -19f, 21f);
 	}
+
+	public float MarshFieldAt(float globalX, float globalZ) =>
+		_marshIslands.Fbm(globalX / 36f, globalZ / 36f, 3) * .75f +
+		_marshBasins.Fbm(globalX / 108f + 31f, globalZ / 108f - 17f, 2) * .25f;
+
+	public bool MarshWaterAt(float globalX, float globalZ, float influence) =>
+		influence > 0f && MarshFieldAt(globalX, globalZ) < Rng.Lerp(-.60f, .08f, influence);
+
+	public float MarshHeightAt(float globalX, float globalZ) =>
+		Terrain.Sea + 2f + Rng.Smoothstep(-.12f, .42f, MarshFieldAt(globalX, globalZ)) * 5f;
 
 	private static float Anisotropic(Noise2D noise, Vector2 point,
 		float angle, float alongWave, float acrossWave)

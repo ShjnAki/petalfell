@@ -40,7 +40,13 @@ function of world seed plus absolute atlas coordinates.
 
 `ProductionTerrainWindow` owns a sector-aligned 2 × 2 window (1,536 blocks
 square). It creates a local `VoxelGrid` with a global origin, applies production
-sites whose complete footprints fit, then populates vegetation.
+sites, then populates vegetation. Ordinary site builders require complete
+footprints. Shallows additionally supports clipped window ownership: its unchanged
+complete blueprint is validated and built in one temporary 2 × 2 production
+context, then only intersecting columns and sparse edits (including AIR) are
+copied into the active window. The temporary context does not recursively build
+sites or populate wilderness and is not retained. The strict source builder and
+its full-footprint checks remain intact; this is not clipped authoring.
 
 `AtlasRuntimeHandoff` chooses adjacent windows for walking and centred windows
 for map travel. A replacement is built completely before it is installed.
@@ -66,6 +72,39 @@ Water identity comes from accepted hydrology after the production displacement
 and shore response. `AtlasSectorWindow` builds visible water geometry from that
 data; the shared shader owns movement, translucency and depth. Collision and the
 controller query the same window water columns.
+
+### Southern lowland response
+
+Southern terrain uses a continuous fen/shallows influence from the accepted region
+map, multiplied by a smooth global-Z 5000–6800 envelope. Low mapped elevations
+compress toward sea-level shelves; the high-elevation response fades out across
+source elevation .64–.76. The existing shelf, stair and bank primitives remain.
+A globally registered 36/108-block marsh field opens subordinate shallow channels
+between low grassy islets. These local pools use a two-block raster inside the
+existing six-block macro hydrology cells, then the same bank, bed and collision
+pipeline. Near-water shelves rise gradually from sea24; wet banks expose moss,
+soil and stone courses. Accepted source PNGs and major river/coast registration
+are not rewritten. This is the author's mushroom-marsh revision, not the prior
+tree-heavy coast treatment.
+
+Unlabelled water pixels inherit the nearest southern province for at most 128
+blocks, using a bounded distance patch with an expanded dependency margin. This
+lets adjacent reeds, water dressing and fauna share a shore identity rather than
+falling back to central meadow. Northern water ownership remains unchanged.
+Southern Wetland selects the dedicated fen detail profile; the historical
+northern profile lookup remains unchanged. A separate coordinate-seeded mushroom
+pass runs before ordinary trees on an 18-block candidate lattice. It requires dry
+root support and excludes authored precincts. Pale stalks, cream undersides and
+layered spotted caps are voxel geometry, not recoloured tree crowns; the normal
+mesher supplies both visible faces and collision. Ordinary tree admission falls
+to 1.5% of its former rate in the fully southern core, blending through the same
+influence. Small mushroom clusters and understory plants share chunk detail.
+Clear ground beneath southern caps remains eligible for map landings.
+
+Southern sea-level water blends toward palette-authored marsh colours with
+reduced refraction, foam and glints, retaining bed transmission and registered
+reflections. The response fades by latitude and depth; low-altitude southern mist
+uses the existing bounded fog buffer. No new per-pond renderer is allocated.
 
 ## Sites
 
@@ -219,6 +258,24 @@ An 18-block field and independent coordinate draw place at most seven flat
 petals inside each cell, clear of its bevel; these join the existing detail mesh.
 `Atmosphere.SetViewDistance` owns the depth-haze span for both production camera
 zoom and review cameras; capture no longer carries a separate haze formula.
+
+Southern reeds are emitted before the submerged-cell rejection in `GroundDetail`.
+They root on the actual bed, have bent leaves and shared wind weights at their
+seed heads, and are restricted to shallow, unobstructed reed-profile cells.
+Dry wetland herbs and bank reeds use the existing merged chunk detail mesh.
+
+`Fauna` has a production-window callback alongside its historical terrain API.
+Production attaches one `SouthernWildlife` node outside replaceable window
+content. At most six animals (three fish, two herons, one butterfly) occupy
+coordinate-seeded habitat candidates. The production spawn radius is 288 blocks
+and retention radius is 384 blocks, with no mesh distance cutoff; camera zoom
+neither increases population nor removes existing animals. Fish require clear
+submerged space, herons require
+shallow water or wet banks, and all species reject unsuitable profiles and placed
+obstructions. Animals retain global transforms across walking replacement and
+are culled after distant travel. Their materials use the shared character light,
+cloud and mirror clipping path, with one sRGB conversion. No legacy inventory,
+fishing, pet or settlement assembly is activated.
 
 ## Player, camera and map
 

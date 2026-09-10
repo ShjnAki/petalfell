@@ -27,6 +27,11 @@ public partial class LookRenderSmoke : Node
 			CheckSurfaceFragments();
 			CheckPavingPetals();
 			CheckMeadowPlants();
+			CheckSouthernProfiles();
+			CheckWetlandReeds();
+			CheckSouthernTransition();
+			CheckMarshMushrooms();
+			CheckSouthernFauna();
 			GD.Print("[look-render-smoke] convex lips/coplanar chunk seam, 255 watertight junctions, unchanged box collision, " +
 				"4097 clock samples/horizon fade, bounded global particle handoff, mirror registration/height fades, local edit ownership, supported fragment/petal/plant handoff and plant wind seams passed");
 			GetTree().Quit();
@@ -41,6 +46,202 @@ public partial class LookRenderSmoke : Node
 	private static void Require(bool value, string message)
 	{
 		if (!value) throw new InvalidOperationException(message);
+	}
+
+	private static void CheckSouthernProfiles()
+	{
+		var atlas = WorldAtlasDefinition.Load("res://content/chapter_01/atlas.json");
+		var lookup = (int[])typeof(ProductionTerrainWindow).GetMethod("BuildProfileLookup",
+			BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, new object[] { atlas });
+		Require(atlas.BiomeCatalog.Profiles[lookup[(int)Biome.Wetland]].Id == "fen",
+			"wetland inherited the central river profile instead of fen");
+		Require(atlas.BiomeCatalog.Profiles[lookup[(int)Biome.Shore]].Id == "drowned-shallows",
+			"shore lost its drowned-shallows profile");
+	}
+
+	private static void CheckWetlandReeds()
+	{
+		var atlas = WorldAtlasDefinition.Load("res://content/chapter_01/atlas.json");
+		int profile = atlas.BiomeCatalog.Profiles.FindIndex(p => p.Id == "fen");
+		const int size = 96;
+		AtlasSectorWindow Window(int originX, int bed, bool blocked = false)
+		{
+			var data = new AtlasSectorData(0, 0, originX, 7200, size, 0,
+				size, size, 64, 24, "wetland-reed-smoke");
+			var grid = new VoxelGrid(size, 64, 7, originX, 7200);
+			for (int z = 0; z < size; z++)
+			for (int x = 0; x < size; x++)
+			{
+				int i = z * size + x;
+				data.Height[i] = (ushort)bed;
+				data.WaterSurface[i] = 24;
+				data.Profile[i] = (byte)profile;
+				grid.Describe(x, z, bed, Palette.MUD, Palette.MUD);
+				if (blocked) grid.Set(x, bed, z, Palette.STONE);
+			}
+			return new AtlasSectorWindow(data, atlas, 7, grid);
+		}
+		var a = Window(6000, 23);
+		var b = Window(6024, 23);
+		var deepWindow = Window(6000, 14);
+		var coveredWindow = Window(6000, 23, true);
+		int vertices = 0;
+		for (int cz = 0; cz < 4; cz++)
+		for (int cx = 1; cx < 4; cx++)
+		{
+			using var mesh = GroundDetail.BuildAtlas(a, cx, cz);
+			using var next = GroundDetail.BuildAtlas(b, cx - 1, cz);
+			using var deep = GroundDetail.BuildAtlas(deepWindow, cx, cz);
+			using var covered = GroundDetail.BuildAtlas(coveredWindow, cx, cz);
+			Require(deep == null && covered == null, "reeds grew in deep water or through a solid blocker");
+			Require((mesh == null) == (next == null), "reed patch changed across window ownership");
+			if (mesh == null) continue;
+			var pa = mesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+			var pb = next.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+			vertices += pa.Length;
+			var wind = mesh.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Custom0].AsFloat32Array();
+			var nextWind = next.SurfaceGetArrays(0)[(int)Mesh.ArrayType.Custom0].AsFloat32Array();
+			Require(wind.SequenceEqual(nextWind), "reed wind changed across window ownership");
+			var joints = new Dictionary<Vector3, Vector2>();
+			Require(pa.Length == pb.Length, "reed count changed across window ownership");
+			for (int i = 0; i < pa.Length; i++)
+			{
+				Require((pa[i] - pb[i] - new Vector3(24, 0, 0)).Length() < .001f,
+					"reed geometry changed across window ownership");
+				Require(pa[i].Y >= 22.9f && pa[i].Y <= 26.5f, "reeds leave their bed/water envelope");
+				var motion = new Vector2(wind[i * 2], wind[i * 2 + 1]);
+				Require(!joints.TryGetValue(pa[i], out var previous) || previous == motion,
+					"reed head or leaf facets tear at shared wind joints");
+				joints[pa[i]] = motion;
+			}
+		}
+		Require(vertices > 0, "shallow wetland has no bed-rooted reed patches");
+		GD.Print($"[southern-detail-smoke] dedicated profiles and {vertices} rooted reed vertices retain window ownership");
+	}
+
+	private static void CheckSouthernTransition()
+	{
+		var atlas = WorldAtlasDefinition.Load("res://content/chapter_01/atlas.json");
+		var a = ProductionTerrainGuide.CreateAtOrigin(atlas, 768, 5760, 6144, 20260820);
+		var b = ProductionTerrainGuide.CreateAtOrigin(atlas, 768, 5784, 6144, 20260820);
+		int blended = 0;
+		for (int z = 24; z < 744; z += 3)
+		for (int x = 48; x < 744; x += 3)
+		{
+			float weight = a.SouthernInfluenceAt(x, z);
+			Require(weight >= 0f && weight <= 1f && float.IsFinite(weight), "invalid southern transition weight");
+			Require(Math.Abs(weight - b.SouthernInfluenceAt(x - 24, z)) < .00001f,
+				"southern transition depends on window origin");
+			if (a.LandAt(x, z) < .99f || a.LandAt(x + 1, z) < .99f) continue;
+			if (weight > .05f && weight < .95f) blended++;
+			Require(Math.Abs(weight - a.SouthernInfluenceAt(x + 1, z)) < .08f,
+				"central/southern terrain influence has an abrupt land boundary");
+		}
+		Require(blended > 100, "southern ecotone has no broad mixed land band");
+		Require(ProductionTerrainGuide.LowlandHeight(44f, 1f) < 33f &&
+			ProductionTerrainGuide.LowlandHeight(120f, 0f) == 120f, "southern relief does not lower selectively");
+		GD.Print($"[southern-transition-smoke] {blended} mixed land samples, continuous relief and exact neighbouring influence");
+	}
+
+	private static void CheckMarshMushrooms()
+	{
+		var atlas = WorldAtlasDefinition.Load("res://content/chapter_01/atlas.json");
+		AtlasSectorWindow Window(int originX)
+		{
+			const int size = 128;
+			var data = new AtlasSectorData(0, 0, originX, 7200, size, 0, size, size, 64, 24, "mushroom-smoke");
+			var grid = new VoxelGrid(size, 64, 7, originX, 7200);
+			for (int z = 0; z < size; z++)
+			for (int x = 0; x < size; x++)
+			{
+				int i = z * size + x;
+				data.Height[i] = 26;
+				data.Land[i] = 1;
+				data.Profile[i] = (byte)atlas.BiomeCatalog.Profiles.FindIndex(p => p.Id == "fen");
+				grid.Describe(x, z, 26, Palette.MOSS, Palette.SOIL);
+			}
+			Vegetation.Mushroom(grid, new Rng(11), new Noise2D(17), 6064 - originX, 26, 64, 1.1f, Palette.LEAF_ROSE);
+			return new AtlasSectorWindow(data, atlas, 7, grid);
+		}
+		var a = Window(6000);
+		var b = Window(6024);
+		int cells = 0;
+		foreach (var voxel in a.Grid.PlacedIn(48, 48, 32))
+		{
+			Require(voxel.Material == b.Grid.At(voxel.X - 24, voxel.Y, voxel.Z), "mushroom changed across window ownership");
+			cells++;
+		}
+		Require(cells > 250 && a.Grid.At(64, 27, 64) == Palette.PLASTER, "giant mushroom lacks its pale grounded stem");
+		Require(!a.Grid.SolidAt(68, 28, 64) && a.Grid.HeightAt(68, 64) > 36,
+			"mushroom cap has no real open underside");
+		Require(AtlasRuntimeHandoff.TryResolveExactLanding(a, 6068, 7264, out var landing, out _) && landing.SurfaceY == 26,
+			"map landing under a mushroom did not use the supported ground");
+		var grammar = new ProductionTerrainGrammar(20260820);
+		int wet = 0, dry = 0;
+		for (int z = 7000; z < 7500; z += 6)
+		for (int x = 6000; x < 6500; x += 6)
+		{
+			Require(!grammar.MarshWaterAt(x, z, 0f), "marsh pools escaped their southern influence");
+			if (grammar.MarshWaterAt(x, z, 1f)) wet++; else dry++;
+			float height = grammar.MarshHeightAt(x, z);
+			Require(height >= 26f && height <= 31f, "marsh relief left its low shelf envelope");
+		}
+		Require(wet > 1000 && dry > 500, "marsh field did not separate shallow channels and islets");
+		GD.Print($"[mushroom-marsh-smoke] {cells} mushroom cells, open underside/ground landing, {wet} wet/{dry} dry field samples");
+	}
+
+	private void CheckSouthernFauna()
+	{
+		var atlas = WorldAtlasDefinition.Load("res://content/chapter_01/atlas.json");
+		int profile = atlas.BiomeCatalog.Profiles.FindIndex(p => p.Id == "fen");
+		AtlasSectorWindow Window(int originX, bool dry = false)
+		{
+			const int size = 768;
+			var data = new AtlasSectorData(0, 0, originX, 7200, size, 0, size, size, 64, 24, "fauna-smoke");
+			var grid = new VoxelGrid(size, 64, 7, originX, 7200);
+			for (int z = 0; z < size; z++)
+			for (int x = 0; x < size; x++)
+			{
+				int i = z * size + x, h = dry ? 25 : (originX + x) % 48 < 24 ? 21 : 23;
+				data.Height[i] = (ushort)h;
+				data.WaterSurface[i] = dry ? (ushort)0 : (ushort)24;
+				data.Wetness[i] = dry ? (byte)0 : (byte)255;
+				data.Profile[i] = (byte)profile;
+				grid.Describe(x, z, h, Palette.MUD, Palette.MUD);
+			}
+			return new AtlasSectorWindow(data, atlas, 7, grid);
+		}
+		AtlasSectorWindow active = Window(5760);
+		var fauna = new Fauna();
+		AddChild(fauna);
+		fauna.Setup(() => active, null, null, 20260820);
+		var focus = new Vector3(6048, 25, 7296);
+		for (int frame = 0; frame < 180; frame++) fauna.Advance(focus, 1.0 / 30.0);
+		Require(fauna.LiveCount is > 0 and <= 6, "southern fauna exceeds the sparse six-animal budget");
+		Require(fauna.Live.Count(c => c.Kind == Species.Heron) <= 2, "too many marsh birds");
+		Require(fauna.Live.Any(c => c.Kind == Species.Fish) && fauna.Live.Any(c => c.Kind == Species.Heron),
+			"southern habitats do not admit both fish and waders");
+		Require(fauna.Live.Any(c => new Vector2(c.GlobalPosition.X - focus.X, c.GlobalPosition.Z - focus.Z).Length() > 96f),
+			"wide-zoom wildlife did not populate beyond the former cull radius");
+		Require(Fauna.MarshSpawnRadius >= 288f && Fauna.MarshRetentionRadius >= 384f, "wildlife range does not cover maximum zoom");
+		var before = fauna.Live.ToDictionary(c => c.GetInstanceId(), c => c.GlobalPosition);
+		active = Window(5784);
+		fauna.Advance(focus + new Vector3(48, 0, 0), 0);
+		Require(fauna.LiveCount == before.Count, "wide-view movement culled retained wildlife");
+		foreach (var animal in fauna.Live)
+		{
+			Require(animal.HabitatValid(), "animal lost its habitat after handoff");
+			Require(before.TryGetValue(animal.GetInstanceId(), out var position) && position == animal.GlobalPosition,
+				"walking handoff reset or moved an animal");
+		}
+		Require(!Fauna.TryAtlasHabitat(Window(5952, true), Species.Fish, focus, out _, out _),
+			"fish admitted on dry ground");
+		Require(!Fauna.TryAtlasHabitat(active, Species.Heron, new Vector3(6002, 24, 7296), out _, out _),
+			"wader admitted in deep water");
+		fauna.Advance(new Vector3(9800, 40, 4600), .01);
+		Require(fauna.LiveCount == 0, "distant map travel retained southern fauna");
+		fauna.Free();
+		GD.Print("[southern-fauna-smoke] six animals/two herons maximum, 288/384-block ranges, habitat exclusion and live handoff passed");
 	}
 
 	private static void CheckLocalEdits()

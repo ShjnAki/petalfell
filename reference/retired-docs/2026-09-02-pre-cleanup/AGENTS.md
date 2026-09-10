@@ -517,25 +517,8 @@ Compile without exporting:
 dotnet build
 ```
 
-**On NixOS**, the engine's bundled `Godot.NET.Sdk` lives in the nix store under a
-content hash that changes on every system rebuild. When the build fails with
-`MSB4236: The SDK 'Godot.NET.Sdk/4.7.1' could not be found`, this is why:
-
-```bash
-bash tools/setup-nuget.sh
-```
-
-For a playable Linux x86-64 release build:
-
-```bash
-./tools/build-linux.sh && ./tools/run-linux.sh
-```
-
-The export lands in `build/`, which is git-ignored. On NixOS the build script
-links the matching Mono export templates out of the nix store into Godot's
-per-user template directory, and the run script exposes the package's isolated
-graphics and audio libraries to the portable executable — a normal distribution
-resolves those through the system linker, NixOS does not.
+Build setup and Linux packaging instructions are superseded by the current
+root `AGENTS.md`.
 
 ### The capture rig
 

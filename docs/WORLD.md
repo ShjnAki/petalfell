@@ -33,6 +33,13 @@ The accepted atlas establishes several landscape families:
 Names and exact allocations live in topology data. This document owns their
 narrative relationship, not coordinates.
 
+The southern lowlands now follow the author's mushroom-marsh direction: low
+fragmented grassy islands, shallow channels, large pale-stemmed fungi and only
+occasional ordinary trees. Sparse fish, wading herons and butterflies reinforce
+this habitat without turning the quiet world into a crowded wildlife display.
+The ecological transition from central country is gradual; ruins keep their
+permanent addresses and measured structural identities.
+
 ## History visible in geography
 
 Water and elevation shaped settlement first. Large civic works occupy crossings,

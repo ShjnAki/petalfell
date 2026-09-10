@@ -76,9 +76,13 @@ reliable on voxel terrain: walking, cautious slow-walk, jumping, route following
 and swimming. The camera stays readable and player-controlled rather than zooming
 around obstructions.
 
-Future scope includes a newly designed inventory and loadout, a pet companion,
-flora and fauna. Their old fixture implementations do not define the production
-design. Build them for the production world after world/site work is stable.
+Southern wetlands follow the author's mushroom-marsh reference: fragmented low
+islets, shallow water and large pale-stemmed pink/purple mushrooms rather than
+ordinary woodland. Sparse ambient fish, herons and butterflies query the current
+production window and remain loaded across the maximum gameplay zoom. Future scope includes
+a newly designed inventory and loadout, a pet companion, and broader flora/fauna
+systems. Their old fixture implementations do not define the production design.
+Build those systems for the production world after world/site work is stable.
 
 ## Narrative delivery
 

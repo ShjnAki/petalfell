@@ -40,7 +40,7 @@ public static class ProductionTerrainWindow
 		AtlasSectorData data = Describe(terrain, atlas, worldSeed, bounds);
 		var window = new AtlasSectorWindow(data, atlas, worldSeed, terrain.Grid);
 		var siteBuilds = new List<AtlasReferenceSiteBuild>();
-		BuildRuntimeSites(terrain, window, atlas, siteBuilds, warning);
+		BuildRuntimeSites(terrain, window, atlas, worldSeed, siteBuilds, warning);
 		long siteMs = watch.ElapsedMilliseconds - planMs - terrainMs;
 		Vegetation.Populate(terrain, worldSeed);
 		long floraMs = watch.ElapsedMilliseconds - planMs - terrainMs - siteMs;
@@ -48,7 +48,7 @@ public static class ProductionTerrainWindow
 		GD.Print($"[production-terrain] full-atlas window {bounds} " +
 		         $"({originX},{originZ}+{size}) plan {planMs}ms terrain {terrainMs}ms " +
 		         $"sites {siteMs}ms flora {floraMs}ms; {terrain.Timings}");
-		GD.Print($"[production-terrain] block grammar: {Vegetation.LastTreeCount} trees, " +
+		GD.Print($"[production-terrain] block grammar: {Vegetation.LastTreeCount} trees, {Vegetation.LastMushroomCount} mushrooms, " +
 		         $"{siteBuilds.Count} production site(s)");
 		GD.Print($"[production-hydrology] derived river-side bank cells " +
 		         $"+{terrain.ProductionRiverBankPositive}/-{terrain.ProductionRiverBankNegative}");
@@ -64,6 +64,8 @@ public static class ProductionTerrainWindow
 			terrain.Grid.OriginX, terrain.Grid.OriginZ, size, 0, size, size,
 			terrain.Grid.Height, Terrain.Sea, $"production-terrain-{worldSeed}");
 		int[] profileByBiome = BuildProfileLookup(atlas);
+		int northernWetlandProfile = atlas.BiomeCatalog.Profiles.FindIndex(profile =>
+			profile.RuntimeBiomes.Contains(nameof(Biome.Wetland), StringComparer.Ordinal));
 
 		for (int z = 0; z < size; z++)
 		for (int x = 0; x < size; x++)
@@ -76,7 +78,8 @@ public static class ProductionTerrainWindow
 			data.Land[i] = water ? (byte)0 : (byte)1;
 			data.Water[i] = water ? (byte)255 : (byte)0;
 			Biome biome = terrain.Plan.AtlasGuide.BiomeAt(x, z);
-			byte profile = (byte)profileByBiome[(int)biome];
+			byte profile = (byte)(biome == Biome.Wetland && terrain.Grid.OriginZ + z <= 5000 && northernWetlandProfile >= 0
+				? northernWetlandProfile : profileByBiome[(int)biome]);
 			data.Profile[i] = profile;
 			data.SecondaryProfile[i] = profile;
 			data.ProfileBlend[i] = 0;
@@ -129,6 +132,7 @@ public static class ProductionTerrainWindow
 		{
 			string name = ((Biome)biome).ToString();
 			int index = atlas.BiomeCatalog.Profiles.FindIndex(profile =>
+				biome == (int)Biome.Wetland ? profile.Id == "fen" :
 				profile.RuntimeBiomes.Contains(name, StringComparer.Ordinal));
 			result[biome] = Math.Max(0, index);
 		}
@@ -136,7 +140,7 @@ public static class ProductionTerrainWindow
 	}
 
 	private static void BuildRuntimeSites(Terrain terrain, AtlasSectorWindow window,
-		WorldAtlasDefinition atlas, List<AtlasReferenceSiteBuild> builds,
+		WorldAtlasDefinition atlas, int worldSeed, List<AtlasReferenceSiteBuild> builds,
 		Action<string> warning)
 	{
 		if (atlas.Topology == null) return;
@@ -147,6 +151,14 @@ public static class ProductionTerrainWindow
 			    !FootprintIntersects(site, window.Data)) continue;
 			if (!FootprintFits(site, window.Data))
 			{
+				if (site.BuilderId == Reference1ShallowsGateCauseway.BuilderId)
+				{
+					var clipped = BuildClippedShallows(terrain.Plan.Definition, atlas, worldSeed, window, site);
+					terrain.SyncAuthoredTerrain();
+					builds.Add(new AtlasReferenceSiteBuild(site.SiteId, clipped));
+					GD.Print($"[production-site] {site.SiteId} clipped from complete plan: {clipped.SurfaceCells} columns/{clipped.Voxels} sparse cells");
+					continue;
+				}
 				warning?.Invoke($"production site '{site.SiteId}' crosses terrain-window {window.Data.OriginX}," +
 				                $"{window.Data.OriginZ}+{window.Data.CoreSize}; it remains reserved but unbuilt");
 				continue;
@@ -170,6 +182,64 @@ public static class ProductionTerrainWindow
 			GD.Print($"[production-site] {site.SiteId} offsetY {verticalOffset} " +
 			         $"surface {statistics.SurfaceCells} voxels {statistics.Voxels}");
 		}
+	}
+
+	private static ReferenceSiteStatistics BuildClippedShallows(MapDefinition map,
+		WorldAtlasDefinition atlas, int worldSeed, AtlasSectorWindow target, ReferenceSiteDefinition site)
+	{
+		AtlasMosaicBounds bounds = AtlasRuntimeHandoff.WindowAround(atlas, site.Origin.X, site.Origin.Z, 2);
+		int size = bounds.Span * atlas.SectorSize;
+		var guide = ProductionTerrainGuide.CreateAtOrigin(atlas, size,
+			bounds.MinSectorX * atlas.SectorSize, bounds.MinSectorZ * atlas.SectorSize, worldSeed);
+		var natural = new Terrain(worldSeed, size, new Planner(worldSeed, size, map, guide), terrainOnly: true);
+		var source = new AtlasSectorWindow(Describe(natural, atlas, worldSeed, bounds), atlas, worldSeed, natural.Grid);
+		if (!FootprintFits(site, source.Data))
+			throw new InvalidOperationException("Shallows complete-plan context does not contain its footprint");
+		ReferenceSiteBuilder.Build(source, site);
+		(int minX, int minZ, int maxX, int maxZ) = Footprint(site);
+		var a = source.Data;
+		var b = target.Data;
+		minX = Math.Max(minX, b.OriginX);
+		minZ = Math.Max(minZ, b.OriginZ);
+		maxX = Math.Min(maxX, b.OriginX + b.Width - 1);
+		maxZ = Math.Min(maxZ, b.OriginZ + b.Depth - 1);
+		int columns = 0, voxels = 0;
+		for (int gz = minZ; gz <= maxZ; gz++)
+		for (int gx = minX; gx <= maxX; gx++)
+		{
+			int sx = gx - a.OriginX, sz = gz - a.OriginZ;
+			int tx = gx - b.OriginX, tz = gz - b.OriginZ;
+			int si = sz * a.Width + sx, ti = tz * b.Width + tx;
+			b.Height[ti] = a.Height[si];
+			b.WaterSurface[ti] = a.WaterSurface[si];
+			b.Land[ti] = a.Land[si];
+			b.Water[ti] = a.Water[si];
+			b.Hydrology[ti] = a.Hydrology[si];
+			b.Profile[ti] = a.Profile[si];
+			b.SecondaryProfile[ti] = a.SecondaryProfile[si];
+			b.ProfileBlend[ti] = a.ProfileBlend[si];
+			b.Surface[ti] = a.Surface[si];
+			b.Slope[ti] = a.Slope[si];
+			b.Aspect[ti] = a.Aspect[si];
+			b.Curvature[ti] = a.Curvature[si];
+			b.Wetness[ti] = a.Wetness[si];
+			target.Grid.Top[ti] = source.Grid.Top[si];
+			target.Grid.Cap[ti] = source.Grid.Cap[si];
+			target.Grid.Sub[ti] = source.Grid.Sub[si];
+			target.Grid.Deep[ti] = source.Grid.Deep[si];
+			target.Grid.Heights[ti] = source.Grid.Heights[si];
+			target.Grid.RaiseOverhangCeiling(tx, tz, source.Grid.MeshHeightAt(sx, sz));
+			columns++;
+		}
+		int width = Math.Max(maxX - minX, maxZ - minZ) + 1;
+		foreach (var cell in source.Grid.PlacedIn(minX - a.OriginX, minZ - a.OriginZ, width))
+		{
+			int gx = a.OriginX + cell.X, gz = a.OriginZ + cell.Z;
+			if (gx > maxX || gz > maxZ) continue;
+			target.Grid.Set(gx - b.OriginX, cell.Y, gz - b.OriginZ, cell.Material);
+			voxels++;
+		}
+		return new ReferenceSiteStatistics(columns, voxels);
 	}
 
 	private static bool FootprintIntersects(ReferenceSiteDefinition site,

@@ -42,6 +42,30 @@ remain abrupt, and threefold trees dominate distant views. These are explicit
 fidelity limits, not an accepted reconstruction. Review alongside reference1
 and reference1-top before further site-owned corrections.
 
+## September 10 boundary ownership
+
+The full atlas audit exposed a boundary omission between windows `7,8..8,9`
+and `7,9..8,10`: at global `6255,7104`, the former owned Shallows' bed18 while
+the latter omitted the entire site and exposed natural bed13. The author
+explicitly approved bounded clipped loading rather than leaving this as a
+separate follow-up.
+
+`ProductionTerrainWindow` now evaluates the unchanged complete Reference 1 plan
+in a temporary ordinary 2 × 2 context whenever Shallows intersects but does not
+fit the active window. Its source builder still validates the entire envelope,
+plan, wet/dry ownership, trees and structure projections. Only intersecting
+columns and sparse edits, including AIR cuts, are copied into the active window;
+no builder assertion is relaxed and no new composition is generated. The
+context is not recursively site-populated, does not grow wilderness, and is not
+retained after the copy. This increases preparation cost for affected windows,
+not the persistent active-world size.
+
+Focused `verify-production-terrain` now compares a north/south neighbour as well
+as its existing east/west neighbour. `6400,7360` and `6100,6600` pass both axes,
+including the previously failing column. `verify-reference-sites` now exercises
+bed/water/deck queries and physical raycasts in both complete and clipped
+Shallows windows. Historical captures below do not verify this ownership change.
+
 ## Historical August 30 evidence
 
 The following record retains earlier source measurements and rejected attempts.

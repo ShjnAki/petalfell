@@ -38,6 +38,21 @@ The `look_*` production capture views use the same camera at each clock sample.
 Build success, generated captures, visual review and author acceptance are
 separate claims. This target has not been achieved merely by recording it.
 
+## Southern mushroom-marsh target — September 10
+
+The author's supplied 1024×768 mushroom-marsh image in the September 10 follow-up
+supersedes the earlier tree-heavy southern treatment. It governs local southern
+landform, flora and water: fragmented grass-capped islets just above shallow
+water, visible layered banks and beds, large pale stalks with broad pink/purple
+mushroom caps, small fungi, sparse reeds and calm grey-blue marsh reflections.
+Ordinary trees and wildlife must not crowd this scene. Wildlife remains loaded
+through the maximum gameplay zoom without increasing population.
+
+This regional target does not relocate authored ruins or alter their source
+composition. Compare actual production marsh, fen and central-transition views
+at play and maximum zoom, quarter turns and day/night. Mechanical validation
+cannot establish exact visual parity or author acceptance.
+
 ## Technical references
 
 The implementation uses Godot's existing spatial material and environment

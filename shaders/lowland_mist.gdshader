@@ -26,6 +26,8 @@ void fog() {
 	float altitude = (WORLD_POSITION.y - water_level - 2.0) / 12.0;
 	float height_band = exp(-altitude * altitude);
 	// Noon remains clear. Wet weather and evening reveal the same drifting banks.
-	DENSITY = height_band * bank * (0.0018 + 0.0015 * pf_cloud_cover + 0.0010 * pf_night);
+	float southern = smoothstep(5000.0, 6800.0, WORLD_POSITION.z);
+	DENSITY = height_band * bank * (0.0018 + 0.0015 * pf_cloud_cover + 0.0010 * pf_night) *
+		mix(1.0, 2.3, southern);
 	ALBEDO = vec3(0.78, 0.84, 0.95);
 }

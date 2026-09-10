@@ -106,6 +106,8 @@ public static class WorldMaterials
 		material.SetShaderParameter("shallow", Palette.ShaderRgb(Palette.WaterShallow));
 		material.SetShaderParameter("deep", Palette.ShaderRgb(Palette.WaterDeep));
 		material.SetShaderParameter("warm", Palette.ShaderRgb(Palette.WaterWarm));
+		material.SetShaderParameter("marsh_shoal", Palette.ShaderRgb(Palette.WaterMarshShoal));
+		material.SetShaderParameter("marsh_deep", Palette.ShaderRgb(Palette.WaterMarshDeep));
 		material.SetShaderParameter("sheen", Palette.ShaderRgb(Palette.WaterSheen));
 		material.SetShaderParameter("sky_low", Palette.ShaderRgb(Palette.SkyHorizon));
 		material.SetShaderParameter("sky_high", Palette.ShaderRgb(Palette.SkyZenith));

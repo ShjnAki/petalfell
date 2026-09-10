@@ -1,4 +1,4 @@
-# Current state — 2026-09-06
+# Current state — 2026-09-10
 
 This is a factual snapshot, not a design proposal.
 
@@ -26,6 +26,71 @@ day and UI state. The current handoff compares the exact terrain/water and nearb
 3 × 3 × 5 collision volume, removing the prior false invisible walls near water,
 terraces and placed objects. Full-map Shift-click travel builds a distant window,
 resolves a supported landing and closes the map on success.
+
+## September 10 southern lowlands
+
+The southern fen/shallows now forms a mushroom marsh: low grassy islets above
+sea24, broken by local shallow channels. A 36/108-block field and two-block local
+water raster break up the old broad land shelves; existing banks, beds, stairs
+and collision still realize the result. Water has a muted grey-blue marsh
+response, quieter refraction/foam/glints, lily-pad patches and stronger low mist.
+A continuous region-distance weight and Z5000–6800 envelope ease the response
+into central terrain. The four accepted control PNGs and permanent site addresses
+are unchanged. The northern 4500,1900 terrain fingerprint remains exactly
+`b5dd5bafbc962634b89f74b569e1edcd98a0e9ee7c798cc7b45f31b17d896fa0`, matching the
+pre-change check on this machine.
+
+Southern wetlands now use the dedicated fen detail profile rather than the
+first central-river profile listing Wetland as a compatible biome. Unlabelled
+near-shore water can inherit the nearest southern province within 128 blocks.
+Large pale-stemmed mushrooms have broad stepped pink/purple caps, cream
+undersides and top-only light patches. They are placed on supported dry ground
+outside authored precincts. Ordinary tree admission falls to 1.5% in the fully
+southern core. Wet banks use moss/soil/stone layers and silt beds; small mushroom
+clusters, flowers, sparse grouped reeds and understory growth use ordinary chunk
+detail. Clear ground beneath caps is a valid supported map landing.
+
+Production and site review attach bounded ambient fish, herons and butterflies
+through an active-window callback. At most six animals occupy deterministic local
+habitat candidates, limited to three fish, two herons and one butterfly. Spawn and
+retention radii are 288/384 blocks; zoom does not change population or apply a
+mesh distance cutoff. They reject inappropriate depths, dry fish spawns and solid
+obstructions, preserve global positions across walking handoff, and cull after
+distant map travel. This does not activate the legacy fishing, pet or item loop.
+
+Violet Threshold's great western and eastern runestones and Twin Rites' eastern
+runestone and western tall survivor now have explicit local recesses/chips and
+branching moss courses. Their footprints, stairs and structural arrangement are
+unchanged. Tidekeeper’s Landing, Drowned Seal Gate, Violet Threshold and Twin Rites
+pin their previous datums so natural relief changes cannot shift authored
+waterlines or landings. Fallen Colossus is unchanged.
+
+The extended rendering smoke checks reed support/exclusions across twelve shared
+chunks, 14,718 mixed ecotone land samples, and wildlife habitat/population/live
+handoff behavior. Focused repeat/overlap checks pass at 4500,1900, 6400,7360 and
+6100,6600, each including 442,368 shared terrain cells. All nine measured site
+collision checks and Shallows' separate bridge check pass; original props retain
+their 23-instance / 2,752-triangle integrity checks.
+
+Water-mode controller probes now test grounded travel without requiring a
+height-changing route on a deliberately flat shore. Land-mode probes still
+require terrace traversal; neither mode relaxes collision, distance or swimming
+checks. The mushroom-marsh coast probe at 6400,7360 walks 23.53 blocks on Y26
+and swims 10.07 blocks; Tidekeeper’s approach at 6481,7519 walks 40.04 blocks
+across Y25..31. This southern visual revision requires separate author review
+against the supplied mushroom-marsh image and does not inherit the September 2
+terrain acceptance.
+
+The full atlas sweep exposed Shallows' complete-footprint-only omission between
+north/south windows. With the author's approval, intersecting windows now copy
+only their owned columns and sparse edits from a complete, strictly validated
+Shallows construction in a temporary bounded production context. This retains
+all source assertions and the unchanged architecture. Focused terrain checks now
+cover both axes; the previously mismatched `6255,7104` bed agrees. Shallows'
+complete and clipped windows both pass bed18 / sea24 / deck87, underwater
+clearance, exact landing and three physical surface probes. Temporary full-plan
+construction adds preparation work in intersecting windows; no persistent terrain
+cache or continent-sized allocation is introduced.
 
 ## Current sites
 
@@ -389,3 +454,25 @@ separate.
 4. Continue reference comparison of materials, lighting and atmosphere, including
    source-specific wear and shape fidelity.
 5. Build gameplay/story content on the accepted world foundation.
+
+## September 7 Omarchy build migration
+
+`tools/setup-nuget.sh` discovers the installed Arch/official Godot Mono
+`GodotSharp/Tools/nupkgs` feed. The generated configuration clears inherited
+fallback folders and uses the bundled Godot SDK plus nuget.org for other .NET
+dependencies. Linux exports use the matching .NET templates in Godot's standard
+user data directory; missing templates produce an actionable error. The package
+launcher uses the system's normal library resolution.
+
+On September 7, a clean Godot.NET.Sdk 4.7.2 / net8.0 build passed with zero
+warnings/errors using Arch Godot Mono 4.7.2. The production atlas audit passed.
+Headless controller checks passed at 2692,2164 (44.15 land blocks) and 6400,7360
+(34.61 land blocks plus 10.06 swimming blocks). The movement checks used temporary
+XDG data directories so sandboxed execution could write logs. No graphical
+review was performed during this migration.
+
+The copied editor executable override was cleared, and old compiled caches and
+Linux output were moved outside the project to a temporary backup before the
+clean build. The current machine has no matching .NET export templates installed;
+`tools/build-linux.sh` correctly stops at that prerequisite, so a fresh standalone
+package has not been verified. Historical capture logs remain unchanged.

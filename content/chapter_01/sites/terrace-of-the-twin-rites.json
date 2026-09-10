@@ -9,6 +9,7 @@
     "z": 7340
   },
   "axisDegrees": 0,
+  "verticalDatumY": 36,
   "runtimePlanScale": 1,
   "surroundingTreeThinningRadius": 28,
   "surroundingTreeDensity": 0.8,

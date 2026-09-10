@@ -10,7 +10,8 @@
   material, biome, map, handoff and authored-site windows
 - **Non-scope:** exhaustive address-by-address atlas review, prolonged
   traversal/collision/swimming review, or final terrain/reference fidelity
-- **Last verified:** 2026-09-02
+- **Last verified:** 2026-09-10 for the southern revision below; September 2
+  foundation evidence retains its original scope and dates
 - **Supersedes:** `fast-map-guided-legacy-review.md` and whole-atlas compilation as
   the inner visual iteration loop
 - **Superseded by:** none
@@ -18,6 +19,87 @@
   [`Planner.cs`](../../src/World/Planner.cs), [`Terrain.cs`](../../src/World/Terrain.cs),
   [`ProductionTerrainWindow.cs`](../../src/World/ProductionTerrainWindow.cs),
   [`AtlasSectorReview.cs`](../../src/Tools/AtlasSectorReview.cs)
+
+## September 10 mushroom-marsh correction
+
+The first southern pass, including the Shallows boundary fix, passed the complete
+165-window audit (`/tmp/petalfell-south-atlas-clipped-final.log`, manifest
+`d9ac9d51792cd3f2`). That is mechanical evidence only. The author then rejected
+its tree-heavy landscape and excessive local wildlife density against the supplied
+1024×768 mushroom-marsh reference. The new target is fragmented low grassy islets,
+shallow marsh channels, pale-stemmed pink/purple giant mushrooms, fewer ordinary
+trees and sparse wildlife retained across the maximum-zoom view. The previous
+grove/density treatment below is superseded for southern visual direction;
+its deterministic transition, source ownership and boundary-copy methods remain.
+
+## September 10 southern revision
+
+The author's southern-lowland request supersedes the previous southern relief,
+vegetation and near-shore detail treatment, not the accepted northern foundation.
+This revision is not author-accepted. Its region-distance influence is multiplied
+by a smooth Z5000–6800 envelope: the same Shore biome also occurs in the north,
+so biome identity alone is not a sufficient scope guard. A first ungated candidate
+changed northern coast terrain and tree counts; that candidate was corrected
+before final review. The original northern 4500,1900 fingerprint is restored.
+
+Low mapped southern elevations compress toward sea24 with the existing warped
+shelf grammar. The high-elevation mask preserves important relief; submerged
+courses stay shallow farther from the bank and then regain ordinary deep-water
+response. Keep all fields global and include the full dependency support when
+building the bounded province-distance patch. Southern unlabelled coastal water
+inherits the nearest province only within 128 blocks; never rewrite the PNG.
+
+Two integration failures are now regression-tested: first-match profile selection
+assigned Wetland to the central river instead of fen, and an early submerged-cell
+rejection made the existing reed branch unreachable. Dedicated southern profiles
+and bed-rooted shallow reeds correct these. The first new reed capture at
+`/tmp/petalfell-south-review/atlas_play.png` showed too many bare vertical needles;
+lower field density and bent leaves replace that candidate. Do not restore dense
+straight sticks as a wetland detail treatment. Seed heads must assign the same
+wind weight to every face vertex: the generic box primitive leaves some bottom
+and back weights at zero. Reusing it without normalizing the head's attributes
+tears its shared corners. The reed fixture now checks coincident-facet wind
+identity as well as geometry and window ownership.
+
+Wildlife must query the current window through a callback, remain outside replaced
+window content, and use global positions. The historical fauna's local Terrain
+coordinates and constant-water behavior cannot be directly attached to production.
+The bounded production adapter reuses its material/body primitives but checks
+current depth, profile, wet banks and placed solids. Only southern fish, herons
+and butterflies are enabled, with a 16-animal cap.
+
+`verify-look-rendering` now checks dedicated profiles, rooted reed geometry and
+exclusions across twelve shared chunks, mixed ecotone influence and a live fauna
+handoff. Water-mode controller tests allow flat grounded routes; land-mode tests
+retain their height-change requirement. A deliberately low tidal shelf must not
+be reshaped merely to satisfy a terrace-specific water-test precondition.
+
+The atlas sweep then exposed Shallows' complete-footprint omission on a
+north/south boundary. An east-only overlap test missed this: the same
+`6255,7104` column was natural bed13 in one window and authored bed18 in the
+other. The author approved evaluating the complete unchanged Shallows plan in a
+temporary bounded production context, then copying active-window-owned columns
+and sparse edits. Keep source builder assertions, AIR cuts, water metadata and
+mesh ceilings; never clip the authored design itself. The focused terrain check
+now includes both axes. Full and clipped Shallows physics checks share the same
+bed/water/deck assertions. See the updated Shallows ledger for this exception to
+complete-footprint-only active-window placement.
+
+Visual evidence on September 10: the three `atlas_play`, `atlas_wide` and
+`look_midnight` images in each of `/tmp/petalfell-south-fen-final/` (5107,6620)
+and `/tmp/petalfell-south-transition-final/` (6100,6100) were inspected individually.
+The transition's play camera is partly obscured by a tree; its wide/night views
+supply the useful landscape evidence. Camera obstruction behavior is unchanged.
+After the boundary-copy and reed-head wind fixes,
+`/tmp/petalfell-south-coast-clipped-final/` supplies play/wide/far, midnight,
+three noon quarters and a motion still. Its seven main stills were reviewed in
+`/tmp/petalfell-coast-clipped-review-matrix.png`, with noon-r2 and far additionally
+inspected at full size. The 180-frame motion capture has four inspected reduced
+samples (0000/0045/0090/0135) in `/tmp/petalfell-south-motion-samples.png`.
+These show low banks, visible beds, pastel groves and local wildlife; reed density,
+site skirts and source-level fidelity remain author-reviewable. Sampled frames
+are not complete temporal or traversal acceptance. Captures use the ordinary
+renderer silently on workspace 5; no package export was performed.
 
 ## Outcome
 

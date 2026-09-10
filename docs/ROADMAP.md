@@ -31,6 +31,16 @@ production allocations and individual plans; Reference 1 now uses the current
 sea datum at its existing address. Continue visual comparison and traversal of
 these destinations using the [current ledger](../building-knowledge/sites/reference-precincts-2026-09.md).
 
+### Southern lowland review
+
+- author review against the September 10 mushroom-marsh reference: fragmented
+  grassy islets, shallow grey-blue channels, giant pink/purple mushrooms and
+  sparse wide-range wildlife; the earlier tree-heavy southern pass is superseded;
+- review Violet Threshold and Twin Rites runestone/support refinements against
+  their source views; their plans and shore registrations remain authoritative;
+- extend manual traversal through the southern ecotone and several live window
+  handoffs; mechanical checks and captures do not establish author acceptance.
+
 ### Worldbuilding review
 
 - author review of the replacement Colossus and the original Tidekeeper’s
@@ -86,8 +96,9 @@ these destinations using the [current ledger](../building-knowledge/sites/refere
 
 The September 6 request authorizes further sites and narrative routes now,
 using explicit authored plans and the established terrain system. Later product scope
-includes newly designed inventory/loadout, pet, flora and fauna systems; their
-old fixture implementations are not production specifications.
+includes newly designed inventory/loadout, pet and broader flora/fauna systems;
+the bounded southern ambient wildlife is only the first production integration.
+Old fixture implementations are not production specifications.
 
 ## Open questions
 

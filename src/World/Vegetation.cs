@@ -71,10 +71,12 @@ public static class Vegetation
 
 	/// <summary>Tree count from the last run, for the boot diagnostics.</summary>
 	public static int LastTreeCount;
+	public static int LastMushroomCount;
 
 	public static void Populate(Terrain terrain, int seed)
 	{
 		LastTreeCount = 0;
+		LastMushroomCount = PopulateMushrooms(terrain, seed);
 		var grid = terrain.Grid;
 		int S = terrain.Size;
 		var sequential = new Rng(seed ^ 0x7EE5);
@@ -185,6 +187,8 @@ public static class Vegetation
 			// specify. Clamping first is what makes the plan visible on the
 			// ground.
 			float gx = terrain.Grid.OriginX + x, gz = terrain.Grid.OriginZ + z;
+			float southern = terrain.Plan.AtlasGuide?.SouthernInfluenceAt(x, z) ?? 0f;
+			flora.Density *= Rng.Lerp(1f, .015f, southern);
 			float dens = nGrove.Fbm01(gx * 0.035f, gz * 0.035f, 3);
 			dens = MathF.Min(dens, 0.55f) * flora.Density;
 			if (!rng.Chance(dens * 0.36f * siteTreeDensity)) continue;
@@ -198,6 +202,85 @@ public static class Vegetation
 
 			Tree(grid, rng, x, h, z, scale, leaf);
 			LastTreeCount++;
+		}
+	}
+
+	private static int PopulateMushrooms(Terrain terrain, int seed)
+	{
+		if (terrain.Plan.AtlasGuide == null) return 0;
+		var grid = terrain.Grid;
+		var patches = new Noise2D(unchecked(seed ^ Rng.StableHash("production:mushroom-cap")));
+		var groves = new Noise2D(unchecked(seed ^ Rng.StableHash("production:mushroom-groves")));
+		const int spacing = 18;
+		int count = 0;
+		for (int cz = grid.OriginZ / spacing; cz <= (grid.OriginZ + grid.Size - 1) / spacing; cz++)
+		for (int cx = grid.OriginX / spacing; cx <= (grid.OriginX + grid.Size - 1) / spacing; cx++)
+		{
+			var rng = new Rng(unchecked(seed ^ StableCellSeed(cx, cz, 0xF061)));
+			int gx = cx * spacing + rng.RangeInt(7, 11), gz = cz * spacing + rng.RangeInt(7, 11);
+			int x = gx - grid.OriginX, z = gz - grid.OriginZ;
+			if (x < 3 || z < 3 || x >= grid.Size - 3 || z >= grid.Size - 3) continue;
+			float southern = terrain.Plan.AtlasGuide.SouthernInfluenceAt(x, z);
+			float grove = groves.Fbm01(gx / 88f, gz / 88f, 3);
+			if (!rng.Chance(southern * Rng.Lerp(.50f, .90f, grove))) continue;
+			int index = z * grid.Size + x, y = grid.Top[index];
+			if (terrain.Land[index] == 0 || y < Terrain.Sea + 2 || y > Terrain.Sea + 12) continue;
+			bool clear = true;
+			for (int dz = -1; dz <= 2 && clear; dz++)
+			for (int dx = -1; dx <= 2; dx++)
+			{
+				int at = (z + dz) * grid.Size + x + dx;
+				if (terrain.Land[at] == 0 || Math.Abs(grid.Top[at] - y) > 1 ||
+					grid.MeshHeightAt(x + dx, z + dz) > grid.Top[at] || terrain.StairMask[at] != 0)
+				{ clear = false; break; }
+			}
+			if (!clear) continue;
+			float scale = rng.Range(.48f, 1.32f);
+			int radius = (int)MathF.Round(3f + scale * 3f) + 2;
+			foreach (var canonical in terrain.Plan.Definition.CanonicalAtlas.Topology.Sites)
+			{
+				var site = canonical.ReferencePlan;
+				if (!canonical.RunsInProduction || site == null) continue;
+				if (site.ContainsGlobal(gx, gz) || site.ContainsGlobal(gx - radius, gz - radius) ||
+					site.ContainsGlobal(gx + radius, gz - radius) || site.ContainsGlobal(gx - radius, gz + radius) ||
+					site.ContainsGlobal(gx + radius, gz + radius)) { clear = false; break; }
+			}
+			if (!clear) continue;
+			byte colour = patches.Fbm(gx / 120f, gz / 120f, 2) > .12f
+				? Palette.LEAF_LILAC : rng.Chance(.75f) ? Palette.LEAF_PINK : Palette.LEAF_ROSE;
+			Mushroom(grid, rng, patches, x, y, z, scale, colour);
+			count++;
+		}
+		return count;
+	}
+
+	internal static void Mushroom(VoxelGrid grid, Rng rng, Noise2D patches, int x, int y, int z,
+		float scale, byte colour)
+	{
+		int stemHeight = (int)MathF.Round(6f + scale * 6f);
+		int radiusX = (int)MathF.Round(3f + scale * 3f), radiusZ = radiusX + rng.RangeInt(-1, 0);
+		int thickness = Math.Max(2, (int)MathF.Round(scale * 3f));
+		int width = scale >= .8f ? 2 : 1;
+		for (int dz = 0; dz < width; dz++)
+		for (int dx = 0; dx < width; dx++)
+			grid.Column(x + dx, z + dz, grid.Top[(z + dz) * grid.Size + x + dx] - 1,
+				y + stemHeight + 1, dx == 0 ? Palette.PLASTER : Palette.LEAF_CREAM);
+		for (int dz = -1; dz <= width; dz++)
+		for (int dx = -1; dx <= width; dx++)
+			grid.Column(x + dx, z + dz, y + stemHeight - 2, y + stemHeight - 1, Palette.LEAF_CREAM);
+		for (int dz = -radiusZ; dz <= radiusZ; dz++)
+		for (int dx = -radiusX; dx <= radiusX; dx++)
+		{
+			if (Math.Abs(dx) + Math.Abs(dz) > radiusX + radiusZ - 2) continue;
+			float edge = Math.Max(Math.Abs(dx) / (float)radiusX, Math.Abs(dz) / (float)radiusZ);
+			int bottom = y + stemHeight - (edge > .78f ? 1 : 0);
+			int top = Math.Max(bottom + 2, y + stemHeight + thickness - (int)(edge * 2f) + 1);
+			grid.Column(x + dx, z + dz, bottom, bottom + 1, Palette.LEAF_CREAM);
+			float patch = patches.Fbm((grid.OriginX + x + dx) / 3.8f,
+				(grid.OriginZ + z + dz) / 3.8f, 2);
+			byte cap = patch > .27f ? Palette.LEAF_CREAM : patch > .08f ? Palette.LEAF_BLUSH : colour;
+			grid.Column(x + dx, z + dz, bottom + 1, top, colour);
+			grid.Set(x + dx, top - 1, z + dz, cap);
 		}
 	}
 

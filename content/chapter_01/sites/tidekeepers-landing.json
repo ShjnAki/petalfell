@@ -10,6 +10,7 @@
     "z": 7528
   },
   "axisDegrees": 0,
+  "verticalDatumY": 29,
   "surroundingTreeThinningRadius": 35,
   "surroundingTreeDensity": 0.65,
   "footprintMin": {

@@ -65,6 +65,7 @@ public partial class AtlasSectorReview : Node3D
 		new("atlas_play", 52f, 45f, 29f),
 		new("atlas_near", 86f, 45f, 31f),
 		new("atlas_wide", 170f, 45f, 38f),
+		new("atlas_max_zoom", 180f, 45f, 33.5f),
 		new("atlas_reverse", 170f, 225f, 36f),
 		new("atlas_far", 300f, 45f, 48f),
 		// Terrain review used to stop at daytime even though translucent depth,
@@ -141,6 +142,7 @@ public partial class AtlasSectorReview : Node3D
 	private Controller _player;
 	private Character _character;
 	private AmbientDrift _ambientDrift;
+	private Fauna _fauna;
 	private PlanarReflection _reflection;
 	private ShaderMaterial _inkLight;
 	private ShaderMaterial _inkDark;
@@ -628,6 +630,9 @@ public partial class AtlasSectorReview : Node3D
 			_ambientDrift = new AmbientDrift { Name = "AtlasAmbientDrift" };
 			AddChild(_ambientDrift);
 			_ambientDrift.Setup(() => _window, _worldSeed, _player.GlobalPosition);
+			_fauna = new Fauna { Name = "SouthernWildlife" };
+			AddChild(_fauna);
+			_fauna.Setup(() => _window, _inkLight, _inkDark, _worldSeed);
 			_started = true;
 
 			if (_playabilitySmoke != null) await RunPlayabilitySmoke(_playabilitySmoke);
@@ -954,6 +959,10 @@ public partial class AtlasSectorReview : Node3D
 				Mathf.Abs(_environment.FogDepthEnd - shotHaze.Y) > 0.05f)
 				throw new InvalidOperationException($"Capture '{shot.Name}' haze was overwritten during settling.");
 			GD.Print($"[capture-camera] {shot.Name} distance {shot.Distance} haze {shotHaze.X}..{shotHaze.Y}");
+			if (_fauna != null)
+				GD.Print($"[capture-fauna] {shot.Name}: {_fauna.LiveCount} loaded, " +
+					$"{_fauna.Live.Count(animal => captureCamera.IsPositionInFrustum(animal.GlobalPosition + Vector3.Up))} in frustum, " +
+					$"retention {Fauna.MarshRetentionRadius} blocks");
 			Capture.Save(captureViewport, _shotDirectory, shot.Name);
 			if (shot.Name == "probe_reflection" && _reflection?.CurrentPlane is float plane)
 			{
@@ -1290,7 +1299,7 @@ public partial class AtlasSectorReview : Node3D
 			throw new InvalidOperationException("production playability smoke began in water");
 
 		List<Vector3> landRoute = FindSmokeRoute(startLocalX, startLocalZ,
-			water: false, minimumSteps: 24, requireHeightChange: true,
+			water: false, minimumSteps: 24, requireHeightChange: mode == "land",
 			out int landMinY, out int landMaxY);
 		Vector3 landStart = _player.GlobalPosition;
 		_player.SetRoute(landRoute);
@@ -1564,6 +1573,7 @@ public partial class AtlasSectorReview : Node3D
 	{
 		if (!_started || _player == null || _character == null) return;
 		_ambientDrift?.Advance(_player.GlobalPosition, delta, _day.NightAmount);
+		_fauna?.Advance(_player.GlobalPosition, delta);
 		if (_playable)
 		{
 			ConstrainRefusedWalkingEdge();

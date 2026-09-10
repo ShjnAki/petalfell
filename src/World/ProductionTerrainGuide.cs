@@ -29,6 +29,7 @@ public sealed class ProductionTerrainGuide
 	private readonly Noise2D _regionWeaveNoise;
 	private readonly RegionTransitionField _regionTransition;
 	private readonly byte[] _biomeByCell;
+	private readonly float[] _southernByCell;
 
 	public readonly int OriginX;
 	public readonly int OriginZ;
@@ -81,6 +82,7 @@ public sealed class ProductionTerrainGuide
 			_provinceIndexByColour[HtmlColourKey(province.PreviewColour)] = index;
 		}
 		_regionTransition = BuildRegionTransitionField();
+		_southernByCell = new float[LocalSize * LocalSize];
 		_biomeByCell = BuildBiomeMap();
 	}
 
@@ -199,6 +201,43 @@ public sealed class ProductionTerrainGuide
 		return BiomeForProvince(weave < highWeight ? high : low);
 	}
 
+	public float SouthernInfluenceAt(float localX, float localZ)
+	{
+		int x = (int)MathF.Floor(localX), z = (int)MathF.Floor(localZ);
+		return x >= 0 && z >= 0 && x < LocalSize && z < LocalSize
+			? _southernByCell[z * LocalSize + x]
+			: SouthernInfluenceAtGlobal(OriginX + x, OriginZ + z);
+	}
+
+	private float SouthernInfluenceAtGlobal(int globalX, int globalZ)
+	{
+		float latitude = SouthernLatitudeAt(globalZ);
+		if (latitude <= 0f) return 0f;
+		float Southern(Biome biome) => biome is Biome.Wetland or Biome.Shore ? latitude : 0f;
+		float primary = Southern(RawBiomeAt(globalX, globalZ));
+		if (!_regionTransition.TrySample(globalX, globalZ, _atlas.BlocksPerPixel,
+			out int owner, out int secondary, out float cost) || owner < 0 || secondary < 0 ||
+			float.IsPositiveInfinity(cost)) return primary;
+		float other = Southern(BiomeForProvince(secondary));
+		if (primary == other) return primary;
+		float width = Math.Min(_atlas.Provinces[owner].TransitionBlocks,
+			_atlas.Provinces[secondary].TransitionBlocks);
+		float distance = Math.Max(0f, cost * _atlas.BlocksPerPixel / 10f +
+			_regionBlendNoise.Value(globalX / RegionBlendWavelength,
+				globalZ / RegionBlendWavelength) * RegionBlendWander);
+		return width <= 0f ? primary : Rng.Lerp(primary, other,
+			.5f * (1f - Rng.Smoothstep(0f, width, distance)));
+	}
+
+	public static float SouthernLatitudeAt(float globalZ) => Rng.Smoothstep(5000f, 6800f, globalZ);
+
+	public float SouthernReliefAt(float localX, float localZ, float elevation) =>
+		SouthernInfluenceAt(localX, localZ) * (1f - Rng.Smoothstep(.64f, .76f, elevation));
+
+	public static float LowlandHeight(float height, float influence) =>
+		Rng.Lerp(height, Terrain.Sea + 3f + Math.Max(0f, height - Terrain.Sea - 3f) * .28f,
+			Math.Clamp(influence, 0f, 1f));
+
 	public string Describe() =>
 		$"production window {OriginX},{OriginZ}..{OriginX + LocalSize},{OriginZ + LocalSize}";
 
@@ -215,8 +254,14 @@ public sealed class ProductionTerrainGuide
 	{
 		int px = Rng.ClampI(globalX / _atlas.BlocksPerPixel, 0, _region.GetWidth() - 1);
 		int pz = Rng.ClampI(globalZ / _atlas.BlocksPerPixel, 0, _region.GetHeight() - 1);
-		return _biomes.TryGetValue(ColourKey(_region.GetPixel(px, pz)), out Biome biome)
-			? biome : Biome.Meadow;
+		if (_biomes.TryGetValue(ColourKey(_region.GetPixel(px, pz)), out Biome biome)) return biome;
+		if (_regionTransition.TrySample(globalX, globalZ, _atlas.BlocksPerPixel,
+			out int owner, out _, out _) && owner >= 0)
+		{
+			Biome shore = BiomeForProvince(owner);
+			if (shore is Biome.Wetland or Biome.Shore) return shore;
+		}
+		return Biome.Meadow;
 	}
 
 	private byte[] BuildBiomeMap()
@@ -228,7 +273,10 @@ public sealed class ProductionTerrainGuide
 		System.Threading.Tasks.Parallel.For(0, LocalSize, z =>
 		{
 			for (int x = 0; x < LocalSize; x++)
+			{
 				result[z * LocalSize + x] = (byte)BiomeAtGlobal(OriginX + x, OriginZ + z);
+				_southernByCell[z * LocalSize + x] = SouthernInfluenceAtGlobal(OriginX + x, OriginZ + z);
+			}
 		});
 		return result;
 	}
@@ -250,7 +298,7 @@ public sealed class ProductionTerrainGuide
 	{
 		int blocksPerPixel = _atlas.BlocksPerPixel;
 		int margin = (int)MathF.Ceiling((_atlas.Provinces.Max(p => p.TransitionBlocks) +
-			RegionBlendWander) / blocksPerPixel) + 2;
+			RegionBlendWander + 128f) / blocksPerPixel) + 2;
 		int minPx = Math.Clamp(FloorDiv(OriginX, blocksPerPixel) - margin,
 			0, _region.GetWidth() - 1);
 		int minPz = Math.Clamp(FloorDiv(OriginZ, blocksPerPixel) - margin,
@@ -273,6 +321,9 @@ public sealed class ProductionTerrainGuide
 			if (_provinceIndexByColour.TryGetValue(colour, out int province))
 				owner[z * width + x] = province;
 		}
+
+		if (maxPz * blocksPerPixel > 5000)
+			ExtendSouthernWaterProvinces(owner, width, depth, 128 / blocksPerPixel, minPz * blocksPerPixel);
 
 		var queue = new PriorityQueue<TransitionNode,
 			(int cost, int secondary, int seed, int cell)>();
@@ -328,6 +379,40 @@ public sealed class ProductionTerrainGuide
 		}
 		return new RegionTransitionField(minPx, minPz, width, depth,
 			owner, secondary, distance);
+	}
+
+	private void ExtendSouthernWaterProvinces(int[] owner, int width, int depth, int reach, int originZ)
+	{
+		var nearest = (int[])owner.Clone();
+		var distance = Enumerable.Repeat(int.MaxValue, owner.Length).ToArray();
+		var queue = new PriorityQueue<(int Cell, int Owner, int Cost), (int Cost, int Owner, int Cell)>();
+		for (int i = 0; i < owner.Length; i++)
+			if (owner[i] >= 0)
+			{
+				distance[i] = 0;
+				queue.Enqueue((i, owner[i], 0), (0, owner[i], i));
+			}
+		while (queue.TryDequeue(out var node, out _))
+		{
+			if (node.Cost != distance[node.Cell] || node.Owner != nearest[node.Cell]) continue;
+			int x = node.Cell % width, z = node.Cell / width;
+			for (int dz = -1; dz <= 1; dz++)
+			for (int dx = -1; dx <= 1; dx++)
+			{
+				int xx = x + dx, zz = z + dz;
+				if ((dx == 0 && dz == 0) || xx < 0 || zz < 0 || xx >= width || zz >= depth) continue;
+				int next = zz * width + xx, cost = node.Cost + (dx == 0 || dz == 0 ? 10 : 14);
+				if (owner[next] >= 0 || cost > reach * 10 || cost > distance[next] ||
+					cost == distance[next] && node.Owner >= nearest[next]) continue;
+				nearest[next] = node.Owner;
+				distance[next] = cost;
+				queue.Enqueue((next, node.Owner, cost), (cost, node.Owner, next));
+			}
+		}
+		for (int i = 0; i < owner.Length; i++)
+			if (owner[i] < 0 && nearest[i] >= 0 && originZ + i / width * _atlas.BlocksPerPixel > 5000 &&
+				BiomeForProvince(nearest[i]) is Biome.Wetland or Biome.Shore)
+				owner[i] = nearest[i];
 	}
 
 	private static int FloorDiv(int value, int divisor)

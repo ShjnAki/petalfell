@@ -56,6 +56,24 @@ Inside it:
 Every field/noise/material lookup uses global coordinates. Overlapping windows
 must produce identical safe terrain and complete placed geometry.
 
+### Southern lowlands
+
+The September 10 mushroom-marsh treatment combines fen/shallows ownership with a
+smooth Z5000–6800 geographic envelope. A 36/108-block field opens local shallow
+channels between low grassy islets, sampled on two-block cells within the existing
+macro hydrology lattice. Accepted coast/major-river registration, high northern
+terrain and site addresses remain unchanged. The region-distance ecotone mixes
+this response into central terrain; no hard latitude threshold changes height.
+Low banks expose moss over soil and stone, with silt beds, sparse reed clumps and
+lily pads. Giant mushrooms replace ordinary woodland in the southern core;
+site-owned trees and architectural plans retain their separate authorship.
+
+Unlabelled coastal water may inherit its nearest southern province within 128
+blocks. This is a bounded, derived habitat classification, not a change to the
+accepted region or water PNGs. All samples remain globally registered. Four shore
+site registrations pin their existing vertical datums so lower natural ground
+cannot shift authored stairs, monuments or water planes.
+
 ## Travel
 
 Walking generates the neighbouring aligned window before the current edge is
@@ -86,8 +104,12 @@ compiler or literal source-boundary extrusion.
 ## Significant content
 
 Topology owns site identity, location, status and connections. Only `Production`
-or `Accepted` sites enter normal terrain windows. A site must fit completely in a
-loaded window before it is built.
+or `Accepted` sites enter normal terrain windows. A site's complete plan must fit
+its construction context. Shallows can cross the active window boundary: it is
+built in a temporary bounded context containing the complete plan, then only the
+active window's intersecting columns and sparse voxels are copied. Other sites
+retain complete-footprint-only active-window placement. No builder may silently
+truncate its authored plan.
 
 Wilderness generation may scatter globally registered vegetation and natural
 detail. It may not choose a settlement, ruin, monument, road, major stair or

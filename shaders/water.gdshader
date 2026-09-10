@@ -42,6 +42,8 @@ uniform vec3 shoal : source_color = vec3(0.812, 0.761, 0.902);
 uniform vec3 shallow : source_color = vec3(0.608, 0.541, 0.831);
 uniform vec3 deep : source_color = vec3(0.357, 0.310, 0.620);
 uniform vec3 warm : source_color = vec3(0.890, 0.769, 0.788);
+uniform vec3 marsh_shoal : source_color = vec3(0.600, 0.643, 0.678);
+uniform vec3 marsh_deep : source_color = vec3(0.373, 0.451, 0.525);
 uniform vec3 sheen : source_color = vec3(0.910, 0.886, 0.961);
 uniform vec3 sky_low : source_color = vec3(0.86, 0.84, 0.96);
 uniform vec3 sky_high : source_color = vec3(0.72, 0.70, 0.91);
@@ -219,6 +221,8 @@ void fragment() {
 		? mesh_world
 		: cam + dir * ((plane_y - cam.y) / denom);
 	float surface = -(VIEW_MATRIX * vec4(wpos, 1.0)).z;
+	float southern_water = smoothstep(5000.0, 6800.0, wpos.z) *
+		(1.0 - smoothstep(25.0, 32.0, wpos.y));
 
 	// Continent-scale water needs a second visual wavelength. The original close
 	// water had excellent ripples but, from the atlas camera, their repeated sum
@@ -240,7 +244,7 @@ void fragment() {
 	// then let only the non-periodic basin field carry the very far view.
 	float view_distance = length(wpos - cam);
 	float local_detail = mix(0.14, 1.0,
-		1.0 - smoothstep(105.0, 260.0, view_distance));
+		1.0 - smoothstep(105.0, 260.0, view_distance)) * mix(1.0, 0.45, southern_water);
 
 	// A slow, shallow swell. The reference water is nearly still — glassy enough
 	// to hold a reflection — so this only breaks the surface up, never reads as
@@ -315,6 +319,7 @@ void fragment() {
 	float through = max(bed_depth - surface, 0.0);
 	float bed_y = world_at(SCREEN_UV, INV_PROJECTION_MATRIX, INV_VIEW_MATRIX).y;
 	float column = max(wpos.y - bed_y, 0.0);
+	float marsh = southern_water * (1.0 - smoothstep(10.0, 24.0, column));
 
 	// The colour lookup is displaced, and only where there is water in front of
 	// the bed — offsetting at the shoreline drags the bank's colour out over the
@@ -322,7 +327,7 @@ void fragment() {
 	// rather than at zero, which keeps the first few centimetres of shallows
 	// undistorted and the waterline crisp.
 	float wet = clamp((through - 0.35) * 0.7, 0.0, 1.0);
-	vec2 offset = flow * refraction * wet;
+	vec2 offset = flow * refraction * wet * mix(1.0, 0.35, marsh);
 	vec2 uv = clamp(SCREEN_UV + offset, vec2(0.0), vec2(1.0));
 
 	// A displaced sample landing on something in FRONT of the water is not bed at
@@ -352,12 +357,14 @@ void fragment() {
 	// crisp mosaic of tiles the reference actually shows.
 	float depth_units = column;
 
-	vec3 absorb = max(exp(-extinction * depth_units), vec3(1.0 - max_occlusion));
+	vec3 absorption = mix(extinction, vec3(0.32, 0.28, 0.24), marsh * 0.8);
+	vec3 absorb = max(exp(-absorption * depth_units), vec3(1.0 - max_occlusion));
 	float t = 1.0 - exp(-depth_units * depth_rate);
 	vec3 body = mix(shoal, shallow, smoothstep(0.0, 0.45, t));
 	body = mix(body, deep, smoothstep(0.35, 1.0, t));
 	// Sunlit ground throwing warmth back up through the first half-metre.
 	body = mix(warm, body, smoothstep(0.0, 0.22, t));
+	body = mix(body, mix(marsh_shoal, marsh_deep, smoothstep(1.0, 8.0, column)), marsh * 0.75);
 	// This water is composited in an unshaded material; its scattering volume
 	// must follow the clock explicitly, as the already-lit bed and sky do.
 	body *= mix(1.0, 0.20, pf_night);
@@ -493,7 +500,7 @@ void fragment() {
 	float lace = fbm(warp(wpos.xz * 1.8, 0.8) + vec2(TIME * 0.045, -TIME * 0.028));
 	float foam = smoothstep(0.42, 0.66, lace + lap * 0.10);
 	vec3 foam_colour = sheen * mix(1.0, 0.22, pf_night);
-	col = mix(col, foam_colour, shore * shore_foam * foam);
+	col = mix(col, foam_colour, shore * shore_foam * foam * mix(1.0, 0.20, marsh));
 
 	// Drifting sheets of brighter surface.
 	//
@@ -521,7 +528,7 @@ void fragment() {
 	// Glints survive the night and gain a little: moonlight on water is mostly
 	// specular, so it is the one thing that should NOT go dim after dusk.
 	col += smoothstep(0.82, 0.98, glint) * sparkle * (1.0 + pf_night * 0.5)
-	     * mix(1.0, 0.42, cloud_cover)
+	     * mix(1.0, 0.42, cloud_cover) * mix(1.0, 0.35, marsh)
 	     * vec3(1.05, 0.98, 1.02);
 
 	// Averaging two colour stops always loses chroma toward the middle; this puts

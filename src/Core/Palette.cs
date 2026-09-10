@@ -59,6 +59,8 @@ public static class Palette
 	// Reference 1's bridge without flattening the shared water colour response.
 	public static readonly Color WaterAtlasBody = C(0xa4a9df);
 	public static readonly Color WaterWarm = C(0xe3c4c9);
+	public static readonly Color WaterMarshShoal = C(0x99a4ad);
+	public static readonly Color WaterMarshDeep = C(0x5f7386);
 	public static readonly Color WaterSheen = C(0xe8e2f5);
 	public static readonly Color WaterEdge = C(0x5c5378);
 	// Reference 5's local active threshold. These do not recolour the world.
