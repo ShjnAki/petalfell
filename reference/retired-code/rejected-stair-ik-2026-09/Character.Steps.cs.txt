@@ -1,0 +1,175 @@
+using System;
+using Godot;
+
+namespace Petalfell.Player;
+
+public partial class Character
+{
+	private const float LegSegment = .48f;
+	private Node3D _kneeL, _kneeR, _footL, _footR;
+	private sealed class PlantedFoot
+	{
+		public Vector3 At, From, Target;
+		public float Progress = 1f;
+		public bool Moving => Progress < 1f;
+	}
+	private readonly PlantedFoot _plantL = new(), _plantR = new();
+	private bool _feetReady, _nextLeft = true;
+	private float _stairBlend;
+	private float _stairPelvisY;
+	private Vector3 _feetRoot;
+	private readonly PhysicsRayQueryParameters3D _footRay = new()
+	{
+		CollideWithAreas = false,
+	};
+	public int StairFootfalls { get; private set; }
+	public float StairPoseBlend => _stairBlend;
+	public float MaxStairPlantError { get; private set; }
+	internal void ResetStairEvidence()
+	{
+		MaxStairPlantError = 0;
+		StairFootfalls = 0;
+	}
+	public Vector3 LeftSolePosition => _footL.GlobalPosition - Vector3.Up * .10f;
+	public Vector3 RightSolePosition => _footR.GlobalPosition - Vector3.Up * .10f;
+
+	private bool FootSupport(Vector3 desired, out Vector3 support)
+	{
+		_footRay.From = new Vector3(desired.X, GlobalPosition.Y + Controller.LowStepHeight + .25f, desired.Z);
+		_footRay.To = _footRay.From - Vector3.Up * (Controller.LowStepHeight * 2f + 1.25f);
+		var hit = GetWorld3D().DirectSpaceState.IntersectRay(_footRay);
+		support = desired;
+		if (hit.Count == 0 || ((Vector3)hit["normal"]).Y < .7f) return false;
+		support = (Vector3)hit["position"] + Vector3.Up * .015f;
+		return Math.Abs(support.Y - GlobalPosition.Y) <= Controller.LowStepHeight + .35f;
+	}
+
+	private void AnimateStairFeet(bool grounded, float speed, float dt)
+	{
+		if (GetParent() is not Controller controller) return;
+		if (_footRay.Exclude.Count == 0)
+			_footRay.Exclude = new Godot.Collections.Array<Rid> { controller.GetRid() };
+		Vector3 root = GlobalPosition;
+		Vector3 forward = GlobalBasis.Z.Normalized(), right = GlobalBasis.X.Normalized();
+		bool leftSupport = FootSupport(root - right * .33f, out Vector3 leftHome);
+		bool rightSupport = FootSupport(root + right * .33f, out Vector3 rightHome);
+		bool ahead = FootSupport(root + forward * .75f, out Vector3 nextTread) &&
+			Math.Abs(nextTread.Y - controller.GlobalPosition.Y) > .12f;
+		bool stairs = grounded && (controller.OnStair || ahead ||
+			leftSupport && rightSupport && Math.Abs(leftHome.Y - rightHome.Y) > .12f);
+		float previousBlend = _stairBlend;
+		_stairBlend = Mathf.MoveToward(_stairBlend, stairs ? 1f : 0f, dt * (stairs ? 12f : 5f));
+		if (previousBlend == 0 && _stairBlend > 0) _feetReady = false;
+		if (!grounded || root.DistanceSquaredTo(_feetRoot) > 16f) _feetReady = false;
+		_feetRoot = root;
+		if (!grounded) return;
+		if (!_feetReady)
+		{
+			_plantL.At = leftSupport ? leftHome : root - right * .33f;
+			_plantR.At = rightSupport ? rightHome : root + right * .33f;
+			_plantL.Progress = _plantR.Progress = 1f;
+			_feetReady = true;
+			_stairPelvisY = _legL.GlobalPosition.Y;
+		}
+		if (!_plantL.Moving && !_plantR.Moving)
+		{
+			PlantedFoot foot = _nextLeft ? _plantL : _plantR;
+			Vector3 home = _nextLeft ? leftHome : rightHome;
+			if (speed <= .15f && foot.At.DistanceTo(home) <= .16f)
+			{
+				_nextLeft = !_nextLeft;
+				foot = _nextLeft ? _plantL : _plantR;
+				home = _nextLeft ? leftHome : rightHome;
+			}
+			float behind = (root - foot.At).Dot(forward);
+			if (speed > .15f && (behind > .12f || ahead) ||
+				speed <= .15f && foot.At.DistanceTo(home) > .16f)
+			{
+				Vector3 desired = root + right * (_nextLeft ? -.33f : .33f)
+					+ forward * (speed > .15f ? Mathf.Clamp(speed * .23f, .32f, .90f) : 0f);
+				if (FootSupport(desired, out Vector3 target))
+				{
+					foot.From = foot.At;
+					foot.Target = target;
+					foot.Progress = 0;
+				}
+			}
+		}
+		AdvanceFoot(_plantL, speed, dt);
+		AdvanceFoot(_plantR, speed, dt);
+		if (_stairBlend <= 0f) return;
+		_body.Position -= Vector3.Up * (_stairBlend * .12f);
+		// Transfer weight through the planted leg. The collision capsule can
+		// already occupy the next tread while the pelvis waits for the leading
+		// sole to land; raising the hips first would drag both feet into the air.
+		float wantedPelvis = _legL.GlobalPosition.Y;
+		float ceiling = wantedPelvis;
+		void SupportLimit(PlantedFoot plant, Node3D hip)
+		{
+			if (plant.Moving) return;
+			Vector3 d = hip.GlobalPosition - plant.At;
+			float horizontalSquared = d.X * d.X + d.Z * d.Z;
+			float reach = MathF.Sqrt(Math.Max(.002f, .95f * .95f - horizontalSquared));
+			ceiling = Math.Min(ceiling, plant.At.Y + .10f + reach);
+		}
+		SupportLimit(_plantL, _legL); SupportLimit(_plantR, _legR);
+		_stairPelvisY = Math.Min(ceiling, Mathf.Lerp(_stairPelvisY, ceiling, 1f - Mathf.Exp(-18f * dt)));
+		_body.Position += Vector3.Up * ((_stairPelvisY - wantedPelvis) * _stairBlend);
+		PoseLeg(_legL, _kneeL, _footL, _plantL.At, _stairBlend);
+		PoseLeg(_legR, _kneeR, _footR, _plantR.At, _stairBlend);
+		if (_stairBlend > .999f)
+		{
+			void Measure(PlantedFoot plant, Vector3 sole)
+			{
+				float error = sole.DistanceTo(plant.At);
+				if (!plant.Moving && error > MaxStairPlantError)
+				{
+					MaxStairPlantError = error;
+				}
+			}
+			Measure(_plantL, LeftSolePosition); Measure(_plantR, RightSolePosition);
+		}
+	}
+
+	private void AdvanceFoot(PlantedFoot foot, float speed, float dt)
+	{
+		if (!foot.Moving) return; // Support stays in world space through the body lift.
+		foot.Progress = Math.Min(1f, foot.Progress + dt / Mathf.Lerp(.23f, .16f,
+			Mathf.Clamp(speed / Controller.StairWalkSpeed, 0f, 1f)));
+		float p = foot.Progress;
+		float travel = Ease01(p);
+		foot.At = foot.From.Lerp(foot.Target, travel);
+		// Lift before crossing the riser, then place the sole before transferring
+		// weight. Downstairs the support foot stays above while the other reaches.
+		float height = Mathf.Max(foot.From.Y, foot.Target.Y);
+		float arc = Mathf.Lerp(foot.From.Y, height + .22f, Ease01(Math.Min(p / .45f, 1f)));
+		if (p > .45f) arc = Mathf.Lerp(height + .22f, foot.Target.Y, Ease01((p - .45f) / .55f));
+		foot.At.Y = arc;
+		if (p >= 1f)
+		{
+			foot.At = foot.Target;
+			_nextLeft = foot == _plantR;
+			if (_stairBlend > .25f) StairFootfalls++;
+		}
+	}
+
+	private void PoseLeg(Node3D hip, Node3D knee, Node3D foot, Vector3 sole, float blend)
+	{
+		Vector3 target = _body.ToLocal(sole + Vector3.Up * .10f) - hip.Position;
+		float distance = Mathf.Clamp(target.Length(), .04f, LegSegment * 2f - .002f);
+		Vector3 direction = target.Normalized();
+		Vector3 bend = Vector3.Back - direction * direction.Dot(Vector3.Back);
+		if (bend.LengthSquared() < .001f) bend = Vector3.Up;
+		bend = bend.Normalized();
+		Vector3 upper = direction * (distance * .5f) + bend *
+			MathF.Sqrt(LegSegment * LegSegment - distance * distance * .25f);
+		Vector3 lower = direction * distance - upper;
+		Quaternion hipPose = new(Vector3.Down, upper.Normalized());
+		Quaternion kneePose = new(Vector3.Down, hipPose.Inverse() * lower.Normalized());
+		hip.Quaternion = hip.Quaternion.Normalized().Slerp(hipPose.Normalized(), blend);
+		knee.Quaternion = Quaternion.Identity.Slerp(kneePose.Normalized(), blend);
+		// Soles stay level on a planted tread, independently of knee bend.
+		foot.GlobalBasis = new Basis(foot.GlobalBasis.GetRotationQuaternion().Normalized()
+			.Slerp(GlobalBasis.GetRotationQuaternion().Normalized(), blend));
+	}
+}

@@ -94,12 +94,34 @@ falling back to central meadow. Northern water ownership remains unchanged.
 Southern Wetland selects the dedicated fen detail profile; the historical
 northern profile lookup remains unchanged. A separate coordinate-seeded mushroom
 pass runs before ordinary trees on an 18-block candidate lattice. It requires dry
-root support and excludes authored precincts. Pale stalks, cream undersides and
+root support and excludes authored precincts. Admission is .40–.72 through the
+grove field, multiplied by southern influence. A bounded eight-neighbour query
+replays candidate positions, admission and scale, then global priority rejects
+cap envelopes closer than two blocks. It queries potential candidates, including
+unplantable ones, to keep spacing independent of local generation order. The
+original lattice and retained candidate coordinates do not move. Pale stalks, cream undersides and
 layered spotted caps are voxel geometry, not recoloured tree crowns; the normal
 mesher supplies both visible faces and collision. Ordinary tree admission falls
 to 1.5% of its former rate in the fully southern core, blending through the same
 influence. Small mushroom clusters and understory plants share chunk detail.
 Clear ground beneath southern caps remains eligible for map landings.
+
+The September 13 refinement adds a continuous 72-block bank-shoulder field within
+that existing southern influence, without moving channels. Offset mushroom crowns
+retain the same rooted construction and exclusion rules. The later mushroom
+follow-up uses a two-block skirt (including the cream underside), a small thick
+offset boss, one drooping quadrant, field-notched rim and low rooted pale feet.
+Stems have two-/three-block sections and use `MUSHROOM_STEM` (38) with
+`PatternFungus` (10). The voxel shader shades each world-registered cube with a
+square tonal patch and no plank seams; architectural plaster is unchanged.
+`GroundDetail` adds
+cream-underside filaments and natural moss-bank roots inside ordinary chunk
+meshes. Sparse cream cells are sorted in Z/X/Y order before emission, independent
+of local edit-tile bucketing. Root and bead facets share their filament's wind
+weights. Opaque detail vertex alpha .5 tags only terminal spore beads for weak
+night emission; other detail uses alpha 1 and no emission. This adds no light,
+node, material or draw per mushroom. Rounded notched lily pads retain per-column
+water support; their shader samples bobbing phase in global XZ.
 
 Southern sea-level water blends toward palette-authored marsh colours with
 reduced refraction, foam and glints, retaining bed transmission and registered
@@ -184,6 +206,17 @@ One material pipeline is shared across terrain and sites:
 - `PlanarReflection` — one half-resolution mirror following a nearby visible water elevation;
 - `DayCycle`/`Atmosphere` — ordinary day and night lighting, horizon handover and weather;
 - `DeveloperMenu` — review-only live parameters.
+
+Direct light and weather advance at render frequency; only sky-material
+radiance updates use the 1/2048-day bucket. The frozen clock skips unchanged
+lighting writes. Render-driven sun, gameplay camera and reflection camera opt
+out of physics interpolation. Camera orientation comes directly from orbit
+angles, avoiding precision loss from subtracting large atlas coordinates.
+Directional shadows use an 8192 atlas, four blended ranges and a developer
+softness control. Zero selects hard filtering; positive values use Ultra PCF.
+Depth bias compensates for the renderer's blur/radius multiplier, keeping the
+surface offset constant across the control. See the
+[shadow stability record](building-knowledge/rendering/shadow-stability-2026-09.md).
 
 The shared mineral texture has an explicit mip chain, generated once if the
 disposable import lacks it. Voxel and sculpture materials share that bounded
@@ -282,6 +315,35 @@ fishing, pet or settlement assembly is activated.
 The controller uses terrain/collision for land and the active window callback
 for water. Manual Shift is slow walk; route-owned travel uses the same cautious
 speed. A dry route cell requires headroom in both terrain and placed voxels.
+
+Space launches a surface water jump with `WaterJumpVel` once per press. A rising
+water jump bypasses buoyancy until descent returns it to the active water surface;
+gravity and `MoveAndSlide` retain ownership throughout. Launching consumes jump
+buffer/coyote state and respects the input gate. No bank teleport or collision
+bypass is used. `verify-water-jump` checks physical bank, wall and ceiling cases.
+
+`Controller.Steps.cs` owns supported up/forward/down capsule sweeps for treads
+up to 1.05 blocks and short descending floor snaps. Actual contact height separates
+low treads from taller auto-jump ledges; available headroom bounds the lift.
+A verified corner crossing temporarily permits its steep capsule contact normal,
+then restores the ordinary slope limit. Walking speed remains owned by ordinary
+movement input and route settings. Manual jumps and swimming retain their paths.
+
+The character retains single-piece legs and its ordinary walking animation.
+Boot placement owns sole alignment to the controller's feet origin; it does not
+move the collision capsule or add a height offset to the whole character.
+Its visual root is `TopLevel` with physics interpolation off, so the manually
+presented world transform is not composed with an interpolated physics parent.
+`Controller.AdvancePresentation` supplies one interpolated position with eased
+step height to both the character and normal follow camera in `AtlasSectorReview`;
+teleports reset its vertical history. Boundary corrections run before sampling
+that frame's shared pose. Stair motion has no separate leg or pelvis
+solver.
+`verify-stair-walk` exercises the production controller and rig on complete
+quarter-, half- and one-block flights, full-speed input, rotated fixtures, taller ledges, roofs,
+manual jumping and stopped/disabled input. `verify-player-motion` runs the same
+fixture on the GPU at 144 render fps against 60 physics ticks, checking the
+post-draw character transform against the shared presentation position.
 
 Camera distance is player-owned. Nearby geometry may occlude the traveller but
 must not change zoom. Wheel input changes distance; `K` linearly moves to maximum

@@ -138,20 +138,25 @@ public static class Atmosphere
 		var sun = new DirectionalLight3D
 		{
 			Name = "Sun",
+			PhysicsInterpolationMode = Node.PhysicsInterpolationModeEnum.Off,
+			SkyMode = DirectionalLight3D.SkyModeEnum.LightOnly,
 			LightColor = Palette.SunColor.LinearToSrgb(),
 			LightEnergy = 0.98f,
 			ShadowEnabled = true,
 			ShadowOpacity = 0.60f,
-			ShadowBias = 0.02f,
+			ShadowBias = DayCycle.ShadowDepthBias / (DayCycle.DefaultShadowSoftness * DayCycle.SoftShadowQualityRadius),
 			ShadowNormalBias = 0.65f,
-			ShadowBlur = 4.20f,
+			ShadowBlur = DayCycle.DefaultShadowSoftness,
 			// Filtered cascades avoid the grain from large PCSS penumbras.
 			LightAngularDistance = 0f,
 			DirectionalShadowMode = DirectionalLight3D.ShadowMode.Parallel4Splits,
+			DirectionalShadowBlendSplits = true,
 			DirectionalShadowMaxDistance = 260f,
-			DirectionalShadowSplit1 = 0.06f,
-			DirectionalShadowSplit2 = 0.16f,
-			DirectionalShadowSplit3 = 0.42f,
+			// The long lens sits 50–240 blocks behind its subject. Tiny near
+			// splits wasted most of the map on air in front of the camera.
+			DirectionalShadowSplit1 = 0.20f,
+			DirectionalShadowSplit2 = 0.45f,
+			DirectionalShadowSplit3 = 0.72f,
 		};
 		sun.LookAtFromPosition(Palette.SunDir * 100f, Vector3.Zero, Vector3.Up);
 		return sun;
@@ -165,6 +170,7 @@ public static class Atmosphere
 		var fill = new DirectionalLight3D
 		{
 			Name = "Fill",
+			SkyMode = DirectionalLight3D.SkyModeEnum.LightOnly,
 			LightColor = Palette.FillColor.LinearToSrgb(),
 			LightEnergy = 0.10f,
 			ShadowEnabled = false,

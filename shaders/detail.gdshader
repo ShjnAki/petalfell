@@ -16,6 +16,8 @@ render_mode cull_disabled, depth_draw_never, diffuse_burley, specular_disabled;
 #include "turf_surface.gdshaderinc"
 varying vec3 detail_world;
 varying vec3 detail_normal_world;
+varying float detail_phase;
+global uniform float pf_night;
 
 uniform float wind_amp = 0.10;
 uniform float wind_speed = 1.0;
@@ -23,6 +25,7 @@ uniform float wind_speed = 1.0;
 void vertex() {
 	float sway = CUSTOM0.x;
 	float phase = CUSTOM0.y;
+	detail_phase = phase;
 	float t = TIME * wind_speed;
 	// Two frequencies, so a gust travels rather than the whole field breathing.
 	VERTEX.x += (sin(t + phase) * 0.7 + sin(t * 1.7 + phase * 1.3) * 0.3) * sway * wind_amp;
@@ -46,4 +49,9 @@ void fragment() {
 	}
 	ROUGHNESS = 0.95;
 	SPECULAR = 0.0;
+	// Only explicitly tagged terminal mushroom beads glow. Ground plants keep
+	// alpha=1, ordinary scene lighting and no emission. This remains opaque.
+	float spore = 1.0 - step(.05, abs(COLOR.a - .5));
+	EMISSION = COLOR.rgb * spore * smoothstep(.12, .68, pf_night) *
+		(.72 + .18 * sin(TIME * .7 + detail_phase));
 }

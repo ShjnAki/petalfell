@@ -105,6 +105,11 @@ public partial class AtlasSectorReview : Node3D
 	// matrices; the same noon camera isolates what each post-process contributes.
 	private static readonly Capture.Shot[] LookProbeShots =
 	{
+		new("shadow_frozen", 170f, 225f, 38f, time: .36f),
+		new("shadow_frozen_follow", 170f, 225f, 38f, time: .36f),
+		new("shadow_flow", 170f, 225f, 38f, time: .36f),
+		new("shadow_crisp", 170f, 225f, 38f, time: .36f),
+		new("shadow_blurry", 170f, 225f, 38f, time: .36f),
 		new("probe_no_fog", 170f, 45f, 38f, time: .50f),
 		new("probe_no_grade", 170f, 45f, 38f, time: .50f),
 		new("probe_no_post", 170f, 45f, 38f, time: .50f),
@@ -852,6 +857,24 @@ public partial class AtlasSectorReview : Node3D
 
 	private async System.Threading.Tasks.Task RunCapture()
 	{
+		if (_only?.Contains("shadow_gameplay") == true)
+		{
+			// Inspect the real window, including its normal post processing and
+			// mirror pass, at a render cadence different from the physics clock.
+			if (!_playable)
+				throw new InvalidOperationException("shadow_gameplay needs playable terrain.");
+			_day.TimeOfDay = .36f;
+			_day.Paused = true;
+			for (int frame = 0; frame < 240; frame++)
+			{
+				_camera.Follow(_player.GetGlobalTransformInterpolated().Origin, _player.Velocity, 1.0 / 90.0);
+				Atmosphere.SetViewDistance(_environment, _camera.Distance);
+				await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+			}
+			await CaptureShadowSequence(GetViewport(), _camera, "shadow_gameplay");
+			GetTree().Quit();
+			return;
+		}
 		Vector2I captureSize = IsSite && !IsTerrainFocusReview &&
 			_referenceSite?.ReferenceView != null
 			? new Vector2I(_referenceSite.ReferenceView.SourceWidth,
@@ -893,11 +916,13 @@ public partial class AtlasSectorReview : Node3D
 		foreach (Capture.Shot shot in ReviewShots.Concat(LookProbeShots.Where(s => _only?.Contains(s.Name) == true)))
 		{
 			if (_only != null && !_only.Contains(shot.Name)) continue;
+			if (shot.Name == "shadow_crisp") _day.SetShadowSoftness(0f);
+			if (shot.Name == "shadow_blurry") _day.SetShadowSoftness(DayCycle.MaxShadowSoftness);
 			captureGrade.Visible = shot.Name is not ("probe_no_grade" or "probe_no_post");
 			_environment.FogEnabled = fogEnabled && shot.Name is not ("probe_no_fog" or "probe_no_post");
 			_environment.GlowEnabled = glowEnabled && shot.Name != "probe_no_post";
 			_environment.VolumetricFogEnabled = mistEnabled && shot.Name is not ("probe_no_fog" or "probe_no_post");
-			bool playableFollow = shot.Name == "atlas_follow" &&
+			bool playableFollow = (shot.Name is "atlas_follow" or "shadow_frozen_follow") &&
 				IsTerrainFocusReview && _player != null;
 			bool referenceTop = IsReferenceTopShot(shot);
 			Vector2I referenceTopSize = referenceTop ? ReferenceTopSize() : default;
@@ -964,6 +989,8 @@ public partial class AtlasSectorReview : Node3D
 					$"{_fauna.Live.Count(animal => captureCamera.IsPositionInFrustum(animal.GlobalPosition + Vector3.Up))} in frustum, " +
 					$"retention {Fauna.MarshRetentionRadius} blocks");
 			Capture.Save(captureViewport, _shotDirectory, shot.Name);
+			if (shot.Name is "shadow_frozen" or "shadow_frozen_follow" or "shadow_flow")
+				await CaptureShadowSequence(captureViewport, captureCamera, shot.Name);
 			if (shot.Name == "probe_reflection" && _reflection?.CurrentPlane is float plane)
 			{
 				Capture.Save(_reflection.RenderViewport, _shotDirectory, "probe_reflection_mirror");
@@ -976,6 +1003,35 @@ public partial class AtlasSectorReview : Node3D
 		}
 		WriteReferenceComparisons();
 		GetTree().Quit();
+	}
+
+	private async System.Threading.Tasks.Task CaptureShadowSequence(Viewport viewport, Camera3D camera, string name)
+	{
+		int fps = name == "shadow_gameplay" ? 90 : 30;
+		int count = name == "shadow_gameplay" ? 180 : 90;
+		if (Math.Abs(GetProcessDeltaTime() - 1.0 / fps) > .00001)
+			throw new InvalidOperationException($"Shadow capture requires --fixed-fps {fps}.");
+		_day.Paused = name != "shadow_flow";
+		string directory = $"{_shotDirectory}/{name}";
+		DirAccess.MakeDirRecursiveAbsolute(directory);
+		using var metadata = new StreamWriter(ProjectSettings.GlobalizePath($"{directory}/frames.csv"));
+		metadata.WriteLine("frame,clock,key_x,key_y,key_z,camera_x,camera_y,camera_z,blur,camera_zx,camera_zy,camera_zz");
+		for (int frame = 0; frame < count; frame++)
+		{
+			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+			if (name is "shadow_frozen_follow" or "shadow_gameplay")
+			{
+				_camera.Follow(_player.GetGlobalTransformInterpolated().Origin, _player.Velocity, 1.0 / fps);
+				camera.GlobalTransform = _camera.GlobalTransform;
+			}
+			await RenderingServer.Singleton.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+			Capture.Save(viewport, directory, $"frame-{frame:D4}", quiet: true);
+			Vector3 key = _key.GlobalBasis.Z, p = camera.GlobalPosition;
+			Vector3 z = camera.GlobalBasis.Z;
+			metadata.WriteLine(FormattableString.Invariant($"{frame},{_day.TimeOfDay:R},{key.X:R},{key.Y:R},{key.Z:R},{p.X:R},{p.Y:R},{p.Z:R},{_key.ShadowBlur:R},{z.X:R},{z.Y:R},{z.Z:R}"));
+		}
+		_day.Paused = true;
+		GD.Print($"[shadow-capture] {name}: {count} frames / {fps} fps");
 	}
 
 	private async System.Threading.Tasks.Task CaptureLookSequence(SubViewport viewport,
@@ -1300,7 +1356,35 @@ public partial class AtlasSectorReview : Node3D
 
 		List<Vector3> landRoute = FindSmokeRoute(startLocalX, startLocalZ,
 			water: false, minimumSteps: 24, requireHeightChange: mode == "land",
-			out int landMinY, out int landMaxY);
+			out int landMinY, out int landMaxY, allowMissing: mode == "water");
+		if (landRoute == null)
+		{
+			// A supported marsh spawn can be a tiny swimmable islet. Keep the full
+			// land-distance assertion, but locate its separate fixture on a nearby
+			// larger bank rather than requiring every valid island to be 24 cells long.
+			for (int radius = 4; radius <= 72 && landRoute == null; radius += 4)
+			for (int dz = -radius; dz <= radius && landRoute == null; dz += 4)
+			for (int dx = -radius; dx <= radius && landRoute == null; dx += 4)
+			{
+				if (Math.Abs(dx) != radius && Math.Abs(dz) != radius) continue;
+				int x = startLocalX + dx, z = startLocalZ + dz;
+				if (!IsLand(x, z)) continue;
+				landRoute = FindSmokeRoute(x, z, water: false, minimumSteps: 24,
+					requireHeightChange: false, out landMinY, out landMaxY, allowMissing: true);
+				if (landRoute == null) continue;
+				_player.StopTravel();
+				_player.GlobalPosition = new Vector3(_window.Data.OriginX + x + .5f,
+					TraversalSurface(x, z, false) + .2f, _window.Data.OriginZ + z + .5f);
+				_player.Velocity = Vector3.Zero;
+				_player.ResetPhysicsInterpolation();
+				_streamer.UpdateAround(_player.GlobalPosition - _window.GlobalOrigin, prime: true);
+				await WaitPhysicsFrames(18);
+				if (!_player.IsOnFloor() || _player.Swimming)
+					throw new InvalidOperationException("nearby bank fixture did not settle on actual collision");
+				GD.Print($"[production-playability-smoke] small-islet spawn retained; land probe starts on nearby bank {_player.GlobalPosition}");
+			}
+			if (landRoute == null) throw new InvalidOperationException("no 24-cell grounded bank route within 72 blocks of marsh spawn");
+		}
 		Vector3 landStart = _player.GlobalPosition;
 		_player.SetRoute(landRoute);
 		// Route-owned movement deliberately uses cautious walking speed so it can hold
@@ -1426,7 +1510,8 @@ public partial class AtlasSectorReview : Node3D
 	}
 
 	private List<Vector3> FindSmokeRoute(int startX, int startZ, bool water,
-		int minimumSteps, bool requireHeightChange, out int routeMinY, out int routeMaxY)
+		int minimumSteps, bool requireHeightChange, out int routeMinY, out int routeMaxY,
+		bool allowMissing = false)
 	{
 		const int radius = 72;
 		const int maxDepth = 48;
@@ -1499,9 +1584,13 @@ public partial class AtlasSectorReview : Node3D
 
 		if (best == start || bestSteps < minimumSteps ||
 		    requireHeightChange && bestRange < Terrain.Step)
+		{
+			routeMinY = routeMaxY = startY;
+			if (allowMissing) return null;
 			throw new InvalidOperationException(
 				$"no {(water ? "deep-water" : "grounded terrace")} smoke route " +
 				$"of {minimumSteps} steps near {startX},{startZ}");
+		}
 
 		var reverse = new List<int>(bestSteps + 1);
 		for (int at = best; at >= 0; at = parent[at]) reverse.Add(at);
@@ -1572,12 +1661,18 @@ public partial class AtlasSectorReview : Node3D
 	public override void _Process(double delta)
 	{
 		if (!_started || _player == null || _character == null) return;
-		_ambientDrift?.Advance(_player.GlobalPosition, delta, _day.NightAmount);
-		_fauna?.Advance(_player.GlobalPosition, delta);
 		if (_playable)
 		{
 			ConstrainRefusedWalkingEdge();
 			TryWalkingBoundaryHandoff();
+		}
+		// Resolve any boundary correction before sampling this frame's shared pose.
+		Vector3 presentation = _player.AdvancePresentation(delta);
+		_character.GlobalPosition = presentation;
+		_ambientDrift?.Advance(_player.GlobalPosition, delta, _day.NightAmount);
+		_fauna?.Advance(_player.GlobalPosition, delta);
+		if (_playable)
+		{
 			_atlasMap?.SetPlayer(_player.GlobalPosition);
 			Vector3 local = _player.Position;
 			_streamer.UpdateAround(local);
@@ -1586,7 +1681,7 @@ public partial class AtlasSectorReview : Node3D
 			// with the dormant player-camera zoom during the settling frames.
 			if (_shotDirectory == null)
 			{
-				_camera.Follow(_player.GetGlobalTransformInterpolated().Origin,
+				_camera.Follow(presentation,
 					_player.Velocity, delta);
 				Atmosphere.SetViewDistance(_environment, _camera.Distance);
 			}

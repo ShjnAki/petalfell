@@ -120,7 +120,10 @@ public partial class CameraRig : Camera3D
 		// Distance belongs only to wheel input, K auto-zoom and the developer
 		// controls. Nearby terrain and props must not turn collision into an
 		// unsolicited zoom or a slow outward camera drift after the player leaves.
-		GlobalPosition = focus + direction * Distance;
-		LookAt(focus, Vector3.Up);
+		// Construct the orientation from the orbit itself. Subtracting the two
+		// large atlas positions inside LookAt quantized the viewing direction as
+		// follow settled, making directional shadow projections wobble at fixed time.
+		GlobalTransform = new Transform3D(Basis.LookingAt(-direction, Vector3.Up),
+			focus + direction * Distance);
 	}
 }

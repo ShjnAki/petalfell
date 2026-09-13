@@ -17,8 +17,8 @@ uniform float sway_speed = 0.6;
 void vertex() {
 	// Pads and petals ride the same slow swell as the surface they sit on,
 	// rather than being pinned to a plane that moves under them.
-	vec3 origin = MODEL_MATRIX[3].xyz;
-	float phase = VERTEX.x * 0.6 + VERTEX.z * 0.8 + origin.x + origin.z;
+	vec3 world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	float phase = world.x * 0.6 + world.z * 0.8;
 	VERTEX.y += sin(TIME * sway_speed + phase) * sway;
 }
 

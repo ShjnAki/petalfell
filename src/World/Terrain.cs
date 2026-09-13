@@ -719,7 +719,11 @@ public sealed class Terrain
 				(1f - Rng.Smoothstep(Sea + 18f, Sea + 40f, bankSource[i]));
 			if (marsh <= 0f) continue;
 			float wander = _nEdge.Fbm(GlobalX(x) / 64f + 51f, GlobalZ(z) / 64f, 2) * 4f;
-			float bankHeight = Sea + 2f + Math.Max(0f, gap + wander - 2f) / 8f;
+			// Connected raised islets alternate with low landing tongues. A uniform
+			// two-block rim flattened every small marsh island into the same wafer.
+			float shoulder = Rng.Smoothstep(-.25f, .35f,
+				_nLedge.Fbm(GlobalX(x) / 72f + 113f, GlobalZ(z) / 72f - 41f, 2));
+			float bankHeight = Sea + 2f + shoulder * 3f + Math.Max(0f, gap + wander - 2f) / 8f;
 			float blend = marsh * (1f - Rng.Smoothstep(64f, 92f, gap));
 			Level[i] = (short)MathF.Round(Rng.Lerp(Level[i], Math.Min(bankSource[i], bankHeight), blend));
 			if (gap < 24f * marsh) Wet[i] = 1;

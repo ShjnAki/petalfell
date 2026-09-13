@@ -53,6 +53,26 @@ composition. Compare actual production marsh, fen and central-transition views
 at play and maximum zoom, quarter turns and day/night. Mechanical validation
 cannot establish exact visual parity or author acceptance.
 
+## Southern refinement — September 13
+
+The author's follow-up asks for closer mushroom likeness and slightly fewer
+large mushrooms, with room between their caps. Use broad shallow skirts, uneven
+stepped rims, offset upper slabs, pale stems/undersides and hanging growth from
+the supplied image; avoid tall uniform cap walls and crowns pressed together.
+The next correction specifies a thinner main cap with a small thick top, some
+deformation and a thicker stem with square shades in a grid instead of stripes.
+This square-tone treatment is specific to mushroom flesh; it overrides the
+general no-grid preference here without introducing drawn seams on the stem.
+
+The September 13 follow-up is preserved unmodified at
+[`southern-marsh.png`](../world-new/look-targets/2026-09-13/southern-marsh.png).
+It refines the same southern target with varied island shoulders, broad stepped
+caps, hanging gills and bank roots, muted shallow reflections and drifting low
+mist. The explicit request for less ground-flower noise takes precedence over
+the image's dense small flowers: retain quiet ground between small patches.
+Existing reference-site plans still own architecture; the pictured ruin does
+not authorize copying a new gate over an existing precinct.
+
 ## Technical references
 
 The implementation uses Godot's existing spatial material and environment

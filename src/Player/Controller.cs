@@ -13,9 +13,8 @@ namespace Petalfell.Player;
 /// time, jump buffering, variable jump height, and step-up so terrace lips
 /// never interrupt a run.
 ///
-/// Traversable ledges are detected before launching a short automatic jump.
-/// The controller follows a real collision-tested arc instead of being placed
-/// on top of the ledge and asking the visual model to hide the teleport.
+/// Low treads use swept, supported steps; taller traversable ledges use a
+/// collision-tested automatic jump. Presentation eases only the low-step lift.
 /// </summary>
 public partial class Controller : CharacterBody3D
 {
@@ -44,6 +43,8 @@ public partial class Controller : CharacterBody3D
 	public const float SwimSpeed = 7.0f;
 	public const float Buoyancy = 26f;
 	public const float WaterDrag = 4.2f;
+	// From the floating feet position this clears a four-block bank at sea level.
+	public const float WaterJumpVel = 24.5f;
 
 	/// <summary>
 	/// Gates new manual and route-following intent without disabling the physics
@@ -73,6 +74,8 @@ public partial class Controller : CharacterBody3D
 	private Terrain _terrain;
 	private Func<int, int, WaterColumn?> _waterColumnAt;
 	private float _activeWaterSurface = Palette.WaterLevel;
+	private bool _waterJumping;
+	private bool _waterJumpReady = true;
 
 	/// <summary>World-space destination from click-to-move, or null.</summary>
 	public System.Collections.Generic.List<Vector3> Route;
@@ -104,6 +107,7 @@ public partial class Controller : CharacterBody3D
 	public override void _PhysicsProcess(double delta)
 	{
 		float dt = (float)delta;
+		if (!Input.IsActionPressed("jump")) _waterJumpReady = true;
 
 		UpdateSwimming();
 		// A seated pose is a grounded interaction. If the ground becomes water,
@@ -130,8 +134,28 @@ public partial class Controller : CharacterBody3D
 		if (Swimming) SwimStep(ref vel, wish, dt);
 		else GroundStep(ref vel, wish, dt);
 
+		bool supported = IsOnFloor() && !Swimming && !_autoJumping && vel.Y <= 0f;
+		Vector3 beforeMove = GlobalPosition;
+		_lowStepPrepared = false;
+		if (supported) PrepareLowStep(ref vel, dt);
+		float floorAngle = FloorMaxAngle;
+		// A capsule contacts the corner of a verified low tread along a steep
+		// normal before its centre reaches the flat top. Support that corner for
+		// this measured crossing only; ordinary slopes retain their normal limit.
+		if (_lowStepPrepared) FloorMaxAngle = Mathf.DegToRad(85f);
 		Velocity = vel;
 		MoveAndSlide();
+		if (supported)
+		{
+			SnapLowStepDown();
+			float rise = GlobalPosition.Y - beforeMove.Y;
+			if (IsOnFloor() && Math.Abs(rise) > .003f && Math.Abs(rise) <= LowStepHeight + .02f)
+			{
+				RecordLowStep(beforeMove.Y, rise);
+				Velocity = new Vector3(Velocity.X, 0f, Velocity.Z);
+			}
+		}
+		FloorMaxAngle = floorAngle;
 
 		if (!Swimming) TryAutoJump(wish, dt);
 
@@ -278,6 +302,17 @@ public partial class Controller : CharacterBody3D
 
 	private void UpdateSwimming()
 	{
+		// A launched jump keeps its momentum while the feet cross the surface.
+		// Re-enter buoyancy only on descent, or after landing/ceiling collision.
+		if (_waterJumping)
+		{
+			if (!IsOnFloor() && (Velocity.Y > 0f || GlobalPosition.Y >= _activeWaterSurface + .35f))
+			{
+				Swimming = false;
+				return;
+			}
+			_waterJumping = false;
+		}
 		// Keyed on the depth of the bed beneath you, never on your own height in
 		// the water. Testing your own Y is a feedback loop: buoyancy lifts you
 		// past the threshold, you stop swimming, gravity drops you back under.
@@ -411,6 +446,8 @@ public partial class Controller : CharacterBody3D
 
 	private void SwimStep(ref Vector3 vel, Vector3 wish, float dt)
 	{
+		_coyote = 0f;
+		_buffer = Mathf.Max(0f, _buffer - dt);
 		_autoJumping = false;
 		_autoJumpFlat = Vector3.Zero;
 		_autoJumpAge = 0f;
@@ -432,8 +469,18 @@ public partial class Controller : CharacterBody3D
 		vel.X = flat.X;
 		vel.Z = flat.Z;
 
-		// Climbing out is a swim toward the bank plus a small assist, not a jump.
-		if (Input.IsActionPressed("jump")) vel.Y = Mathf.Max(vel.Y, 6.5f);
+		if (InputEnabled && Input.IsActionPressed("jump") && _waterJumpReady)
+		{
+			if (GlobalPosition.Y >= _activeWaterSurface - 1.1f)
+			{
+				vel.Y = WaterJumpVel;
+				_waterJumping = true;
+				_waterJumpReady = false;
+				Swimming = false;
+				_buffer = 0f;
+			}
+			else vel.Y = Mathf.Max(vel.Y, 6.5f);
+		}
 	}
 
 	/// <summary>
@@ -483,6 +530,9 @@ public partial class Controller : CharacterBody3D
 
 			float rise = probe.Origin.Y - GlobalPosition.Y;
 			if (rise <= 0.05f || rise > StepHeight + 0.05f) continue;
+			float surfaceRise = result.GetCollisionCount() > 0
+				? result.GetPosition().Y - GlobalPosition.Y : rise;
+			if (surfaceRise <= LowStepHeight) return;
 
 			// Solve v² = 2gh for an apex slightly above the landing. Auto jumps
 			// ignore manual short-hop input while rising, otherwise the absence of a

@@ -29,5 +29,11 @@ void fog() {
 	float southern = smoothstep(5000.0, 6800.0, WORLD_POSITION.z);
 	DENSITY = height_band * bank * (0.0018 + 0.0015 * pf_cloud_cover + 0.0010 * pf_night) *
 		mix(1.0, 2.3, southern);
+	// Narrow low wisps separate the water from island tops, leaving clear gaps
+	// between moving banks instead of whitening the whole view uniformly.
+	vec2 curl = WORLD_POSITION.xz * .032 + vec2(pf_weather_time * .0023, -pf_weather_time * .0012);
+	float wisp = smoothstep(.48, .72, field(curl + field(curl * .4 + 31.0) * 1.5));
+	float low = (WORLD_POSITION.y - water_level - .8) / 2.2;
+	DENSITY += southern * exp(-low * low) * wisp * (.018 + .008 * pf_night);
 	ALBEDO = vec3(0.78, 0.84, 0.95);
 }

@@ -20,6 +20,7 @@ public partial class LookRenderSmoke : Node
 			CheckEdges();
 			CheckBevelJunctions();
 			CheckClock();
+			CheckCameraShadowBasis();
 			CheckDrift();
 			CheckMirrorRegistration();
 			CheckMirrorTransitions();
@@ -31,6 +32,7 @@ public partial class LookRenderSmoke : Node
 			CheckWetlandReeds();
 			CheckSouthernTransition();
 			CheckMarshMushrooms();
+			CheckMarshSurfaceDetail();
 			CheckSouthernFauna();
 			GD.Print("[look-render-smoke] convex lips/coplanar chunk seam, 255 watertight junctions, unchanged box collision, " +
 				"4097 clock samples/horizon fade, bounded global particle handoff, mirror registration/height fades, local edit ownership, supported fragment/petal/plant handoff and plant wind seams passed");
@@ -143,6 +145,67 @@ public partial class LookRenderSmoke : Node
 		GD.Print($"[southern-transition-smoke] {blended} mixed land samples, continuous relief and exact neighbouring influence");
 	}
 
+	private static void CheckMarshSurfaceDetail()
+	{
+		var atlas = WorldAtlasDefinition.Load("res://content/chapter_01/atlas.json");
+		int profile = atlas.BiomeCatalog.Profiles.FindIndex(p => p.Id == "fen");
+		AtlasSectorWindow Window(int originX)
+		{
+			const int size = 96;
+			var data = new AtlasSectorData(0, 0, originX, 7200, size, 0, size, size, 64, 24, "marsh-detail-smoke");
+			var grid = new VoxelGrid(size, 64, 7, originX, 7200);
+			for (int z = 0; z < size; z++)
+			for (int x = 0; x < size; x++)
+			{
+				int gx = originX + x, gz = 7200 + z, i = z * size + x;
+				bool dry = (gx / 8 + gz / 8) % 3 == 0;
+				int height = dry ? 28 : 22;
+				data.Height[i] = (ushort)height; data.Land[i] = dry ? (byte)1 : (byte)0;
+				data.WaterSurface[i] = dry ? (ushort)0 : (ushort)24;
+				data.Profile[i] = data.SecondaryProfile[i] = (byte)profile;
+				grid.Describe(x, z, height, dry ? Palette.MOSS : Palette.MUD, Palette.STONE);
+			}
+			return new AtlasSectorWindow(data, atlas, 7, grid);
+		}
+		int rootVertices = 0, padVertices = 0;
+		foreach (int origin in new[] { 6000, 6288, 6576 })
+		{
+			var a = Window(origin); var b = Window(origin + 24);
+			foreach (bool water in new[] { false, true })
+			{
+				using var ma = water ? GroundDetail.BuildAtlasWater(a, 2, 2) : GroundDetail.BuildAtlas(a, 2, 2);
+				using var mb = water ? GroundDetail.BuildAtlasWater(b, 1, 2) : GroundDetail.BuildAtlas(b, 1, 2);
+				Require((ma == null) == (mb == null), "marsh detail appeared only in one window");
+				if (ma == null) continue;
+				var aa = ma.SurfaceGetArrays(0); var bb = mb.SurfaceGetArrays(0);
+				var pa = aa[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+				var pb = bb[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+				var wa = aa[(int)Mesh.ArrayType.Custom0].AsFloat32Array();
+				Require(pa.Length == pb.Length && wa.SequenceEqual(bb[(int)Mesh.ArrayType.Custom0].AsFloat32Array()),
+					"bank or pad count/wind changed across window ownership");
+				var joints = new Dictionary<Vector3, Vector2>();
+				for (int i = 0; i < pa.Length; i++)
+				{
+					Require((pa[i] + a.GlobalOrigin - pb[i] - b.GlobalOrigin).Length() < .002f,
+						"bank roots or pads moved at handoff");
+					var wind = new Vector2(wa[i * 2], wa[i * 2 + 1]);
+					if (joints.TryGetValue(pa[i], out var other)) Require(wind.IsEqualApprox(other), "bank root facets tear in wind");
+					else joints.Add(pa[i], wind);
+					if (water)
+					{
+						int x = Mathf.FloorToInt(pa[i].X), z = Mathf.FloorToInt(pa[i].Z);
+						Require(a.Data.WaterSurface[z * a.Data.Width + x] == 24 && pa[i].Y >= 24.37f && pa[i].Y <= 24.55f,
+							"floating leaf left its wet supporting cell");
+						padVertices++;
+					}
+					else if (pa[i].Y > 25.5f && pa[i].Y < 27.9f) rootVertices++;
+				}
+			}
+		}
+		Require(rootVertices > 100 && padVertices > 20, "fixture did not exercise roots and floating leaves");
+		GD.Print($"[marsh-surface-smoke] {rootVertices} hanging root / {padVertices} water-detail vertices preserve support, global placement and wind joints");
+	}
+
 	private static void CheckMarshMushrooms()
 	{
 		var atlas = WorldAtlasDefinition.Load("res://content/chapter_01/atlas.json");
@@ -171,11 +234,44 @@ public partial class LookRenderSmoke : Node
 			Require(voxel.Material == b.Grid.At(voxel.X - 24, voxel.Y, voxel.Z), "mushroom changed across window ownership");
 			cells++;
 		}
-		Require(cells > 250 && a.Grid.At(64, 27, 64) == Palette.PLASTER, "giant mushroom lacks its pale grounded stem");
+		Require(cells > 250 && a.Grid.At(64, 27, 64) == Palette.MUSHROOM_STEM, "giant mushroom lacks its pale grounded stem");
+		Require(Palette.Get(Palette.MUSHROOM_STEM).Pattern == Palette.PatternFungus,
+			"mushroom stem inherited plank striping");
+		for (int z = 63; z <= 65; z++)
+		for (int x = 63; x <= 65; x++)
+			Require(a.Grid.At(x, 31, z) == Palette.MUSHROOM_STEM, "large mushroom stem lost its thick section");
 		Require(!a.Grid.SolidAt(68, 28, 64) && a.Grid.HeightAt(68, 64) > 36,
 			"mushroom cap has no real open underside");
 		Require(AtlasRuntimeHandoff.TryResolveExactLanding(a, 6068, 7264, out var landing, out _) && landing.SurfaceY == 26,
 			"map landing under a mushroom did not use the supported ground");
+		using (var detailA = GroundDetail.BuildAtlas(a, 2, 2))
+		using (var detailB = GroundDetail.BuildAtlas(b, 1, 2))
+		{
+			Require(detailA != null && detailB != null, "mushroom fixture has no hanging detail");
+			var aa = detailA.SurfaceGetArrays(0); var bb = detailB.SurfaceGetArrays(0);
+			var pa = aa[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+			var pb = bb[(int)Mesh.ArrayType.Vertex].AsVector3Array();
+			var wa = aa[(int)Mesh.ArrayType.Custom0].AsFloat32Array();
+			var wb = bb[(int)Mesh.ArrayType.Custom0].AsFloat32Array();
+			Require(pa.Length == pb.Length && wa.SequenceEqual(wb), "mushroom hanging detail changed at handoff");
+			int hanging = 0;
+			var joints = new Dictionary<Vector3, Vector2>();
+			for (int i = 0; i < pa.Length; i++)
+			{
+				Require((pa[i] + a.GlobalOrigin - pb[i] - b.GlobalOrigin).Length() < .002f,
+					"mushroom detail moved across window ownership");
+				if (pa[i].Y < 32f) continue;
+				hanging++;
+				var wind = new Vector2(wa[2 * i], wa[2 * i + 1]);
+				Require(wind.X >= 0f && wind.X <= .75f, "invalid gill wind weight");
+				if (joints.TryGetValue(pa[i], out var other))
+					Require(wind.IsEqualApprox(other), "hanging bead facets separate under wind");
+				else joints.Add(pa[i], wind);
+				Require(pa[i].Y < 40f && pa[i].Y > 34f, "gills escaped the cap's clear underside");
+			}
+			Require(hanging > 100, "fixture did not exercise hanging gills");
+			GD.Print($"[mushroom-detail-smoke] {hanging} hanging vertices retain global anchors and shared wind joints");
+		}
 		var grammar = new ProductionTerrainGrammar(20260820);
 		int wet = 0, dry = 0;
 		for (int z = 7000; z < 7500; z += 6)
@@ -654,8 +750,77 @@ public partial class LookRenderSmoke : Node
 				"sun/moon ownership changed with a visible direct key");
 			previous = key.LightEnergy;
 		}
+		day.TimeOfDay = .36f;
+		day.Paused = false;
+		day.DayLength = 900f;
+		day._Process(0);
+		Vector3 direction = key.Basis.Z;
+		for (int frame = 0; frame < 240; frame++)
+		{
+			day._Process(1.0 / 120.0);
+			Vector3 next = key.Basis.Z;
+			float distance = direction.DistanceTo(next);
+			Require(distance > .00001f && distance < .0001f,
+				"sun direction held or jumped between rendered frames");
+			direction = next;
+		}
+		day.Paused = true;
+		Transform3D frozen = key.Transform;
+		float frozenCover = day.CloudCover;
+		for (int frame = 0; frame < 240; frame++) day._Process(1.0 / 120.0);
+		Require(key.Transform == frozen && day.CloudCover == frozenCover,
+			"frozen clock changed the directional light or weather");
+		Require(key.PhysicsInterpolationMode == PhysicsInterpolationModeEnum.Off,
+			"render-driven sun inherited physics interpolation");
+		day.TimeOfDay += .00001f;
+		day._Process(0);
+		Require(key.Transform != frozen, "fine paused clock scrub was quantized away");
+		day.SetShadowSoftness(0);
+		Require(day.ShadowSoftness == 0f && key.ShadowBias > 0f, "crisp endpoint lost depth bias");
+		float hardBias = key.ShadowBias * key.ShadowBlur;
+		day.RandomizeClouds();
+		Require(day.ShadowSoftness == 0f, "weather overrides crisp shadows");
+		day.SetShadowSoftness(DayCycle.MaxShadowSoftness);
+		Require(key.ShadowBlur == DayCycle.MaxShadowSoftness, "very blurry endpoint is clamped away");
+		Require(Mathf.IsEqualApprox(hardBias, key.ShadowBias * key.ShadowBlur * 4f),
+			"softness changes the effective shadow depth offset");
+		var camera = new CameraRig();
+		AddChild(camera);
+		var menu = new DeveloperMenu();
+		menu.Setup(null, null, camera, day);
+		AddChild(menu);
+		Label title = menu.FindChildren("*", "Label", true, false).OfType<Label>()
+			.Single(label => label.Text.StartsWith("Shadow softness"));
+		HSlider slider = title.GetParent().GetParent().GetChildren().OfType<HSlider>().Single();
+		slider.Value = 0;
+		Require(day.ShadowSoftness == 0 && day.Paused, "menu did not select crisp shadows while frozen");
+		slider.Value = 50;
+		Require(day.ShadowSoftness == 6 && key.ShadowBlur == 6, "menu midpoint did not update the frozen light");
+		slider.Value = 100;
+		Require(day.ShadowSoftness == DayCycle.MaxShadowSoftness, "menu cannot reach very blurry shadows");
+		menu.Free(); camera.Free();
+		GD.Print("[shadow-clock-smoke] 240 flowing/240 frozen frames, fine frozen scrub and both softness endpoints pass");
+		GD.Print("[shadow-menu-smoke] frozen-clock UI: crisp / 50% / very blurry pass");
 		day.QueueFree(); key.QueueFree(); fill.QueueFree();
 		env.Dispose();
+	}
+
+	private void CheckCameraShadowBasis()
+	{
+		var camera = new CameraRig();
+		AddChild(camera);
+		camera.Follow(new Vector3(6400, 26, 7360), Vector3.Zero, 1);
+		Basis basis = camera.GlobalBasis;
+		for (int frame = 0; frame < 240; frame++)
+		{
+			// Real atlas coordinates and sub-voxel body/follow movement must not
+			// rotate a camera whose orbit and zoom are stationary.
+			camera.Follow(new Vector3(6400, 26 + MathF.Sin(frame) * .003f, 7360),
+				Vector3.Zero, 1.0 / 120.0);
+			Require(camera.GlobalBasis == basis, "atlas follow jitter changed the shadow camera basis");
+		}
+		camera.Free();
+		GD.Print("[shadow-camera-smoke] 240 frames preserve exact orbit basis during sub-voxel atlas follow");
 	}
 
 	private void CheckDrift()

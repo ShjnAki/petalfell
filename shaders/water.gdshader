@@ -357,7 +357,7 @@ void fragment() {
 	// crisp mosaic of tiles the reference actually shows.
 	float depth_units = column;
 
-	vec3 absorption = mix(extinction, vec3(0.32, 0.28, 0.24), marsh * 0.8);
+	vec3 absorption = mix(extinction, vec3(0.38, 0.24, 0.22), marsh * 0.8);
 	vec3 absorb = max(exp(-absorption * depth_units), vec3(1.0 - max_occlusion));
 	float t = 1.0 - exp(-depth_units * depth_rate);
 	vec3 body = mix(shoal, shallow, smoothstep(0.0, 0.45, t));

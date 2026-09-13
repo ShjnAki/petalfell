@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
 using Petalfell.Core;
 
@@ -286,6 +287,24 @@ public static class GroundDetail
 			}
 		}
 
+		public void LilyPad(float x, float y, float z, float radius, float angle, Color colour)
+		{
+			// One missing wedge gives a readable leaf notch, with a shallow folded rim.
+			for (int k = 0; k < 9; k++)
+			{
+				float a = angle + (k + .35f) * Mathf.Tau / 10f;
+				float b = angle + (k + 1.35f) * Mathf.Tau / 10f;
+				int i = Pos.Count;
+				Pos.Add(new(x, y, z));
+				Pos.Add(new(x + Mathf.Cos(b) * radius, y + .018f, z + Mathf.Sin(b) * radius));
+				Pos.Add(new(x + Mathf.Cos(a) * radius, y + .018f, z + Mathf.Sin(a) * radius));
+				for (int n = 0; n < 3; n++)
+				{
+					Nrm.Add(Vector3.Up); Col.Add(colour); Det.Add(0f); Det.Add(0f); Idx.Add(i + n);
+				}
+			}
+		}
+
 		public ArrayMesh Build()
 		{
 			var arrays = new Godot.Collections.Array();
@@ -527,16 +546,16 @@ public static class GroundDetail
 				for (int k = 0; k < count; k++)
 				{
 					float ox = rng.Range(-0.34f, 0.34f), oz = rng.Range(-0.34f, 0.34f);
-					f.Fleck(fx + ox, y, fz + oz, rng.Range(0.46f, 0.72f),
-						rng.Range(0.42f, 0.66f), rng.Next() * 1.57f, pad);
-					if (k == 0 && rng.Chance(0.30f))
-						f.Box(fx + ox, y + 0.02f, fz + oz, 0.20f, 0.14f, 0.20f,
+					f.LilyPad(fx + ox * .55f, y, fz + oz * .55f, rng.Range(.20f, .32f),
+						rng.Next() * Mathf.Tau, pad);
+					if (k == 0 && rng.Chance(0.12f))
+						f.Box(fx + ox * .55f, y + 0.02f, fz + oz * .55f, 0.20f, 0.14f, 0.20f,
 							rng.Pick(FlowerTops));
 				}
 				continue;
 			}
 
-			float petalChance = permitsPetals ? 0.005f + clump * 0.035f : 0f;
+			float petalChance = permitsPetals ? (0.005f + clump * 0.035f) * Rng.Lerp(1f, .25f, marsh) : 0f;
 			if (!rng.Chance(petalChance)) continue;
 			int petals = rng.Int(1, 2);
 			for (int k = 0; k < petals; k++)
@@ -879,6 +898,10 @@ public static class GroundDetail
 	{
 		Vector3I.Right, Vector3I.Left, Vector3I.Up, Vector3I.Back, Vector3I.Forward,
 	};
+	private static readonly Vector3I[] BankFaces =
+	{
+		Vector3I.Left, Vector3I.Right, Vector3I.Forward, Vector3I.Back,
+	};
 
 	/// <summary>
 	/// Add physical growth only to existing moss-stone cells. Cap profiles and
@@ -956,20 +979,108 @@ public static class GroundDetail
 		return true;
 	}
 
+	/// <summary>Fine hanging gills on exposed cream undersides, owned by the same chunk as their cap cell.</summary>
+	private static void MushroomGills(Field field, AtlasSectorWindow window, int x0, int z0)
+	{
+		var grid = window.Grid;
+		// Sparse tiles use local indices; sort the bounded cream subset so a moved
+		// window emits the same mesh order as well as the same visible geometry.
+		foreach (var cell in grid.PlacedIn(x0, z0, ChunkMesher.ChunkSize)
+			.Where(c => c.Material == Palette.LEAF_CREAM).OrderBy(c => c.Z).ThenBy(c => c.X).ThenBy(c => c.Y))
+		{
+			if (cell.Material != Palette.LEAF_CREAM) continue;
+			int x = cell.X, z = cell.Z, y = cell.Y;
+			string profile = window.GroundDetailSetAt(x, z);
+			if (profile is not ("reed-root-moss" or "sand-reed-petal")) continue;
+			int gx = grid.OriginX + x, gz = grid.OriginZ + z;
+			float south = ProductionTerrainGuide.SouthernLatitudeAt(gz);
+			if (south <= 0f || y < grid.Top[z * grid.Size + x] + 6 ||
+				grid.At(x, y + 1, z) is not (>= Palette.LEAF_PINK and <= Palette.LEAF_ROSE) ||
+				grid.At(x, y - 1, z) != Palette.AIR) continue;
+			// Keep clear lanes underneath and let whole reaches of a cap stay quiet.
+			float patch = _meadow.Fbm01(gx / 9f + 13f, gz / 9f - 23f, 2);
+			var rng = new Draw(gx, gz, 0x6111 + y);
+			if (!rng.Chance(south * Rng.Smoothstep(.30f, .65f, patch) * .42f)) continue;
+			float length = rng.Range(1.2f, 3.2f);
+			bool clear = true;
+			for (int h = y - 1; h >= y - Mathf.CeilToInt(length) - 1; h--)
+				if (grid.At(x, h, z) != Palette.AIR) { clear = false; break; }
+			if (!clear) continue;
+			float px = x + .5f + rng.Range(-.18f, .18f), pz = z + .5f + rng.Range(-.18f, .18f);
+			float phase = rng.Range(0f, Mathf.Tau);
+			Color cream = Palette.Get(Palette.LEAF_CREAM).Top;
+			Color blush = cream.Lerp(Palette.Get(Palette.LEAF_BLUSH).Top, .3f);
+			// Negative height pins the top and gives the hanging tip the wind weight.
+			field.Tuft(px, y + .025f, pz, .09f, -length, cream, blush, phase, sway: .75f);
+			for (int bead = 1; bead <= 3; bead++)
+			{
+				float t = bead / 3f;
+				int start = field.Det.Count;
+				field.Box(px, y + .025f - length * t, pz, .16f, .22f, .16f,
+					bead == 3 ? cream.Lerp(FlowerHeart, .24f) : blush, phase: phase);
+				// Every face shares the filament's interpolated displacement at this bead.
+				for (int i = start; i < field.Det.Count; i += 2)
+				{
+					field.Det[i] = .75f * Mathf.Clamp((y + .025f - field.Pos[i / 2].Y) / length, 0f, 1f);
+					// The opaque detail shader reserves vertex alpha .5 for a spore tip.
+					// This is an emission tag, not transparency or another material/draw.
+					if (bead == 3)
+					{
+						Color tint = field.Col[i / 2]; tint.A = .5f; field.Col[i / 2] = tint;
+					}
+				}
+			}
+		}
+	}
+
+	private static void MarshBankRoots(Field field, VoxelGrid grid, int gx, int gz, int x, int z, int height)
+	{
+		float patch = _meadow.Fbm01(gx / 14f - 37f, gz / 14f + 8f, 2);
+		var rng = new Draw(gx, gz, 0xB411);
+		if (!rng.Chance(ProductionTerrainGuide.SouthernLatitudeAt(gz) *
+			Rng.Smoothstep(.38f, .65f, patch) * .38f)) return;
+		foreach (var step in BankFaces)
+		{
+			int nx = x + step.X, nz = z + step.Z;
+			if (nx < 0 || nz < 0 || nx >= grid.Size || nz >= grid.Size) continue;
+			int drop = height - grid.Top[nz * grid.Size + nx];
+			if (drop < 2 || grid.At(nx, height - 1, nz) != Palette.AIR) continue;
+			float length = Math.Min(drop - .5f, rng.Range(.8f, 2.3f));
+			bool clear = true;
+			for (int y = height - 1; y >= height - Mathf.CeilToInt(length); y--)
+				if (grid.At(nx, y, nz) != Palette.AIR) { clear = false; break; }
+			if (!clear) continue;
+			float px = x + .5f + step.X * .56f, pz = z + .5f + step.Z * .56f;
+			float phase = rng.Range(0f, Mathf.Tau);
+			field.Tuft(px, height - .08f, pz, .12f, -length, VineAttach, VineTip, phase, sway: .50f);
+			for (int leaf = 1; leaf <= 3; leaf++)
+			{
+				float t = leaf / 3f;
+				int start = field.Det.Count;
+				field.Box(px, height - .08f - length * t, pz, .24f, .17f, .20f, VineAttach);
+				for (int i = start; i < field.Det.Count; i += 2)
+				{
+					field.Det[i] = .50f * Mathf.Clamp((height - .08f - field.Pos[i / 2].Y) / length, 0f, 1f);
+					field.Det[i + 1] = phase;
+				}
+			}
+		}
+	}
+
 	private static void WetlandReeds(Field field, int gx, int gz, float x, float z, int bed, int surface)
 	{
 		float patch = _meadow.Fbm01(gx / 38f + 17f, gz / 38f - 29f, 3);
-		float density = Rng.Smoothstep(.48f, .72f, patch) * .045f *
+		float density = Rng.Smoothstep(.48f, .72f, patch) * .028f *
 			ProductionTerrainGuide.SouthernLatitudeAt(gz);
 		var rng = new Draw(gx, gz, 0x7EED);
 		if (!rng.Chance(density)) return;
-		int count = rng.Int(2, 4);
+		int count = rng.Int(2, 3);
 		for (int k = 0; k < count; k++)
 		{
 			float px = x + rng.Range(-.12f, .12f), pz = z + rng.Range(-.12f, .12f);
-			float root = bed - .025f, height = surface - root + rng.Range(.65f, 1.35f);
+			float root = bed - .025f, height = surface - root + rng.Range(.65f, 1.10f);
 			float phase = rng.Next() * Mathf.Tau;
-			field.Grass(px, root, pz, .22f, height * .94f, ReedBase, ReedTip,
+			field.Grass(px, surface - .06f, pz, .25f, (root + height - surface) * .85f, VineAttach, VineTip,
 				phase, rng.Range(-.18f, .18f), rng.Range(-.18f, .18f));
 			field.Tuft(px, root, pz, .055f, height, ReedBase, ReedTip, phase, sway: .65f);
 			int headStart = field.Det.Count;
@@ -1040,7 +1151,12 @@ public static class GroundDetail
 			float y = h, fx = x + 0.5f, fz = z + 0.5f;
 			string detailSet = window.GroundDetailSetAt(x, z);
 			if (grassy && detailSet is "reed-root-moss" or "sand-reed-petal")
+			{
 				SmallMushrooms(f, gx, gz, fx, y, fz);
+				// Only natural moss banks; authored paving and masonry use their own masks.
+				if (cap == Palette.MOSS && h == natural)
+					MarshBankRoots(f, grid, gx, gz, x, z, h);
+			}
 			if ((grassy || muddy) && h <= Terrain.Sea + 6 && data.Wetness[index] >= 160 &&
 				detailSet is "reed-root-moss" or "sand-reed-petal")
 				WetlandReeds(f, gx, gz, fx, fz, h, h);
@@ -1087,21 +1203,21 @@ public static class GroundDetail
 					detailSet.Contains("petal", StringComparison.Ordinal) ||
 					detailSet == "reed-root-moss" && ProductionTerrainGuide.SouthernLatitudeAt(gz) > 0f;
 				float flowerField = _flowers.Fbm01(gx * 0.028f, gz * 0.028f, 3);
-				float flowerBand = Rng.Smoothstep(0.45f, 0.70f, flowerField);
-				if (flowers && rng.Chance(flowerBand * 0.34f *
+				float flowerBand = Rng.Smoothstep(0.51f, 0.74f, flowerField);
+				if (flowers && rng.Chance(flowerBand * 0.10f *
 					(detailSet == "reed-root-moss" ? ProductionTerrainGuide.SouthernLatitudeAt(gz) : 1f)))
 				{
 					Color petals = rng.Pick(FlowerTops);
-					int count = rng.Int(2, 4);
+					int count = rng.Int(1, 2);
 					for (int k = 0; k < count; k++)
 						f.Flower(fx + rng.Range(-0.30f, 0.30f), y,
 							fz + rng.Range(-0.30f, 0.30f), rng.Range(0.20f, 0.45f),
 							petals, rng.Next() * Mathf.Tau);
 				}
 				if (detailSet.Contains("petal", StringComparison.Ordinal) &&
-					rng.Chance(meadowBand * 0.12f))
+					rng.Chance(meadowBand * 0.035f))
 				{
-					int count = rng.Int(3, 6);
+					int count = rng.Int(1, 3);
 					for (int k = 0; k < count; k++)
 						f.Fleck(fx + rng.Range(-0.34f, 0.34f), y + 0.018f,
 							fz + rng.Range(-0.34f, 0.34f), rng.Range(0.09f, 0.17f),
@@ -1229,6 +1345,7 @@ public static class GroundDetail
 			}
 		}
 
+		MushroomGills(f, window, x0, z0);
 		MasonryGrowth(f, grid, data, x0, z0, x1, z1);
 		return f.Empty ? null : f.Build();
 	}

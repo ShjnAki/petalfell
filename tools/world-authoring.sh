@@ -111,6 +111,18 @@ case "$command_name" in
 		exec godot-mono --headless --path "$project_dir" \
 		  --script res://tools/terrain-survey.gd -- "$atlas_point" "$survey_output"
 		;;
+	verify-water-jump)
+	exec godot-mono --headless --path "$project_dir" \
+	  --script res://tools/water-jump-smoke.gd
+	;;
+	verify-player-motion)
+	exec godot-mono --path "$project_dir" --display-driver x11 --disable-vsync --fixed-fps 144 \
+	  --script res://tools/stair-walk-smoke.gd -- --motion-check
+	;;
+	verify-stair-walk)
+	exec godot-mono --headless --fixed-fps 60 --path "$project_dir" \
+	  --script res://tools/stair-walk-smoke.gd
+	;;
 	verify-reference-sites)
 		exec godot-mono --headless --path "$project_dir" \
 		  --script res://tools/reference-sites-smoke.gd -- "${@:2}"
@@ -127,7 +139,7 @@ case "$command_name" in
 		exec godot-mono --path "$project_dir" --fullscreen -- "${args[@]}"
 		;;
   *)
-echo "usage: $0 audit | atlas-preview [output] | atlas-topology-preview [output] | atlas-map-preview [output] | preview-atlas-domain <domain-id> [output] | preview-site-plan <site-id> [output] [--runtime-facing] | reference-top-grid [output] [source-pixel-x,y ...] | reference-plan-overlay [output] | verify-production-terrain <global-x,z> | audit-production-terrain | verify-production-playability <global-x,z> [land|water] | review-production-terrain <global-x,z> | capture-production-terrain <global-x,z> [output] [shot-names] | verify-atlas-walking-handoff | verify-camera-obstruction | verify-atlas-map-transport | verify-camera-auto-zoom | verify-look-rendering | verify-sculpture | verify-worldbuilding | survey-terrain <global-x,z> <output-directory> | review-site <site-id> | capture-site <site-id> [output] [shot-names]" >&2
+echo "usage: $0 audit | atlas-preview [output] | atlas-topology-preview [output] | atlas-map-preview [output] | preview-atlas-domain <domain-id> [output] | preview-site-plan <site-id> [output] [--runtime-facing] | reference-top-grid [output] [source-pixel-x,y ...] | reference-plan-overlay [output] | verify-production-terrain <global-x,z> | audit-production-terrain | verify-production-playability <global-x,z> [land|water] | review-production-terrain <global-x,z> | capture-production-terrain <global-x,z> [output] [shot-names] | verify-atlas-walking-handoff | verify-camera-obstruction | verify-atlas-map-transport | verify-camera-auto-zoom | verify-water-jump | verify-stair-walk | verify-player-motion | verify-look-rendering | verify-sculpture | verify-worldbuilding | survey-terrain <global-x,z> <output-directory> | review-site <site-id> | capture-site <site-id> [output] [shot-names]" >&2
     exit 64
     ;;
 esac

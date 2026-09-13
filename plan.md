@@ -73,12 +73,19 @@ reference families establish real production cost and spacing.
 
 The player is small relative to the world and architecture. Movement must remain
 reliable on voxel terrain: walking, cautious slow-walk, jumping, route following
-and swimming. The camera stays readable and player-controlled rather than zooming
+and swimming. Keep the original single-piece legs and walking animation. Low
+slabs and whole stair flights should smoothly change character height while that
+same walking cycle continues, including on descent. Higher
+ledges can use automatic hops, while Space remains an explicit jump.
+The camera stays readable and player-controlled rather than zooming
 around obstructions.
 
 Southern wetlands follow the author's mushroom-marsh reference: fragmented low
 islets, shallow water and large pale-stemmed pink/purple mushrooms rather than
-ordinary woodland. Sparse ambient fish, herons and butterflies query the current
+ordinary woodland. The [September 13 refinement](docs/LOOK_TARGET.md) calls for
+varied island shoulders, hanging organic detail, dynamic low mist and quiet
+ground between small flower patches. Water jumps make higher bank exits usable.
+Sparse ambient fish, herons and butterflies query the current
 production window and remain loaded across the maximum gameplay zoom. Future scope includes
 a newly designed inventory and loadout, a pet companion, and broader flora/fauna
 systems. Their old fixture implementations do not define the production design.

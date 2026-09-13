@@ -25,6 +25,10 @@ lamp placements, new sites or changed tree anchors.
 
 ## Current method
 
+The September 13 [shadow stability pass](shadow-stability-2026-09.md) owns the
+current clock cadence, cascade settings and softness control. Earlier shadow
+settings in this ledger describe their dated captures.
+
 - Blossom lobes retain their geometry, palette and per-block values. A new
   `canopy_surface.gdshaderinc` supplies shallow jittered petal facets and
   analytic gradients on the world face plane. The retained 6.5-cell/metre,

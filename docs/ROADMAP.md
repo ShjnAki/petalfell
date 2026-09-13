@@ -31,11 +31,28 @@ production allocations and individual plans; Reference 1 now uses the current
 sea datum at its existing address. Continue visual comparison and traversal of
 these destinations using the [current ledger](../building-knowledge/sites/reference-precincts-2026-09.md).
 
+### Movement review
+
+- author review of ordinary straight-leg walking with eased low-step height
+  changes and the corrected render interpolation, using the [stair motion evidence](../building-knowledge/workflows/grounded-stair-walking.md);
+- extend manual traversal to irregular broken slabs and direction changes on
+  authored stairs beyond the verified complete-flight fixtures and mountain route.
+
 ### Southern lowland review
 
+- author review of the September 13 shadow motion/stability pass and the
+  crisp-to-blurry developer control; inspect the
+  [shadow evidence](../building-knowledge/rendering/shadow-stability-2026-09.md)
+  alongside the marsh captures;
 - author review against the September 10 mushroom-marsh reference: fragmented
   grassy islets, shallow grey-blue channels, giant pink/purple mushrooms and
   sparse wide-range wildlife; the earlier tree-heavy southern pass is superseded;
+- review the September 13 refinement against its preserved source and fresh
+  `mushroom-v3-*` captures: thin deformed caps, small thick tops, thick square-shaded
+  stems and reduced clustering,
+  island shoulders, quieter ground cover, hanging caps,
+  night spore tips and low mist; extend manual water-jump traversal beyond the
+  verified bank fixtures and bounded coast route;
 - review Violet Threshold and Twin Rites runestone/support refinements against
   their source views; their plans and shore registrations remain authoritative;
 - extend manual traversal through the southern ecotone and several live window

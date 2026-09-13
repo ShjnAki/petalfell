@@ -107,6 +107,7 @@ public partial class PlanarReflection : Node3D
 		_camera = new Camera3D
 		{
 			Name = "ReflectionCamera",
+			PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off,
 			Current = true,
 			Projection = Camera3D.ProjectionType.Perspective,
 			// Everything except the water plane and what floats on it.

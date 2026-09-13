@@ -222,7 +222,7 @@ public static class Vegetation
 			if (x < 3 || z < 3 || x >= grid.Size - 3 || z >= grid.Size - 3) continue;
 			float southern = terrain.Plan.AtlasGuide.SouthernInfluenceAt(x, z);
 			float grove = groves.Fbm01(gx / 88f, gz / 88f, 3);
-			if (!rng.Chance(southern * Rng.Lerp(.50f, .90f, grove))) continue;
+			if (!rng.Chance(southern * Rng.Lerp(.40f, .72f, grove))) continue;
 			int index = z * grid.Size + x, y = grid.Top[index];
 			if (terrain.Land[index] == 0 || y < Terrain.Sea + 2 || y > Terrain.Sea + 12) continue;
 			bool clear = true;
@@ -236,7 +236,25 @@ public static class Vegetation
 			}
 			if (!clear) continue;
 			float scale = rng.Range(.48f, 1.32f);
-			int radius = (int)MathF.Round(3f + scale * 3f) + 2;
+			int radius = (int)MathF.Round(3f + scale * 3.5f) + 2;
+			// Thin conflicting candidates by a global priority, never by what a
+			// window happened to build first. Keep the original permanent lattice.
+			uint priority = (uint)StableCellSeed(cx, cz, 0xF062);
+			for (int nz = cz - 1; nz <= cz + 1 && clear; nz++)
+			for (int nx = cx - 1; nx <= cx + 1; nx++)
+			{
+				if (nx == cx && nz == cz || (uint)StableCellSeed(nx, nz, 0xF062) >= priority) continue;
+				var neighbour = new Rng(unchecked(seed ^ StableCellSeed(nx, nz, 0xF061)));
+				int ngx = nx * spacing + neighbour.RangeInt(7, 11), ngz = nz * spacing + neighbour.RangeInt(7, 11);
+				float influence = terrain.Plan.AtlasGuide.SouthernInfluenceAt(ngx - grid.OriginX, ngz - grid.OriginZ);
+				float density = groves.Fbm01(ngx / 88f, ngz / 88f, 3);
+				if (!neighbour.Chance(influence * Rng.Lerp(.40f, .72f, density))) continue;
+				int otherRadius = (int)MathF.Round(3f + neighbour.Range(.48f, 1.32f) * 3.5f);
+				int separation = radius + otherRadius;
+				if (Math.Abs(ngx - gx) < separation && Math.Abs(ngz - gz) < separation)
+					{ clear = false; break; }
+			}
+			if (!clear) continue;
 			foreach (var canonical in terrain.Plan.Definition.CanonicalAtlas.Topology.Sites)
 			{
 				var site = canonical.ReferencePlan;
@@ -246,7 +264,7 @@ public static class Vegetation
 					site.ContainsGlobal(gx + radius, gz + radius)) { clear = false; break; }
 			}
 			if (!clear) continue;
-			byte colour = patches.Fbm(gx / 120f, gz / 120f, 2) > .12f
+			byte colour = patches.Fbm(gx / 120f, gz / 120f, 2) > .04f
 				? Palette.LEAF_LILAC : rng.Chance(.75f) ? Palette.LEAF_PINK : Palette.LEAF_ROSE;
 			Mushroom(grid, rng, patches, x, y, z, scale, colour);
 			count++;
@@ -258,27 +276,46 @@ public static class Vegetation
 		float scale, byte colour)
 	{
 		int stemHeight = (int)MathF.Round(6f + scale * 6f);
-		int radiusX = (int)MathF.Round(3f + scale * 3f), radiusZ = radiusX + rng.RangeInt(-1, 0);
-		int thickness = Math.Max(2, (int)MathF.Round(scale * 3f));
-		int width = scale >= .8f ? 2 : 1;
-		for (int dz = 0; dz < width; dz++)
-		for (int dx = 0; dx < width; dx++)
+		int radiusX = (int)MathF.Round(3f + scale * 3.5f), radiusZ = radiusX + rng.RangeInt(-1, 0);
+		int width = scale >= .8f ? 3 : 2;
+		int stemMin = width == 3 ? -1 : 0;
+		int crownX = rng.RangeInt(-1, 1), crownZ = rng.RangeInt(-1, 1);
+		int bendX = rng.RangeInt(0, 1) == 0 ? -1 : 1;
+		int bendZ = rng.RangeInt(0, 1) == 0 ? -1 : 1;
+		int peakX = crownX + rng.RangeInt(-1, 1), peakZ = crownZ + rng.RangeInt(-1, 1);
+		int peakWidth = rng.RangeInt(1, 2);
+		int peakHeight = rng.RangeInt(2, 3);
+		// A thin umbrella carries one small chunky boss. Its drooping quadrant
+		// and clipped rim deform the silhouette without adding concentric tiers.
+		for (int dz = stemMin; dz < stemMin + width; dz++)
+		for (int dx = stemMin; dx < stemMin + width; dx++)
 			grid.Column(x + dx, z + dz, grid.Top[(z + dz) * grid.Size + x + dx] - 1,
-				y + stemHeight + 1, dx == 0 ? Palette.PLASTER : Palette.LEAF_CREAM);
-		for (int dz = -1; dz <= width; dz++)
-		for (int dx = -1; dx <= width; dx++)
+				y + stemHeight + 1, Palette.MUSHROOM_STEM);
+		for (int dz = -1; dz <= 2; dz++)
+		for (int dx = -1; dx <= 2; dx++)
+		{
+			if (dx == 2 && dz == 2) continue;
+			int ground = grid.Top[(z + dz) * grid.Size + x + dx];
+			grid.Column(x + dx, z + dz, ground - 1, Math.Max(ground, y + 1), Palette.MUSHROOM_STEM);
 			grid.Column(x + dx, z + dz, y + stemHeight - 2, y + stemHeight - 1, Palette.LEAF_CREAM);
+		}
 		for (int dz = -radiusZ; dz <= radiusZ; dz++)
 		for (int dx = -radiusX; dx <= radiusX; dx++)
 		{
-			if (Math.Abs(dx) + Math.Abs(dz) > radiusX + radiusZ - 2) continue;
-			float edge = Math.Max(Math.Abs(dx) / (float)radiusX, Math.Abs(dz) / (float)radiusZ);
-			int bottom = y + stemHeight - (edge > .78f ? 1 : 0);
-			int top = Math.Max(bottom + 2, y + stemHeight + thickness - (int)(edge * 2f) + 1);
+			int corner = 2 + (dx * crownX + dz * crownZ > 0 ? 1 : 0);
+			if (Math.Abs(dx) + Math.Abs(dz) > radiusX + radiusZ - corner) continue;
+			float rim = patches.Fbm((grid.OriginX + x + dx) / 5f,
+				(grid.OriginZ + z + dz) / 5f, 2);
+			bool outer = Math.Abs(dx) == radiusX || Math.Abs(dz) == radiusZ;
+			if (outer && rim > .15f) continue;
+			bool droop = dx * bendX > radiusX / 2 && dz * bendZ > 0;
+			int bottom = y + stemHeight - (droop ? 1 : 0);
+			bool peak = Math.Abs(dx - peakX) <= peakWidth && Math.Abs(dz - peakZ) <= 1;
+			int top = bottom + 2 + (peak ? peakHeight : 0);
 			grid.Column(x + dx, z + dz, bottom, bottom + 1, Palette.LEAF_CREAM);
 			float patch = patches.Fbm((grid.OriginX + x + dx) / 3.8f,
 				(grid.OriginZ + z + dz) / 3.8f, 2);
-			byte cap = patch > .27f ? Palette.LEAF_CREAM : patch > .08f ? Palette.LEAF_BLUSH : colour;
+			byte cap = patch > .40f ? Palette.LEAF_CREAM : patch > .22f ? Palette.LEAF_BLUSH : colour;
 			grid.Column(x + dx, z + dz, bottom + 1, top, colour);
 			grid.Set(x + dx, top - 1, z + dz, cap);
 		}

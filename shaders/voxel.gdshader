@@ -325,6 +325,15 @@ void fragment() {
 		petal_relief = petal.yz * 0.0018;
 	}
 
+	if (pattern > 9.5 && pattern < 10.5) {
+		// The author's mushroom stems use square shade patches, without seams
+		// or the horizontal plank grain of the former plaster material.
+		vec3 cell = floor(v_world - wn * 0.5 + 0.001);
+		float tone = hash21(cell.xz + cell.y * 17.0);
+		base *= mix(0.84, 1.08, tone);
+		surface_relief = 0.0;
+	}
+
 	float dist = length(v_world - CAMERA_POSITION_WORLD);
 	float fade = 1.0 - smoothstep(pattern_fade_start, pattern_fade_end, dist);
 	// Derivatives suppress detail once a world-space mark is subpixel.

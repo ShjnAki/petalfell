@@ -1,4 +1,4 @@
-# Current state — 2026-09-10
+# Current state — 2026-09-13
 
 This is a factual snapshot, not a design proposal.
 
@@ -26,6 +26,99 @@ day and UI state. The current handoff compares the exact terrain/water and nearb
 3 × 3 × 5 collision volume, removing the prior false invisible walls near water,
 terraces and placed objects. Full-map Shift-click travel builds a distant window,
 resolves a supported landing and closes the map on success.
+
+## September 13 marsh refinement and water jumps
+
+The new source is preserved at `world-new/look-targets/2026-09-13/southern-marsh.png`
+with its SHA-256 manifest. Southern banks now blend through a 72-block shoulder
+field, exposing varied stone courses beneath low mossy landing tongues instead
+of flattening every small islet to the same two-block rim. Accepted macro PNGs,
+local channel locations, site addresses and authored structures are unchanged.
+
+Giant mushroom caps are wider, with offset stepped crowns, quieter pale patches
+and more lilac reaches. The latest mushroom revision makes the main skirt
+two blocks deep including its cream underside, with one small raised boss two
+or three blocks thick. One rim quadrant droops by a block; coherent notches and
+asymmetric corner cuts deform the footprint. Stems are two blocks wide on small
+forms and three on large ones, with low rooted feet. A dedicated pale fungus
+material (38) uses per-voxel square tonal patches (pattern 10), replacing the
+plaster striping without changing plaster on buildings. Admission is 20% lower on
+the unchanged candidate lattice. A global priority removes potential neighbours
+whose cap envelopes approach within two blocks, independent of build order.
+Production counts fall from 913 to 701 in the fen window and 777 to 615 at the
+coast (23% and 21%). Exposed cream undersides carry sparse hanging filaments
+and small terminal spore beads. Their tips glow softly through the ordinary
+night cycle. Natural moss banks carry short hanging roots; both details use the
+existing chunk mesh, globally registered draws and coherent wind weights.
+Sparse cream-cell iteration is sorted before mesh emission so local edit-tile
+ordering cannot alter the emitted mesh across window changes.
+
+Production ground flowers now occupy narrower continuous patches, with admission
+reduced from .34 to .10 and one or two flowers per admitted cell instead of two
+to four. Loose ground petals also have lower admission and smaller groups.
+Reeds have fewer stems and leaves attached near the water surface; lily pads have
+notched rounded outlines, fewer blossoms and globally registered bobbing. Shallow
+marsh absorption and narrow moving low mist retain visible beds and clear gaps.
+Wildlife remains capped at six animals, including at most two herons.
+
+Holding Space near the swimming surface now launches a physical jump, with a
+24.5-block/second initial upward speed. The rising body retains momentum through
+the waterline; descending bodies resume buoyancy. Release and press again to
+launch another water jump. Manual short-hop gravity, horizontal air control,
+ordinary collisions and disabled-input handling remain active.
+`verify-water-jump` exercises the real controller against one-, two-, three- and
+four-block banks above water, a six-block wall, an overhead roof and disabled
+input. The four reachable banks pass, with a 4.53-block apex above water; the
+wall and roof block passage, and a held key launches only once.
+
+Low slabs and stairs up to one block use supported walking steps instead of
+automatic hops. The character retains its original single-piece legs and ordinary
+walking cycle at the existing movement speeds. Boot meshes cover the trouser
+ends with neutral soles .015 blocks above the character ground origin, clearing
+the ±.012 idle bob instead of extending .195 blocks into the surface. Character and follow camera share
+an interpolated, eased step height going up and down. The visual root is independent
+of its moving physics parent's transform, preventing that parent from applying a
+second movement delta during rendering. Boundary corrections precede sampling
+of the character/camera pose. Taller ledges retain
+automatic jump arcs and Space still launches a manual jump.
+
+`verify-stair-walk` passes six-tread flights in both directions at quarter-,
+half- and one-block rises with zero airborne frames and no upward jump velocity,
+including full-speed one-block flights and rotated fixtures at 6400,24,7360.
+Taller 1.25-/two-block ledges still hop, two-block drops fall, appropriate ceiling
+clearance is enforced, and stopping/disabled input remain effective.
+Current half-block ascent/descent captures are under
+`shots/stairs-2026-09-13/interpolation-fixed/`; see the
+[grounded stair method](building-knowledge/workflows/grounded-stair-walking.md).
+`verify-player-motion` passes flat walking, slow/full-speed stair flights, taller
+jumps/drops and rotated fixtures at 144 render fps against 60 physics ticks.
+All 4254 post-draw samples match the assigned presentation position; the same
+check reproduced .21348 blocks of unwanted displacement before the fix.
+Author review of the revised motion remains open.
+
+The coast water smoke may start on a tiny valid islet. After verifying its actual
+spawn collision, it selects a nearby larger bank for the separate 24-cell land
+probe, retaining every distance, grounding and swimming assertion. The current
+6400,7360 check walks 22.54 blocks across Y28..29 and swims 14.05 blocks. The
+northern 2692,2164 land probe still walks 44.15 blocks across Y72..78, and the
+4500,1900 terrain fingerprint remains `b5dd5bafbc962634b89f74b569e1edcd98a0e9ee7c798cc7b45f31b17d896fa0`.
+The extended look smoke checks 1,760 hanging-gill vertices, 4,484 root vertices
+and 3,504 water-detail vertices for window ownership, support and wind continuity.
+The existing site spawn/stair and complete/clipped Shallows bridge checks pass.
+Before the follow-up mushroom shape/density edit, the full-atlas audit passed
+all 165 windows, 5,984 safe terrain comparisons
+and 14,208 overhang comparisons (manifest `a4347626a528b54b`). The 6100,6600
+transition passes repeat and both neighbour-axis checks; walking handoff passes
+its cardinal, corner and partial-outer cases. The subsequent mushroom revision
+passes focused repeated terrain and both neighbour axes at 6400,7360 and
+5107,6620; the earlier full-atlas manifest is not its final geometry fingerprint.
+Fresh `mushroom-v3-*` captures supersede the earlier mushroom shape/material
+evidence; the earlier 180-frame motion sequence retains only its unchanged
+water, wind and atmosphere scope.
+
+Visual evidence and remaining limitations are recorded in
+[the September marsh entry](building-knowledge/rendering/southern-marsh-2026-09.md).
+This revision is not author-accepted.
 
 ## September 10 southern lowlands
 
@@ -248,6 +341,16 @@ keys are unchanged. The 4,097-sample clock check passes with this ramp. Terrain,
 characters and sculpture use the same cloud field. Linear palette colours are
 uploaded as numeric shader vectors; typed sRGB light/fog properties are encoded
 at their boundary to avoid the previous double conversion.
+The direct key now advances every rendered frame; sky-material updates retain
+the 1/2048-day throttle. Frozen time retains the exact light transform and
+weather. Sun and mirror cameras disable physics interpolation; the gameplay
+camera constructs its basis directly from orbit angles at large atlas positions.
+Shadows use an 8192 map with four blended ranges at 0.20/0.45/0.72 of the
+260-block span. The developer menu's **Shadow softness** slider spans 0–100%:
+hard filtering at zero and Ultra PCF up to radius 12, with default radius 1.25.
+The depth offset stays constant across this range; weather does not override
+softness. Checks and capture limits are recorded in the
+[September shadow entry](building-knowledge/rendering/shadow-stability-2026-09.md).
 The current ACES exposure is 0.72 and daytime ambient multiplier 0.42. Depth
 haze has a 115–430-block minimum span and a 1.70 curve; shared view-distance
 scaling extends that span for long-lens overviews in production and review.

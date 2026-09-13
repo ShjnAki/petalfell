@@ -22,6 +22,13 @@
 
 ## September 10 mushroom-marsh correction
 
+The [September 13 refinement](../rendering/southern-marsh-2026-09.md) supersedes
+the uniform low rims and flower density in this entry, adding varied shoulders,
+hanging organic detail and physical water jumps. Its 165-window audit passed
+with manifest `a4347626a528b54b` before the subsequent mushroom shape/density
+follow-up; that follow-up passes focused coast/fen repeats and both neighbour
+axes. Visual acceptance remains separate.
+
 The first southern pass, including the Shallows boundary fix, passed the complete
 165-window audit (`/tmp/petalfell-south-atlas-clipped-final.log`, manifest
 `d9ac9d51792cd3f2`). That is mechanical evidence only. The author then rejected

@@ -100,9 +100,10 @@ public partial class Character : Node3D
 
 	public void Setup(ShaderMaterial inkLight, ShaderMaterial inkDark)
 	{
-		// Translation still inherits the interpolated Player transform. Local body,
-		// limb and outline animation is authored every render frame, so interpolating
-		// it again retains a second nearby pose on fast motion.
+		// The owner supplies the already-interpolated world position each frame.
+		// Off alone only disables LOCAL interpolation: a moving physics parent
+		// would still be applied during rendering and add a second position delta.
+		TopLevel = true;
 		PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
 		_inkLight = inkLight;
 		_inkDark = inkDark;
@@ -204,7 +205,10 @@ public partial class Character : Node3D
 		Part(pivot, 1.7f, 3.4f, 1.8f, Trouser, 0f, -1.5f, 0f);
 		// The trouser already provides the leg silhouette. A second boxed stroke
 		// around the boot reads as an overlapping internal grid at small scale.
-		Part(pivot, 1.9f, 1.1f, 2.4f, Boots, 0f, -3.3f, 0.25f, outlined: false);
+		// Sole = (hip 3.2 - centre 2.6 - half-height .55) * S = .015.
+		// Boots cover the trouser ends; that tiny clearance also covers idle bob.
+		Part(pivot, 1.9f, 1.1f, 2.4f, Boots, 0f, -2.6f, 0.25f, outlined: false)
+			.Name = side < 0 ? "LeftBoot" : "RightBoot";
 		return pivot;
 	}
 
@@ -390,7 +394,9 @@ public partial class Character : Node3D
 		var look = new Vector3(facing.X, 0, facing.Z);
 		if (look.LengthSquared() > 0.0001f)
 		{
-			float yaw = Mathf.Atan2(look.X, look.Z);
+			Vector3 localLook = GetParentNode3D() is Node3D parent
+				? parent.GlobalBasis.Inverse() * look : look;
+			float yaw = Mathf.Atan2(localLook.X, localLook.Z);
 			Rotation = new Vector3(0, Mathf.LerpAngle(Rotation.Y, yaw, 1f - Mathf.Exp(-14f * dt)), 0);
 		}
 

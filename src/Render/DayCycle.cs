@@ -46,8 +46,13 @@ public partial class DayCycle : Node
 	/// it without changing the authored colours.
 	/// </summary>
 	public float NightDarkness { get; private set; } = 0.45f;
-	/// <summary>Clear-sky shadow filtering, before weather adds its small softening.</summary>
-	public float ShadowSoftness { get; private set; } = 4.20f;
+	public const float MaxShadowSoftness = 12f;
+	public const float DefaultShadowSoftness = 1.25f;
+	internal const float ShadowDepthBias = .32f;
+	internal const float SoftShadowQualityRadius = 4f;
+	/// <summary>Directional filtering radius; zero is crisp, twelve is very soft.</summary>
+	public float ShadowSoftness { get; private set; } = DefaultShadowSoftness;
+	private bool? _hardShadowFilter;
 	/// <summary>Smoothed, deterministic weather coverage. Clouds are lighting-only.</summary>
 	public float CloudCover { get; private set; }
 	/// <summary>World-space directions from the world toward each celestial body.</summary>
@@ -118,25 +123,23 @@ public partial class DayCycle : Node
 		_cloudStartCover = _weatherRng.RandfRange(0.08f, 0.48f);
 		ConfigureNextCloudSegment();
 		ProcessPriority = -50;   // before anything reads the light this frame
-		_applied = -1f;
-		_appliedCloud = -1;
+		_appliedSky = -1f;
+		_appliedSkyCloud = -1;
+		// This light is driven at render frequency, never by the physics clock.
+		if (_key != null) _key.PhysicsInterpolationMode = PhysicsInterpolationModeEnum.Off;
 		Apply();
 	}
 
 	/// <summary>
-	/// Smallest change in time worth re-applying.
-	///
-	/// Every Apply() moves the key light, which invalidates all four shadow
-	/// cascades, and rewrites the sky, which re-bakes the ambient radiance. Doing
-	/// that at frame rate is enormously expensive and completely pointless: over
-	/// a fifteen-minute day the sun travels a quarter of a degree between these
-	/// steps, which nothing on screen can resolve. This is the difference between
-	/// a day cycle that costs almost nothing and one that halves the frame rate.
+	/// Only sky radiance is throttled. Quantizing the actual sun direction here
+	/// held every cast shadow still for .44 seconds, then moved it in one jump.
 	/// </summary>
 	private const float Quantum = 1f / 2048f;
 
-	private float _applied = -1f;
-	private int _appliedCloud = -1;
+	private float _appliedSky = -1f;
+	private int _appliedSkyCloud = -1;
+	private float _appliedTime = -1f;
+	private float _appliedWeatherTime = -1f;
 
 	public override void _Process(double delta)
 	{
@@ -149,11 +152,7 @@ public partial class DayCycle : Node
 			RenderingServer.GlobalShaderParameterSet("pf_weather_time", _weatherTime);
 		}
 
-		float step = Mathf.Floor(TimeOfDay / Quantum);
-		int cloudStep = Mathf.FloorToInt(ComputeCloudCover() * 48f);
-		if (Mathf.IsEqualApprox(step, _applied) && cloudStep == _appliedCloud) return;
-		_applied = step;
-		_appliedCloud = cloudStep;
+		if (TimeOfDay == _appliedTime && _weatherTime == _appliedWeatherTime) return;
 		Apply();
 	}
 
@@ -226,6 +225,8 @@ public partial class DayCycle : Node
 
 	private void Apply()
 	{
+		_appliedTime = TimeOfDay;
+		_appliedWeatherTime = _weatherTime;
 		var from = Sample(TimeOfDay, out float k, out var to);
 
 		Color Blend(Color x, Color y) => x.Lerp(y, k);
@@ -277,29 +278,34 @@ public partial class DayCycle : Node
 		float ambientCloud = daylight
 			? Mathf.Lerp(1f, 1.08f, CloudCover)
 			: Mathf.Lerp(1f, 0.76f, CloudCover);
-		float cloudSoftness = Mathf.Clamp((CloudCover - 0.08f) / 0.84f, 0f, 1f);
-		cloudSoftness *= cloudSoftness * (3f - 2f * cloudSoftness);
 
 		if (_key != null)
 		{
 			_key.LightColor = keyColour.LinearToSrgb();
 			// Fade direct light to zero before changing celestial ownership. The sky
 			// and ambient retain twilight while the shadow direction crosses horizon.
-			// Spread the rise over enough of the arc that quantised shadow updates
-			// remain continuous even with the brighter golden-hour key.
+			// The direct key crosses the horizon at zero energy.
 			float horizonKey = Mathf.SmoothStep(0f, 0.24f, Mathf.Abs(SunDirection.Y));
 			_key.LightEnergy = energy * keyExposure * directCloud * horizonKey;
 			// Cloud transmission already dims the direct key. Retain occlusion;
 			// fading it a second time floods sheltered faces with direct light.
 			_key.ShadowOpacity = Lerp(from.ShadowOpacity, to.ShadowOpacity);
-			// Clear skies retain the existing crisp storybook shadows. Scattered
-			// overcast light expands the effective source and lowers the shadow's
-			// contrast instead of merely making the whole scene darker.
-			_key.ShadowBlur = Mathf.Clamp(
-				ShadowSoftness * Mathf.Lerp(1f, 1.16f, cloudSoftness), 0.5f, 6f);
+			bool hard = ShadowSoftness == 0f;
+			if (_hardShadowFilter != hard)
+			{
+				RenderingServer.DirectionalSoftShadowFilterSetQuality(hard
+					? RenderingServer.ShadowQuality.Hard : RenderingServer.ShadowQuality.SoftUltra);
+				_hardShadowFilter = hard;
+			}
+			// Hard filtering has no blur kernel. Do not pass a zero ShadowBlur:
+			// Godot multiplies depth bias by blur and would remove it entirely.
+			// Ultra's radius is 4; Hard's is 1. Keep the effective depth offset
+			// constant as the filter widens, avoiding acne and detached shadows.
+			_key.ShadowBlur = hard ? 1f : Math.Max(.05f, ShadowSoftness);
+			_key.ShadowBias = ShadowDepthBias / (_key.ShadowBlur * (hard ? 1f : SoftShadowQualityRadius));
 			// PCSS angular-distance shadows caused noisy stippling and huge unstable
-			// penumbras across cascade boundaries. Regular filtered shadows stay clean;
-			// cloud softness comes from a restrained blur and lower opacity instead.
+			// penumbras across cascade boundaries. Use PCF; weather changes the
+			// illumination, not the user's chosen filter footprint.
 			_key.LightAngularDistance = 0f;
 			// A light exactly on the horizon casts shadows the length of the world
 			// and the cascade cannot hold them, so the key is never allowed all
@@ -330,8 +336,12 @@ public partial class DayCycle : Node
 			ApplyBloom();
 		}
 
-		if (_sky != null)
+		float skyStep = Mathf.Floor(TimeOfDay / Quantum);
+		int skyCloudStep = Mathf.FloorToInt(CloudCover * 48f);
+		if (_sky != null && (skyStep != _appliedSky || skyCloudStep != _appliedSkyCloud))
 		{
+			_appliedSky = skyStep;
+			_appliedSkyCloud = skyCloudStep;
 			_sky.SetShaderParameter("zenith", Palette.ShaderRgb(Blend(from.Zenith, to.Zenith)));
 			_sky.SetShaderParameter("horizon", Palette.ShaderRgb(Blend(from.Horizon, to.Horizon)));
 			_sky.SetShaderParameter("ground", Palette.ShaderRgb(Blend(from.Ground, to.Ground)));
@@ -380,10 +390,10 @@ public partial class DayCycle : Node
 		Apply();
 	}
 
-	/// <summary>Clear-sky baseline. Cloud softness is applied independently on top.</summary>
+	/// <summary>Applies immediately while frozen, including an unfiltered endpoint.</summary>
 	public void SetShadowSoftness(float amount)
 	{
-		ShadowSoftness = Mathf.Clamp(amount, 0.5f, 6f);
+		ShadowSoftness = Mathf.Clamp(amount, 0f, MaxShadowSoftness);
 		Apply();
 	}
 
@@ -392,7 +402,7 @@ public partial class DayCycle : Node
 	{
 		_cloudStartCover = _weatherRng.RandfRange(0.04f, 0.84f);
 		ConfigureNextCloudSegment();
-		_appliedCloud = -1;
+		_appliedSkyCloud = -1;
 		Apply();
 	}
 

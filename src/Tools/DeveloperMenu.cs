@@ -132,8 +132,10 @@ public partial class DeveloperMenu : CanvasLayer
 			AddSlider(content, "Night darkness", 0.0, 2.5, 0.05, _day.NightDarkness,
 				v => $"{v:0.00}x", v => _day.SetNightDarkness((float)v));
 
-			AddSlider(content, "Shadow softness", 0.5, 6.0, 0.05, _day.ShadowSoftness,
-				v => $"{v:0.00}", v => _day.SetShadowSoftness((float)v));
+			AddSlider(content, "Shadow softness · crisp → blurry", 0.0, 100.0, 1.0,
+				_day.ShadowSoftness / DayCycle.MaxShadowSoftness * 100f,
+				v => v <= 0 ? "Crisp" : v >= 100 ? "Very blurry" : $"{v:0}%",
+				v => _day.SetShadowSoftness((float)v / 100f * DayCycle.MaxShadowSoftness));
 
 			_cloudButton = new Button
 			{

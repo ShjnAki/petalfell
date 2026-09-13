@@ -288,7 +288,8 @@ public static class Palette
 	public const byte TRUNK_ROSE = 25;
 	// Building materials. Cottages are plaster panels in a timber frame under a
 	// steep tiled roof, which is the one place in this world a MADE seam is
-	// allowed to show — everything natural is forbidden coursing and grids.
+	// allowed to show. Mushroom stems have author-requested square tonal patches,
+	// but no drawn masonry or plank seams.
 	public const byte PLASTER = 26;
 	public const byte ROOF_SLATE = 27;
 	public const byte ROOF_TILE = 28;
@@ -308,6 +309,8 @@ public static class Palette
 	public const byte LEAF_ROSE = 35;
 	public const byte STONE_ROSE = 36;
 	public const byte STONE_AMETHYST = 37;
+	/// <summary>Pale fungus flesh with square tonal patches, never plank seams.</summary>
+	public const byte MUSHROOM_STEM = 38;
 	public const byte LANTERN = 40;
 	public const byte CRYSTAL = 41;
 	/// <summary>A lit window. The reason a village reads as inhabited at dusk.</summary>
@@ -346,6 +349,8 @@ public static class Palette
 	/// one white card as soon as that generic detail disappeared at mid distance.
 	/// </summary>
 	public const float PatternSnow = 8f;
+	/// <summary>Author-requested square fungus-flesh tones without grooves.</summary>
+	public const float PatternFungus = 10f;
 
 	public struct BlockDef
 	{
@@ -475,6 +480,8 @@ public static class Palette
 		Def(LEAF_CREAM, 0xf5dcd0, 0xeac4b9, 0xd3aaab, pattern: PatternLeaf);
 		Def(LEAF_MINT, 0xccd8ea, 0xb2c6df, 0x93accb, pattern: PatternLeaf);
 		Def(LEAF_ROSE, 0xe9a5bf, 0xdb8cad, 0xba6c94, pattern: PatternLeaf);
+		Def(MUSHROOM_STEM, 0xf7eadd, 0xeedcce, 0xd5c1b8, pattern: PatternFungus,
+			forceLightFaces: true);
 
 		Def(LANTERN, 0xffdcb8, 0xffd2a8, 0xf6c79e, emissive: 0.75f);
 		Def(CRYSTAL, 0xdfd0f7, 0xd2c0f1, 0xc2aee5, emissive: 0.42f);

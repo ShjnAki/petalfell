@@ -68,6 +68,12 @@ Low banks expose moss over soil and stone, with silt beds, sparse reed clumps an
 lily pads. Giant mushrooms replace ordinary woodland in the southern core;
 site-owned trees and architectural plans retain their separate authorship.
 
+The September 13 pass varies near-water shoulder height through a continuous
+72-block field within the same southern mask. It retains low landing tongues,
+exposes more of the layered banks and does not change the marsh channel field.
+The later ordinary stair pass still connects eligible land courses. Water jumps
+can clear banks up to four blocks above the waterline under the tested conditions.
+
 Unlabelled coastal water may inherit its nearest southern province within 128
 blocks. This is a bounded, derived habitat classification, not a change to the
 accepted region or water PNGs. All samples remain globally registered. Four shore
