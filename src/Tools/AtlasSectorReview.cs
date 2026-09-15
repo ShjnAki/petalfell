@@ -105,6 +105,11 @@ public partial class AtlasSectorReview : Node3D
 	// matrices; the same noon camera isolates what each post-process contributes.
 	private static readonly Capture.Shot[] LookProbeShots =
 	{
+		new("zoom_close", 75f, 45f, 33.5f, time: .36f),
+		new("zoom_max", 240f, 45f, 33.5f, time: .36f),
+		new("zoom_max_r1", 240f, 135f, 33.5f, time: .36f),
+		new("zoom_max_r2", 240f, 225f, 33.5f, time: .36f),
+		new("zoom_max_r3", 240f, 315f, 33.5f, time: .36f),
 		new("shadow_frozen", 170f, 225f, 38f, time: .36f),
 		new("shadow_frozen_follow", 170f, 225f, 38f, time: .36f),
 		new("shadow_flow", 170f, 225f, 38f, time: .36f),
@@ -140,6 +145,7 @@ public partial class AtlasSectorReview : Node3D
 	private ChunkStreamer _streamer;
 	private CameraRig _camera;
 	private DayCycle _day;
+	private Petalfell.Weather.RainWeather _rain;
 	private DirectionalLight3D _key;
 	private Godot.Environment _environment;
 	private Vector3 _focusLocal;
@@ -568,6 +574,16 @@ public partial class AtlasSectorReview : Node3D
 			_reflection = new PlanarReflection { Name = "AtlasWaterReflection", PlaneSource = NearbyReflectionPlane };
 			_reflection.Setup(_camera, _waterMaterial, data.SeaLevel + 0.35f);
 			AddChild(_reflection);
+			_rain = new Petalfell.Weather.RainWeather { Name = "RainWeather" };
+			AddChild(_rain);
+			_rain.Setup(() => _player?.GlobalPosition ?? _window.GlobalOrigin + _focusLocal,
+				() => _window, _day, (ulong)Time.GetUnixTimeFromSystem(), _camera);
+			if (_shotDirectory != null) { _rain.Preview(0); _rain.Audio.Enabled = false; }
+			foreach (string arg in OS.GetCmdlineUserArgs())
+				if (arg.StartsWith("--rain=") && float.TryParse(arg[7..],
+					System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float rain))
+					_rain.Preview(rain);
+
 			if (_playable)
 			{
 				// These controls use the actual atlas camera, ink materials and clock.
@@ -575,7 +591,7 @@ public partial class AtlasSectorReview : Node3D
 				// separate L0/L1 surface means later sector handoff only replaces the
 				// teleport boundary; it does not have to rebuild cartography or UI.
 				_developerMenu = new DeveloperMenu { Name = "DeveloperSettings" };
-				_developerMenu.Setup(_inkLight, _inkDark, _camera, _day);
+				_developerMenu.Setup(_inkLight, _inkDark, _camera, _day, _rain);
 				_developerMenu.OpenChanged += open =>
 				{
 					// Sliders own mouse/keyboard focus while the panel is open. Input
@@ -850,6 +866,8 @@ public partial class AtlasSectorReview : Node3D
 		var shot = new Capture.Shot("interactive", _interactiveDistance, _interactiveYaw,
 			_interactivePitch);
 		Capture.Place(_camera, shot, GlobalFocus());
+		Atmosphere.SetShadowViewDistance(_key, _interactiveDistance,
+			IsSite && _referenceSite?.SiteId == Reference1SiteId ? _referenceSite.RuntimePlanScale : 1f);
 		if (_environment != null)
 			Atmosphere.SetViewDistance(_environment, _interactiveDistance,
 				IsSite && _referenceSite?.SiteId == Reference1SiteId ? _referenceSite.RuntimePlanScale : 1f);
@@ -869,6 +887,7 @@ public partial class AtlasSectorReview : Node3D
 			{
 				_camera.Follow(_player.GetGlobalTransformInterpolated().Origin, _player.Velocity, 1.0 / 90.0);
 				Atmosphere.SetViewDistance(_environment, _camera.Distance);
+				Atmosphere.SetShadowViewDistance(_key, _camera.Distance);
 				await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
 			}
 			await CaptureShadowSequence(GetViewport(), _camera, "shadow_gameplay");
@@ -905,6 +924,7 @@ public partial class AtlasSectorReview : Node3D
 		captureViewport.AddChild(captureGrade);
 		AddChild(captureViewport);
 		_reflection?.SetSource(captureCamera);
+		_rain?.PuddleReflection?.SetSource(captureCamera);
 		// The capture viewport owns the rendered frame. Suppress the duplicate
 		// window's 3D pass, including during silent-workspace GPU measurements.
 		GetViewport().Disable3D = true;
@@ -939,13 +959,9 @@ public partial class AtlasSectorReview : Node3D
 			}
 			if (_key != null)
 			{
-				// The playable camera needs only the normal 260-block cascade. A
-				// thousand-block atlas composition shot otherwise sits completely
-				// outside the shadow map and cannot judge the reference silhouette.
 				float siteScale = IsSite && _referenceSite?.SiteId == Reference1SiteId
 					? _referenceSite.RuntimePlanScale : 1f;
-				_key.DirectionalShadowMaxDistance = Math.Clamp(shot.Distance * 1.18f,
-					260f * siteScale, IsDomain ? 1200f : 420f * siteScale);
+				Atmosphere.SetShadowViewDistance(_key, shot.Distance, siteScale);
 			}
 			if (_environment != null)
 			{
@@ -999,7 +1015,7 @@ public partial class AtlasSectorReview : Node3D
 			if (shot.Name is "look_motion" or "look_cycle" or "look_orbit" or "look_orbit_night")
 				await CaptureLookSequence(captureViewport, captureCamera, shot, shotFocus);
 			if (shot.Name is "look_perf_day" or "look_perf_night")
-				await CaptureBenchmark.Measure(this, captureViewport, _shotDirectory, shot.Name, _reflection?.RenderViewport);
+				await CaptureBenchmark.Measure(this, captureViewport, _shotDirectory, shot.Name, _reflection?.RenderViewport, _rain?.PuddleReflection?.RenderViewport);
 		}
 		WriteReferenceComparisons();
 		GetTree().Quit();
@@ -1054,7 +1070,7 @@ public partial class AtlasSectorReview : Node3D
 		string directory = $"{_shotDirectory}/{name}";
 		DirAccess.MakeDirRecursiveAbsolute(directory);
 		using var metadata = new StreamWriter(ProjectSettings.GlobalizePath($"{directory}/frames.csv"));
-		metadata.WriteLine("frame,time_of_day,night,cloud_cover,key_energy,camera_yaw,reflection_plane");
+		metadata.WriteLine("frame,time_of_day,night,cloud_cover,key_energy,camera_yaw,reflection_plane,rain,wetness,rain_time");
 		for (int frame = 0; frame < count; frame++)
 		{
 			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
@@ -1065,7 +1081,7 @@ public partial class AtlasSectorReview : Node3D
 				Capture.Place(camera, new Capture.Shot(name, shot.Distance, yaw, shot.Pitch), focus);
 			await RenderingServer.Singleton.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
 			Capture.Save(viewport, directory, $"frame-{frame:D4}", quiet: true);
-			metadata.WriteLine(FormattableString.Invariant($"{frame},{_day.TimeOfDay:F7},{_day.NightAmount:F5},{_day.CloudCover:F5},{_key.LightEnergy:F5},{yaw:F3},{_reflection?.CurrentPlane:F3}"));
+			metadata.WriteLine(FormattableString.Invariant($"{frame},{_day.TimeOfDay:F7},{_day.NightAmount:F5},{_day.CloudCover:F5},{_key.LightEnergy:F5},{yaw:F3},{_reflection?.CurrentPlane:F3},{_rain?.LocalRain:F5},{_rain?.Field.Sample(new Vector2(focus.X,focus.Z),true):F5},{_rain?.Field.Time:F5}"));
 			if ((frame + 1) % 60 == 0) GD.Print($"[capture-motion] {name} {frame + 1}/{count}");
 		}
 		_day.Paused = true;
@@ -1684,6 +1700,7 @@ public partial class AtlasSectorReview : Node3D
 				_camera.Follow(presentation,
 					_player.Velocity, delta);
 				Atmosphere.SetViewDistance(_environment, _camera.Distance);
+				Atmosphere.SetShadowViewDistance(_key, _camera.Distance);
 			}
 		}
 		_character.Animate(_player.Velocity, _player.Facing,

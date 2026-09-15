@@ -16,6 +16,7 @@ shader_type spatial;
 render_mode cull_back, diffuse_burley, specular_schlick_ggx;
 #define PETALFELL_CANOPY_LIGHT
 #include "cloud_light.gdshaderinc"
+#include "rain_field.gdshaderinc"
 #include "mineral_surface.gdshaderinc"
 #include "turf_surface.gdshaderinc"
 
@@ -27,6 +28,7 @@ uniform float face_tint : hint_range(0.0, 1.0) = 0.24;
 // clock that had to find them all would spend the frame chasing references.
 global uniform vec3 pf_sun_dir;
 global uniform float pf_night;
+global uniform sampler2D pf_puddle_tex : filter_linear;
 
 // Tonal variation within each material. Macro material placement stays authored.
 uniform float pattern_strength : hint_range(0.0, 1.0) = 0.78;
@@ -418,6 +420,23 @@ void fragment() {
 	if (pattern > 6.5 && pattern < 7.5) ROUGHNESS = 0.94;
 	if (pattern > 8.5 && pattern < 9.5) ROUGHNESS = mix(0.93, 0.80, sand_grain * fade * resolved);
 	SPECULAR = pattern > 7.5 && pattern < 8.5 ? 0.24 : 0.16;
+	// Porous ground darkens; mineral tops collect broken reflective films.
+	float rain_wet = rain_wetness(v_world.xz);
+	float mineral = (pattern > 1.5 && pattern < 2.5) ? 1.0 : 0.0;
+	float timber = (pattern > 2.5 && pattern < 4.5) ? 1.0 : 0.0;
+	float top_wet = smoothstep(.6,.98,wn.y);
+	float pooling = smoothstep(.43,.56,fbm(v_world.xz*.22 + 63.1));
+	float film = rain_wet * mix(.20,pooling,top_wet) * mix(.22,1.0,mineral);
+	ALBEDO *= 1.0 - rain_wet * mix(.13,.22,timber) * mix(.55,1.0,top_wet);
+	ROUGHNESS = mix(ROUGHNESS, mix(.54,.075,mineral), film);
+	SPECULAR = mix(SPECULAR,.7,rain_wet*mix(.25,.85,mineral));
+	CLEARCOAT = film*mineral*top_wet*.65;
+	CLEARCOAT_ROUGHNESS = .10;
+	if (film > .001) {
+		vec3 impact = rain_ripples(v_world.xz, rain_at(v_world.xz), footprint);
+		vec3 wet_normal = normalize(mix(textured_normal,wn,film*.92) - vec3(impact.x,0,impact.y)*film*top_wet*.45);
+		NORMAL = normalize((VIEW_MATRIX * vec4(wet_normal,0)).xyz);
+	}
 	METALLIC = 0.0;
 	// The mesher parks per-block emissive in the vertex alpha; lanterns, lit
 	// windows and cascades are the only things in the world allowed to glow.
@@ -430,4 +449,17 @@ void fragment() {
 	// came back as pure white rectangles, which reads as a hole in the wall
 	// rather than as a warm room behind it. The COLOUR is the point.
 	EMISSION = base * COLOR.a * (2.2 + pf_night * 1.9);
+	// Paving reflects at its own registered height. Other levels keep their
+	// roughness/SSR response; mirrored passes never sample their own target.
+	if (CAMERA_VISIBLE_LAYERS == 0xfffffu && pf_puddle_state.y > .001 && film > .01 && top_wet > .9) {
+		float match_plane = 1.0-smoothstep(.02,.10,abs(v_world.y-pf_puddle_state.x));
+		float weight = film*mineral*match_plane*pf_puddle_state.y*.48;
+		vec3 n_view=normalize(NORMAL);
+		vec3 flat_view=normalize((VIEW_MATRIX*vec4(wn,0)).xyz);
+		vec2 uv_reflect=vec2(1.0-SCREEN_UV.x,SCREEN_UV.y)+(n_view.xy-flat_view.xy)*.016;
+		vec3 encoded=texture(pf_puddle_tex,clamp(uv_reflect,vec2(.001),vec2(.999))).rgb;
+		vec3 reflected=mix(encoded/12.92,pow((encoded+.055)/1.055,vec3(2.4)),step(vec3(.04045),encoded));
+		ALBEDO*=1.0-weight;
+		EMISSION+=reflected*weight;
+	}
 }

@@ -49,6 +49,7 @@ if [ "$export_status" -ne 0 ] || grep -q '^ERROR:' "$export_log"; then
   exit 1
 fi
 
+cp "$project_dir/assets/audio/weather/CREDITS.md" "$output_dir/WEATHER-AUDIO-CREDITS.md"
 chmod +x "$output_file"
 # An editor export can succeed even when runtime atlas PNGs are absent from the
 # PCK. Run the actual package's source/header/topology audit before calling it ready.

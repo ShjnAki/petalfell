@@ -31,6 +31,12 @@ production allocations and individual plans; Reference 1 now uses the current
 sea datum at its existing address. Continue visual comparison and traversal of
 these destinations using the [current ledger](../building-knowledge/sites/reference-precincts-2026-09.md).
 
+### Weather review
+
+- author review of rain density, wet stone reflections, grass response, water
+  disturbance and rain/thunder balance against the three preserved sources;
+- extend traversal and listening beyond the named weather fixtures and captures.
+
 ### Movement review
 
 - author review of ordinary straight-leg walking with eased low-step height

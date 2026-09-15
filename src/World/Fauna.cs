@@ -31,7 +31,8 @@ public enum Species : byte { Deer, Rabbit, Goat, Bird, Butterfly, Fish, Heron }
 public partial class Fauna : Node3D
 {
 	private const int Population = 16;
-	public const int MarshPopulation = 6;
+	public const int FishPopulation = 24;
+	public const int MarshPopulation = FishPopulation + 3;
 	public const float MarshSpawnRadius = 288f;
 	public const float MarshRetentionRadius = 384f;
 	private int PopulationLimit => _window == null ? Population : MarshPopulation;
@@ -159,7 +160,7 @@ public partial class Fauna : Node3D
 			if (_habitats.Contains(key)) continue;
 			int seed = unchecked(_seed ^ cellX * 374761393 ^ cellZ * 668265263 ^ 0x5EA7);
 			var rng = new Rng(seed);
-			if (!rng.Chance(.11f * ProductionTerrainGuide.SouthernLatitudeAt(cellZ * spacing))) continue;
+			float admission = rng.Next();
 			var point = new Vector3((cellX + rng.Range(.2f, .8f)) * spacing, 0f,
 				(cellZ + rng.Range(.2f, .8f)) * spacing);
 			float distance = new Vector2(point.X - player.X, point.Z - player.Z).Length();
@@ -170,9 +171,11 @@ public partial class Fauna : Node3D
 			int i = z * window.Data.Width + x;
 			int depth = window.Data.WaterSurface[i] - window.Grid.Top[i];
 			Species species = depth >= 2 ? Species.Fish : rng.Chance(.70f) ? Species.Heron : Species.Butterfly;
+			float chance = species == Species.Fish ? .32f : .11f * ProductionTerrainGuide.SouthernLatitudeAt(cellZ * spacing);
+			if (admission >= chance) continue;
 			int count = 0;
 			foreach (var animal in _live) if (animal.Kind == species) count++;
-			if (count >= (species == Species.Fish ? 3 : species == Species.Heron ? 2 : 1)) continue;
+			if (count >= (species == Species.Fish ? FishPopulation : species == Species.Heron ? 2 : 1)) continue;
 			if (!TryAtlasHabitat(window, species, point, out float ground, out float water)) continue;
 			point.Y = species == Species.Fish ? water - .8f : species == Species.Butterfly ? ground + 1.9f : ground;
 			var critter = new Critter { HabitatKey = key };
@@ -189,20 +192,21 @@ public partial class Fauna : Node3D
 		out float ground, out float water)
 	{
 		ground = water = 0f;
-		if (window == null || ProductionTerrainGuide.SouthernLatitudeAt(at.Z) <= 0f) return false;
+		if (window == null) return false;
 		var data = window.Data;
 		var grid = window.Grid;
 		int x = Mathf.FloorToInt(at.X) - data.OriginX, z = Mathf.FloorToInt(at.Z) - data.OriginZ;
 		if (x < 2 || z < 2 || x >= data.Width - 2 || z >= data.Depth - 2) return false;
 		string detail = window.GroundDetailSetAt(x, z);
-		if (detail is not ("reed-root-moss" or "sand-reed-petal")) return false;
+		if (species != Species.Fish && (ProductionTerrainGuide.SouthernLatitudeAt(at.Z) <= 0f ||
+			detail is not ("reed-root-moss" or "sand-reed-petal"))) return false;
 		int i = z * data.Width + x, bed = grid.Top[i];
 		water = data.WaterSurface[i] > 0 ? data.WaterSurface[i] + .35f : 0f;
 		ground = bed;
 		float depth = water - bed;
 		if (species == Species.Fish)
 		{
-			if (depth < 1.8f || depth > 9f) return false;
+			if (water <= 0f || depth < 1.8f) return false;
 			for (int dz = -1; dz <= 1; dz++)
 			for (int dx = -1; dx <= 1; dx++)
 				if (data.WaterSurface[(z + dz) * data.Width + x + dx] != data.WaterSurface[i] ||
@@ -311,7 +315,7 @@ public partial class Critter : Node3D
 		_phase = _rng.Next() * 6f;
 		_yaw = _rng.Next() * Mathf.Tau;
 		if (!Fauna.TryAtlasHabitat(window(), kind, GlobalPosition, out _groundY, out _waterSurface))
-			throw new InvalidOperationException("Wildlife spawn has no matching southern habitat");
+			throw new InvalidOperationException("Wildlife spawn has no matching habitat");
 		Build();
 	}
 

@@ -29,6 +29,8 @@ public partial class DeveloperMenu : CanvasLayer
 	private ShaderMaterial _inkDark;
 	private CameraRig _camera;
 	private DayCycle _day;
+	private Petalfell.Weather.RainWeather _rain;
+	private SliderRow _rainRow;
 	private SliderRow _timeRow;
 	private Control _root;
 	private SliderRow _minZoom;
@@ -39,12 +41,12 @@ public partial class DeveloperMenu : CanvasLayer
 	public event Action<bool> OpenChanged;
 
 	public void Setup(ShaderMaterial inkLight, ShaderMaterial inkDark, CameraRig camera,
-		DayCycle day = null)
+		DayCycle day = null, Petalfell.Weather.RainWeather rain = null)
 	{
 		_inkLight = inkLight;
 		_inkDark = inkDark;
 		_camera = camera;
-		_day = day;
+		_day = day; _rain = rain;
 	}
 
 	public override void _Ready()
@@ -90,9 +92,12 @@ public partial class DeveloperMenu : CanvasLayer
 		margin.AddThemeConstantOverride("margin_bottom", 16);
 		panel.AddChild(margin);
 
-		var content = new VBoxContainer();
+		var scroll = new ScrollContainer { CustomMinimumSize = new Vector2(325, 680),
+			HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
+		margin.AddChild(scroll);
+		var content = new VBoxContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill };
 		content.AddThemeConstantOverride("separation", 12);
-		margin.AddChild(content);
+		scroll.AddChild(content);
 
 		var title = new Label { Text = "Developer settings" };
 		title.AddThemeFontSizeOverride("font_size", 17);
@@ -150,6 +155,19 @@ public partial class DeveloperMenu : CanvasLayer
 			content.AddChild(_cloudButton);
 		}
 
+		if (_rain != null)
+		{
+			var automatic = new CheckBox { Text = "Automatic weather", ButtonPressed = _rain.Field.Automatic };
+			automatic.Toggled += on => { if (on) _rain.Field.Resume(); else _rain.Preview(_rain.LocalRain); };
+			content.AddChild(automatic);
+			_rainRow = AddSlider(content, "Rain here", 0, 100, 1, _rain.LocalRain * 100,
+				v => $"{v:0}%", v => { _rain.Preview((float)v / 100); automatic.SetPressedNoSignal(false); });
+			AddSlider(content, "Weather volume", 0, 100, 1, _rain.Audio.Volume * 100,
+				v => $"{v:0}%", v => _rain.Audio.Volume = (float)v / 100);
+			var pauseRain = new CheckBox { Text = "Freeze weather", ButtonPressed = _rain.Paused };
+			pauseRain.Toggled += on => _rain.Paused = on; content.AddChild(pauseRain);
+		}
+
 		_maxZoom = AddSlider(content, "Maximum zoom", 24.0, 240.0, 1.0,
 			_camera.MaxDistance, value => $"{value:0}", SetMaximumZoom);
 
@@ -162,6 +180,7 @@ public partial class DeveloperMenu : CanvasLayer
 
 	public override void _Process(double delta)
 	{
+		if (IsOpen && _rainRow != null) _rainRow.SetWithoutSignal(_rain.LocalRain * 100);
 		// Follow the clock while it is running, so the slider is a readout as well
 		// as a control. Without a signal, or the change handler would fire every
 		// frame and pause the very cycle it is reporting on.

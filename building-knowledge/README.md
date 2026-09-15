@@ -35,6 +35,8 @@ For any reference-site plan, builder, material, or comparison-tool change:
 
 ## Index
 
+Dynamic weather: [rain, wet materials and sound](rendering/dynamic-rain.md).
+
 | Entry | Use it for | Current scope |
 |---|---|---|
 | [Evidence and certainty](CERTAINTY.md) | Status vocabulary, evidence rules, promotion and supersession | All building-knowledge entries |
@@ -49,7 +51,7 @@ For any reference-site plan, builder, material, or comparison-tool change:
 | [Material and weathering breakup](surfaces/material-and-weathering-breakup.md) | Macro colour placement plus existing fine stone weathering | Existing voxel material path; References 10 and 12 applications |
 | [September reference look](rendering/reference-look-2026-09.md) | Exposed-edge shading, filtered canopy surfaces, shared turf colour, clock, rooted plant shapes and folded airborne petals | Shared production renderer; visual parity remains open |
 | [September southern marsh](rendering/southern-marsh-2026-09.md) | Varied low banks, mushroom gills, hanging roots, quiet flower patches, water leaves and physical water jumps | September 13 southern refinement; author review remains open |
-| [Shadow motion and stability](rendering/shadow-stability-2026-09.md) | Continuous sun motion, frozen light/camera stability and crisp-to-blurry filtering without self-shadow stripes | Shared renderer; September 13 mechanical and focused capture evidence, author review open |
+| [Shadow motion and stability](rendering/shadow-stability-2026-09.md) | Continuous sun motion, frozen light/camera stability and crisp-to-blurry filtering without self-shadow stripes | Shared renderer; September 15 zoom coverage and thin-detail continuity, plus frozen-shadow evidence; author review open |
 | [Capture, overlay, and acceptance](rendering/capture-overlay-and-acceptance.md) | Fixed isometric/top comparisons and multi-scale/rotation review | Current reference-site review rig |
 | [Time-responsive ink and high-key lighting](rendering/time-responsive-ink-and-high-key-lighting.md) | Rejected internal-softness/night-ink experiment and its historical evidence | Superseded; do not reapply |
 | [Bloom Grove Court evidence ledger](sites/bloom-grove-court.md) | Site-specific constraints, rejected readings, and current evidence gaps | Reference 10 only |
@@ -107,3 +109,6 @@ An active entry may carry several evidence states for different claims. State
 those claims separately. Never compress `observed`, `mechanically verified`,
 `visually reviewed`, and `author-accepted` into one vague word such as
 "validated."
+
+- [Ocean fish population](rendering/ocean-fish.md): independent fish budget,
+  region-independent water admission and bounded habitat verification.

@@ -3,7 +3,7 @@
 - **Lifecycle:** active
 - **Evidence:** mechanically verified; focused visual review below; author acceptance open
 - **Scope:** shared directional renderer and atlas camera
-- **Last verified:** 2026-09-13
+- **Last verified:** 2026-09-15
 - **Supersedes:** quantized direct-light updates and the restricted 0.5–6 blur control
 - **Owning sources:** [DayCycle](../../src/Render/DayCycle.cs),
   [Atmosphere](../../src/Render/Atmosphere.cs),
@@ -27,7 +27,7 @@ directly from yaw/pitch, avoiding small basis changes when LookAt subtracts
 rounded world positions thousands of blocks from the origin.
 
 An 8192 directional atlas and blended cascade splits 0.20/0.45/0.72 place more
-resolution around the long-lens subject. Max range stays 260 blocks in play.
+resolution around the long-lens subject. Range now grows with camera distance as described in the September 15 correction below.
 The developer control is 0–100%, mapping to radius 0–12 with default 1.25.
 Zero selects Hard filtering with zero angular distance. Positive values use
 Ultra PCF. Cloud coverage changes illumination but cannot change this radius.
@@ -90,3 +90,30 @@ Water, grass, mist and wildlife intentionally continue animating when only the
 day clock is frozen. Their movement is separate from stationary terrain shadows.
 The exact original everywhere-shaking symptom was not independently reproduced;
 author confirmation in ordinary play remains open.
+
+## September 15 zoom consistency correction
+
+The fixed 260-block production shadow range could end within the visible scene
+at maximum zoom. Production, interactive review and captures now share
+`Atmosphere.SetShadowViewDistance`: max(260 × site scale, 2 × camera distance).
+The 240-block developer maximum therefore has 480-block shadow coverage. There
+is no range quantization, and an unchanged zoom does not rewrite the light.
+The look check covers six distances through 700 and repeated frozen calls.
+
+Thin grass/stem/reed/vine edges also carry a midpoint offset in CUSTOM1. The
+vertex shader preserves up to 0.9 pixels of coverage with a maximum 3× width;
+it does not add plants or move their centres. Joined grass shoulders share the
+same offset and wind, mechanically checked through window handoff. Broad
+mineral faces and flower heads keep their physical dimensions. The detail mesh
+has a half-block cull margin for wind and this small width expansion.
+
+This addresses subpixel loss of thin decorations, not a removed distance LOD:
+the production detail shader and merged meshes had no explicit distance cutoff.
+
+`shots/zoom-consistency/` records the same coast at 75 and 240 blocks and all
+four quarter rotations at 240. Close and wide were inspected at full size; the
+remaining quarters in a labelled 800-pixel-wide matrix. Cast mushroom shadows,
+reeds, grass and hanging vegetation remain visible. Production reported 25
+loaded animals throughout the wide rotations. Capture logs are clean; build,
+weather and extended look checks pass. These stills do not claim exhaustive
+motion review or author acceptance.

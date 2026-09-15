@@ -87,15 +87,20 @@ public static class GroundDetail
 		public readonly List<Color> Col = new(4096);
 		public readonly List<float> Det = new(8192);   // (sway, phase) per vertex
 		public readonly List<int> Idx = new(6144);
+		private readonly List<(int index, Vector3 inward)> _thinEdges = new();
 
 		public bool Empty => Pos.Count == 0;
 
 		/// <summary>One quad with separately weighted bottom and top edges.</summary>
 		public void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector3 n,
-			Color bottom, Color top, float sway, float phase, float bottomSway = 0f)
+			Color bottom, Color top, float sway, float phase, float bottomSway = 0f, bool preserveWidth = false)
 		{
 			int i = Pos.Count;
 			Pos.Add(a); Pos.Add(b); Pos.Add(c); Pos.Add(d);
+			if (preserveWidth) {
+				_thinEdges.Add((i, (b-a)*.5f)); _thinEdges.Add((i+1, (a-b)*.5f));
+				_thinEdges.Add((i+2, (d-c)*.5f)); _thinEdges.Add((i+3, (c-d)*.5f));
+			}
 			for (int k = 0; k < 4; k++) Nrm.Add(n);
 			Col.Add(bottom); Col.Add(bottom); Col.Add(top); Col.Add(top);
 			Det.Add(bottomSway); Det.Add(phase);
@@ -125,11 +130,11 @@ public static class GroundDetail
 				float shoulderSway = stature * 0.55f;
 				Quad(root - across * 0.8f, root + across * 0.8f,
 					shoulder + across, shoulder - across, Vector3.Up,
-					bottom, middle, shoulderSway, phase);
+					bottom, middle, shoulderSway, phase, preserveWidth: true);
 				// Duplicated shoulder vertices use identical weights in both segments.
 				Quad(shoulder - across, shoulder + across,
 					tip + across * 0.5f, tip - across * 0.5f, Vector3.Up,
-					middle, top, stature, phase, shoulderSway);
+					middle, top, stature, phase, shoulderSway, preserveWidth: true);
 			}
 		}
 
@@ -148,7 +153,7 @@ public static class GroundDetail
 					new Vector3(x + ax, y, z + az),
 					new Vector3(tx + ax * 0.62f, y + h, tz + az * 0.62f),
 					new Vector3(tx - ax * 0.62f, y + h, tz - az * 0.62f),
-					Vector3.Up, bottom, top, sway, phase);
+					Vector3.Up, bottom, top, sway, phase, preserveWidth: true);
 			}
 		}
 
@@ -242,7 +247,7 @@ public static class GroundDetail
 				new Vector3(x + tx * hw, y, z + tz * hw),
 				new Vector3(x + tx * hw * 0.7f + fx * swing, bottom, z + tz * hw * 0.7f + fz * swing),
 				new Vector3(x - tx * hw * 0.7f + fx * swing, bottom, z - tz * hw * 0.7f + fz * swing),
-				n, attach, tip, 1f, phase);
+				n, attach, tip, 1f, phase, preserveWidth: true);
 		}
 
 		/// <summary>A tiny leaf or petal lying flat on the ground, rotated in plan.</summary>
@@ -314,9 +319,15 @@ public static class GroundDetail
 			arrays[(int)Mesh.ArrayType.Color] = Col.ToArray();
 			arrays[(int)Mesh.ArrayType.Custom0] = Det.ToArray();
 			arrays[(int)Mesh.ArrayType.Index] = Idx.ToArray();
+			var widths = new float[Pos.Count * 3];
+			foreach (var (index, inward) in _thinEdges) {
+				widths[index*3] = inward.X; widths[index*3+1] = inward.Y; widths[index*3+2] = inward.Z;
+			}
+			arrays[(int)Mesh.ArrayType.Custom1] = widths;
 
 			// Two floats per vertex in CUSTOM0: sway weight and clump phase.
-			ulong fmt = (ulong)Mesh.ArrayCustomFormat.RgFloat << 13;
+			ulong fmt = ((ulong)Mesh.ArrayCustomFormat.RgFloat << 13) |
+				((ulong)Mesh.ArrayCustomFormat.RgbFloat << 16);
 
 			var mesh = new ArrayMesh();
 			mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays, null, null,

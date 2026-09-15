@@ -290,19 +290,19 @@ public partial class LookRenderSmoke : Node
 	{
 		var atlas = WorldAtlasDefinition.Load("res://content/chapter_01/atlas.json");
 		int profile = atlas.BiomeCatalog.Profiles.FindIndex(p => p.Id == "fen");
-		AtlasSectorWindow Window(int originX, bool dry = false)
+		AtlasSectorWindow Window(int originX, bool dry = false, int originZ = 7200, bool ocean = false)
 		{
 			const int size = 768;
-			var data = new AtlasSectorData(0, 0, originX, 7200, size, 0, size, size, 64, 24, "fauna-smoke");
-			var grid = new VoxelGrid(size, 64, 7, originX, 7200);
+			var data = new AtlasSectorData(0, 0, originX, originZ, size, 0, size, size, 64, 24, "fauna-smoke");
+			var grid = new VoxelGrid(size, 64, 7, originX, originZ);
 			for (int z = 0; z < size; z++)
 			for (int x = 0; x < size; x++)
 			{
-				int i = z * size + x, h = dry ? 25 : (originX + x) % 48 < 24 ? 21 : 23;
+				int i = z * size + x, h = dry ? 25 : ocean ? 4 : (originX + x) % 48 < 24 ? 21 : 23;
 				data.Height[i] = (ushort)h;
 				data.WaterSurface[i] = dry ? (ushort)0 : (ushort)24;
 				data.Wetness[i] = dry ? (byte)0 : (byte)255;
-				data.Profile[i] = (byte)profile;
+				data.Profile[i] = ocean ? (byte)0 : (byte)profile;
 				grid.Describe(x, z, h, Palette.MUD, Palette.MUD);
 			}
 			return new AtlasSectorWindow(data, atlas, 7, grid);
@@ -313,7 +313,7 @@ public partial class LookRenderSmoke : Node
 		fauna.Setup(() => active, null, null, 20260820);
 		var focus = new Vector3(6048, 25, 7296);
 		for (int frame = 0; frame < 180; frame++) fauna.Advance(focus, 1.0 / 30.0);
-		Require(fauna.LiveCount is > 0 and <= 6, "southern fauna exceeds the sparse six-animal budget");
+		Require(fauna.LiveCount is > 0 and <= Fauna.MarshPopulation, "fauna exceeds bounded population");
 		Require(fauna.Live.Count(c => c.Kind == Species.Heron) <= 2, "too many marsh birds");
 		Require(fauna.Live.Any(c => c.Kind == Species.Fish) && fauna.Live.Any(c => c.Kind == Species.Heron),
 			"southern habitats do not admit both fish and waders");
@@ -336,8 +336,18 @@ public partial class LookRenderSmoke : Node
 			"wader admitted in deep water");
 		fauna.Advance(new Vector3(9800, 40, 4600), .01);
 		Require(fauna.LiveCount == 0, "distant map travel retained southern fauna");
+		active = Window(5760, originZ: 1200, ocean: true);
+		focus = new Vector3(6048, 24, 1536);
+		for (int frame = 0; frame < 180; frame++) fauna.Advance(focus, 1.0 / 30.0);
+		Require(fauna.LiveCount == Fauna.FishPopulation && fauna.Live.All(c => c.Kind == Species.Fish),
+			"deep northern ocean did not fill its independent fish population");
+		Require(fauna.Live.All(c => c.HabitatValid()), "ocean fish escaped navigable water");
+		var blocked = fauna.Live[0].GlobalPosition;
+		active.Grid.Set(Mathf.FloorToInt(blocked.X)-active.Data.OriginX, 23,
+			Mathf.FloorToInt(blocked.Z)-active.Data.OriginZ, Palette.STONE_PALE);
+		Require(!Fauna.TryAtlasHabitat(active, Species.Fish, blocked, out _, out _), "ocean fish admitted inside stone");
 		fauna.Free();
-		GD.Print("[southern-fauna-smoke] six animals/two herons maximum, 288/384-block ranges, habitat exclusion and live handoff passed");
+		GD.Print("[southern-fauna-smoke] 24 fish including deep northern ocean, two herons maximum, 288/384-block ranges, habitat exclusion and live handoff passed");
 	}
 
 	private static void CheckLocalEdits()
@@ -544,6 +554,19 @@ public partial class LookRenderSmoke : Node
 				var da = aa[(int)Mesh.ArrayType.Custom0].AsFloat32Array();
 				var db = bb[(int)Mesh.ArrayType.Custom0].AsFloat32Array();
 				Require(pa.Length == pb.Length && da.SequenceEqual(db), "plant shape/wind changed at handoff");
+				var widths = aa[(int)Mesh.ArrayType.Custom1].AsFloat32Array();
+				Require(widths.Length == pa.Length*3 && widths.Zip(bb[(int)Mesh.ArrayType.Custom1].AsFloat32Array()).All(pair => Math.Abs(pair.First-pair.Second)<.0001f),
+					"thin edge coverage changed at handoff");
+				Require(widths.Any(v => Math.Abs(v) > .001f), "thin plant edges have no coverage metadata");
+				var widthJoints = new Dictionary<Vector3,Vector3>();
+				for (int vertex = 0; vertex < pa.Length; vertex++) {
+					var inward = new Vector3(widths[vertex*3],widths[vertex*3+1],widths[vertex*3+2]);
+					if (inward == Vector3.Zero) continue;
+					Require(inward.Length() < .5f, "coverage tagged a broad decoration face");
+					if (widthJoints.TryGetValue(pa[vertex],out var prior))
+						Require(prior.IsEqualApprox(inward), "grass shoulder splits when widened at zoom");
+					else widthJoints.Add(pa[vertex],inward);
+				}
 				var joints = new Dictionary<Vector3, Vector2>();
 				for (int i = 0; i < pa.Length; i++)
 				{
@@ -819,6 +842,16 @@ public partial class LookRenderSmoke : Node
 				Vector3.Zero, 1.0 / 120.0);
 			Require(camera.GlobalBasis == basis, "atlas follow jitter changed the shadow camera basis");
 		}
+		var sun = Atmosphere.Sun(); AddChild(sun);
+		foreach (float distance in new[]{50f,120f,180f,240f,360f,700f}) {
+			Atmosphere.SetShadowViewDistance(sun,distance);
+			Require(sun.DirectionalShadowMaxDistance >= distance*1.5f,
+				"wide view loses shadows before the far visible ground");
+			float stable = sun.DirectionalShadowMaxDistance;
+			for (int frame=0; frame<120; frame++) Atmosphere.SetShadowViewDistance(sun,distance);
+			Require(sun.DirectionalShadowMaxDistance == stable, "stationary zoom shakes shadow range");
+		}
+		sun.Free();
 		camera.Free();
 		GD.Print("[shadow-camera-smoke] 240 frames preserve exact orbit basis during sub-voxel atlas follow");
 	}

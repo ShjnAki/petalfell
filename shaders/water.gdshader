@@ -1,4 +1,5 @@
 shader_type spatial;
+#include "rain_field.gdshaderinc"
 
 // Water.
 //
@@ -282,6 +283,9 @@ void fragment() {
 	          + ripple(p, vec2(-0.860, -0.510), 5.83, 0.008, 1.90, TIME)
 	          + ripple(p, vec2( 0.190,  0.982), 9.11, 0.005, 2.30, TIME);
 	wave *= local_detail;
+	float rain_amount = rain_at(wpos.xz);
+	vec3 impacts = rain_ripples(wpos.xz, rain_amount, max(length(dFdx(wpos.xz)),length(dFdy(wpos.xz))));
+	wave.yz += impacts.xy * 2.6;
 	// For a height field the normal runs against the gradient.
 	vec3 ripple_world = normalize(vec3(swell.x * 0.055 * local_detail - wave.y,
 		1.0, swell.y * 0.055 * local_detail - wave.z));
@@ -536,6 +540,8 @@ void fragment() {
 	float lum = dot(col, vec3(0.2126, 0.7152, 0.0722));
 	col = mix(vec3(lum), col, mix(saturation, 0.70, pf_night));
 
+	// Rain rings break both transmission and mirrored banks through the same flow.
+	col += impacts.z * mix(vec3(.22,.29,.36),vec3(.06,.09,.14),pf_night);
 	ALBEDO = col;
 	// The bed is already composited in, so the surface itself is opaque. Alpha
 	// blending on top would apply the attenuation twice and wash the shallows out

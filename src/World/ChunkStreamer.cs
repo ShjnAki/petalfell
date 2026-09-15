@@ -214,6 +214,8 @@ public partial class ChunkStreamer : Node3D
 			{
 				Mesh = detail,
 				MaterialOverride = _detailMat,
+				// Wind and subpixel width coverage can extend beyond the authored mesh.
+				ExtraCullMargin = .5f,
 				CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
 			});
 		}

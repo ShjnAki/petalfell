@@ -1,6 +1,40 @@
-# Current state — 2026-09-13
+# Current state — 2026-09-15
 
 This is a factual snapshot, not a design proposal.
+
+## September 15 dynamic weather
+
+Production now has temporary rain cells which form and stop over time, then choose
+new locations across the atlas. Their centres are uniform at a random 60–80% peak,
+with smoothly faded outer fringes. Wetness rises with rain and dries after it ends.
+Weather survives moving-window handoffs and uses its own random stream and clock.
+
+Rain includes falling streaks, receiver-aligned impact rings and tiny spray, water
+ripple gradients, material-dependent darkening/roughness, reflective mineral films,
+stereo rain ambience and irregular thunder. Tilde controls expose automatic weather,
+a local rain preview, volume and independent weather freezing. Reference captures
+stay dry unless `--rain=` is supplied. Sources and implementation details are in
+[WEATHER.md](docs/WEATHER.md); evidence is tracked in the
+[weather ledger](building-knowledge/rendering/dynamic-rain.md). The field/receiver
+checks and existing rendering checks pass; 180 motion frames, a complete storm
+lifecycle, day/night site views and a 19-second real audio mix have been captured
+and reviewed within the stated scopes.
+
+Wet paving selection follows the camera's visible receivers across zoom levels,
+using a bounded screen-ray grid instead of a 40-block player search. Wetness at
+the visible surface controls selection, and SSR remains enabled while any storm
+has residual wetness. The distant-player wide fixture visibly retains stone
+reflections; three zooms/four rotations and dry rejection pass the weather check.
+The fauna check fills all 24 fish slots in a deep northern ocean fixture and
+verifies dry/solid rejection, sparse herons and walking handoff.
+
+Shadow reach now uses the same camera-distance rule in play and captures,
+covering 480 blocks at the 240-block developer zoom limit. Thin grass, stems,
+reeds and vines retain up to 0.9 pixels of width (at most 3× their authored width)
+while keeping their centres, counts and connected wind joints. The detail cull
+bounds include a half-block margin. Broad decoration faces retain physical size. The 75/240-block coast views and
+four maximum-zoom rotations were visually inspected under
+`shots/zoom-consistency/`; shadows and thin vegetation remain present.
 
 ## Accepted terrain foundation
 
@@ -59,7 +93,8 @@ to four. Loose ground petals also have lower admission and smaller groups.
 Reeds have fewer stems and leaves attached near the water surface; lily pads have
 notched rounded outlines, fewer blossoms and globally registered bobbing. Shallow
 marsh absorption and narrow moving low mist retain visible beds and clear gaps.
-Wildlife remains capped at six animals, including at most two herons.
+Non-fish wildlife remains capped at two herons and one butterfly; fish have
+a separate 24-animal local budget throughout navigable atlas water.
 
 Holding Space near the swimming surface now launches a physical jump, with a
 24.5-block/second initial upward speed. The rising body retains momentum through
@@ -144,8 +179,9 @@ clusters, flowers, sparse grouped reeds and understory growth use ordinary chunk
 detail. Clear ground beneath caps is a valid supported map landing.
 
 Production and site review attach bounded ambient fish, herons and butterflies
-through an active-window callback. At most six animals occupy deterministic local
-habitat candidates, limited to three fish, two herons and one butterfly. Spawn and
+through an active-window callback. At most 27 animals occupy deterministic local
+habitat candidates, limited to 24 fish, two herons and one butterfly. Fish also
+populate northern and deep ocean water without marsh profile restrictions. Spawn and
 retention radii are 288/384 blocks; zoom does not change population or apply a
 mesh distance cutoff. They reject inappropriate depths, dry fish spawns and solid
 obstructions, preserve global positions across walking handoff, and cull after
@@ -346,7 +382,7 @@ the 1/2048-day throttle. Frozen time retains the exact light transform and
 weather. Sun and mirror cameras disable physics interpolation; the gameplay
 camera constructs its basis directly from orbit angles at large atlas positions.
 Shadows use an 8192 map with four blended ranges at 0.20/0.45/0.72 of the
-260-block span. The developer menu's **Shadow softness** slider spans 0–100%:
+camera-scaled span (at least 260 blocks). The developer menu's **Shadow softness** slider spans 0–100%:
 hard filtering at zero and Ultra PCF up to radius 12, with default radius 1.25.
 The depth offset stays constant across this range; weather does not override
 softness. Checks and capture limits are recorded in the

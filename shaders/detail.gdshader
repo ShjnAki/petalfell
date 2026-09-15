@@ -1,4 +1,5 @@
 shader_type spatial;
+#include "rain_field.gdshaderinc"
 
 // Sub-voxel ground detail: grass tufts, flower heads, pebbles, reeds, petals.
 //
@@ -30,6 +31,16 @@ void vertex() {
 	// Two frequencies, so a gust travels rather than the whole field breathing.
 	VERTEX.x += (sin(t + phase) * 0.7 + sin(t * 1.7 + phase * 1.3) * 0.3) * sway * wind_amp;
 	VERTEX.z += (cos(t * 0.83 + phase * 1.1) * 0.7) * sway * wind_amp * 0.6;
+	// Thin plant edges retain subpixel coverage at wide zoom. CUSTOM1 points
+	// to the same edge midpoint at both corners; roots and wind joints stay put.
+	// Limit widening to 3x and 0.9 pixels total, leaving broad faces unchanged.
+	if (dot(CUSTOM1.xyz, CUSTOM1.xyz) > .000001) {
+		vec4 edge = PROJECTION_MATRIX * MODELVIEW_MATRIX * vec4(VERTEX,1.0);
+		vec4 middle = PROJECTION_MATRIX * MODELVIEW_MATRIX * vec4(VERTEX+CUSTOM1.xyz,1.0);
+		float half_pixels = length((edge.xy/edge.w-middle.xy/middle.w)*VIEWPORT_SIZE*.5);
+		float widen = clamp(.45/max(half_pixels,.001),1.0,3.0);
+		VERTEX -= CUSTOM1.xyz*(widen-1.0);
+	}
 	detail_world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	// Blades deliberately use the ground's upward normal on both sides.
 	// Preserve it before the renderer flips back-face normals: otherwise a
@@ -47,8 +58,10 @@ void fragment() {
 	if (COLOR.g > COLOR.r * 1.04 && COLOR.g > COLOR.b * 1.25) {
 		ALBEDO = turf_colour(ALBEDO, turf_surface(detail_world.xz).rgb);
 	}
-	ROUGHNESS = 0.95;
-	SPECULAR = 0.0;
+	float wet = rain_wetness(detail_world.xz);
+	ALBEDO *= 1.0-wet*.12;
+	ROUGHNESS = mix(.95,.58,wet);
+	SPECULAR = wet*.35;
 	// Only explicitly tagged terminal mushroom beads glow. Ground plants keep
 	// alpha=1, ordinary scene lighting and no emission. This remains opaque.
 	float spore = 1.0 - step(.05, abs(COLOR.a - .5));

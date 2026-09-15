@@ -55,6 +55,13 @@ public partial class DayCycle : Node
 	private bool? _hardShadowFilter;
 	/// <summary>Smoothed, deterministic weather coverage. Clouds are lighting-only.</summary>
 	public float CloudCover { get; private set; }
+	public float RainCover { get; private set; }
+	public void SetRainCover(float amount)
+	{
+		amount = Mathf.Clamp(amount, 0, 1);
+		if (Math.Abs(amount - RainCover) < .0001f) return;
+		RainCover = amount; Apply();
+	}
 	/// <summary>World-space directions from the world toward each celestial body.</summary>
 	public Vector3 SunDirection { get; private set; } = Palette.SunDir;
 	public Vector3 MoonDirection { get; private set; } = -Palette.SunDir;
@@ -107,6 +114,14 @@ public partial class DayCycle : Node
 			new Vector4(115f, 430f, 1.70f, 1f));
 		Add(SunColourParam, RenderingServer.GlobalShaderParameterType.Vec3,
 			new Vector3(Palette.SunColor.R, Palette.SunColor.G, Palette.SunColor.B));
+		Add("pf_puddle_state", RenderingServer.GlobalShaderParameterType.Vec4, new Vector4(-1000000,0,0,0));
+		Add("pf_puddle_tex", RenderingServer.GlobalShaderParameterType.Sampler2D, new GradientTexture2D());
+		Add("pf_rain_time", RenderingServer.GlobalShaderParameterType.Float, 0f);
+		for (int i = 0; i < Petalfell.Weather.RainField.CellCount; i++)
+		{
+			Add($"pf_rain_{i}", RenderingServer.GlobalShaderParameterType.Vec4, Vector4.Zero);
+			Add($"pf_wet_{i}", RenderingServer.GlobalShaderParameterType.Vec4, Vector4.Zero);
+		}
 	}
 
 	public void Setup(Godot.Environment env, DirectionalLight3D key, DirectionalLight3D fill,
@@ -252,7 +267,7 @@ public partial class DayCycle : Node
 
 		float night = Lerp(from.Night, to.Night);
 		NightAmount = night;
-		CloudCover = ComputeCloudCover();
+		CloudCover = Mathf.Lerp(ComputeCloudCover(), .98f, RainCover);
 		var sunColour = Blend(from.Sun, to.Sun);
 		var moonColour = Palette.MoonColor;
 		// The old single-key implementation moved to the moon's direction after
@@ -286,7 +301,7 @@ public partial class DayCycle : Node
 			// and ambient retain twilight while the shadow direction crosses horizon.
 			// The direct key crosses the horizon at zero energy.
 			float horizonKey = Mathf.SmoothStep(0f, 0.24f, Mathf.Abs(SunDirection.Y));
-			_key.LightEnergy = energy * keyExposure * directCloud * horizonKey;
+			_key.LightEnergy = energy * keyExposure * directCloud * horizonKey * Mathf.Lerp(1f, .40f, RainCover);
 			// Cloud transmission already dims the direct key. Retain occlusion;
 			// fading it a second time floods sheltered faces with direct light.
 			_key.ShadowOpacity = Lerp(from.ShadowOpacity, to.ShadowOpacity);
@@ -326,7 +341,7 @@ public partial class DayCycle : Node
 				* ambientExposure * ambientCloud * Mathf.Lerp(0.42f, 0.85f, night);
 			_env.AmbientLightSkyContribution = Lerp(from.SkyMix, to.SkyMix)
 				* Mathf.Lerp(1f, 0.72f, CloudCover);
-			var fog = Blend(from.Fog, to.Fog);
+			var fog = Blend(from.Fog, to.Fog).Lerp(new Color(.46f,.54f,.66f), RainCover * .42f);
 			_env.FogLightColor = fog.LinearToSrgb();
 			_env.FogLightEnergy = Mathf.Pow(0.68f, darkness)
 				* (daylight ? Mathf.Lerp(1f, 0.92f, CloudCover) : Mathf.Lerp(1f, 0.56f, CloudCover));

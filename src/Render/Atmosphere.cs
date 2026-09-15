@@ -98,6 +98,13 @@ public static class Atmosphere
 		env.SsaoHorizon = 0.10f;
 
 
+		// Wet stone uses the opaque depth/normal buffer, so reflection stays on
+		// each slab's actual elevation. Weather enables this only while wet.
+		env.SsrMaxSteps = 48;
+		env.SsrDepthTolerance = .5f;
+		env.SsrFadeIn = .15f;
+		env.SsrFadeOut = 2f;
+
 		env.AdjustmentEnabled = false;   // the canvas grade owns display space
 
 		LastSky = skyMat;
@@ -131,6 +138,16 @@ public static class Atmosphere
 		// colour. They need the same span as their owning surface at every zoom.
 		RenderingServer.GlobalShaderParameterSet("pf_depth_haze", new Vector4(begin, end,
 			environment.FogDepthCurve, environment.FogEnabled ? environment.FogDensity : 0f));
+	}
+
+	public static float ShadowDistanceForView(float distance, float scale = 1f)
+		=> Mathf.Max(260f * scale, distance * 2f);
+
+	public static void SetShadowViewDistance(DirectionalLight3D sun, float distance, float scale = 1f)
+	{
+		if (sun == null) return;
+		float range = ShadowDistanceForView(distance, scale);
+		if (sun.DirectionalShadowMaxDistance != range) sun.DirectionalShadowMaxDistance = range;
 	}
 
 	public static DirectionalLight3D Sun()

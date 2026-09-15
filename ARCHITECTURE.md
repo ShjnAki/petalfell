@@ -24,6 +24,21 @@ Main
 `Main` does not assemble an alternate world. Retired implementations are stored
 outside the compilation tree under `reference/retired-code/`.
 
+## Weather ownership
+
+`RainField` owns three temporary world-space storm cells and residual wetness.
+`RainWeather` owns bounded drop/impact receivers, shader publication, local lighting
+and `RainAudio`. This node survives terrain-window replacement. Each storm fades
+out and dries before choosing a fresh location; rain is not a fixed atlas region.
+DayCycle consumes local rain coverage for light/air, while the independent weather
+clock drives rain and water impacts. Materials sample the same global field.
+A wet-paving mirror selects one actual visible mineral level at 37.5% resolution,
+using a bounded 40×24 screen-ray grid across the source camera at every zoom,
+with a separate camera mask/clip plane from the existing water mirror. Both share
+the production world. Wetness controls its lifetime; changing levels fades through
+zero before re-registering. It never projects one floor's mirror onto other levels.
+The [weather contract](docs/WEATHER.md) defines lifecycle, controls and evidence.
+
 ## World ownership
 
 The atlas is 12,288 × 9,216 blocks. Four accepted images own land, elevation,
@@ -33,8 +48,9 @@ connections, status and reference-plan paths.
 The images are macro controls, not block masks. `ProductionTerrainGuide` samples
 them in global coordinates and supplies the existing local terrain grammar.
 `Planner` and `Terrain` create shelves, broken terraces, banks, submerged beds,
-materials and natural detail inside a bounded window. All randomness is a pure
-function of world seed plus absolute atlas coordinates.
+materials and natural detail inside a bounded window. All terrain randomness is a pure
+function of world seed plus absolute atlas coordinates. Transient weather owns a
+separate random stream and never writes geography.
 
 ## Bounded windows
 
@@ -276,7 +292,11 @@ two segments with identical displacement at the shared shoulder. Clump anchors
 stay within the supporting grass cell; existing meadow admission fields and
 random draw counts are unchanged. Stems and reeds retain the crossed primitive.
 Flower heads form shallow five-petal cups, with two facets per petal and one
-shared head displacement. Both shapes join the existing chunk detail mesh.
+shared head displacement. Both shapes join the existing chunk detail mesh. Thin grass, stem, reed and vine
+edges carry a midpoint offset in CUSTOM1; the shared detail shader keeps up to
+0.9 pixels of width, capped at threefold widening. Edge midpoints, plant counts,
+wind joints and authored positions are unchanged. A half-block cull margin covers
+wind and this small coverage extension. Broad faces keep their physical size.
 Existing moss-stone cap cells and sparse placed cells also supply folded leaf
 facets on their exposed, dry faces. `VoxelGrid.PlacedIn` visits only overlapping
 edit tiles; cap/overlay overlap is processed once. This detail stays within the
@@ -289,6 +309,9 @@ with no site masonry placement, collision, extra draw or shadow pass.
 Blossom profiles also allow small fallen-petal drifts on exposed dry `PAVING`.
 An 18-block field and independent coordinate draw place at most seven flat
 petals inside each cell, clear of its bevel; these join the existing detail mesh.
+`Atmosphere.SetShadowViewDistance` gives production and review the same shadow
+reach: at least 260 blocks, growing to twice the camera distance (480 at the
+240-block developer maximum). Stationary zoom leaves that range unchanged.
 `Atmosphere.SetViewDistance` owns the depth-haze span for both production camera
 zoom and review cameras; capture no longer carries a separate haze formula.
 
@@ -299,13 +322,13 @@ Dry wetland herbs and bank reeds use the existing merged chunk detail mesh.
 
 `Fauna` has a production-window callback alongside its historical terrain API.
 Production attaches one `SouthernWildlife` node outside replaceable window
-content. At most six animals (three fish, two herons, one butterfly) occupy
+content. At most 27 animals (24 fish, two herons, one butterfly) occupy
 coordinate-seeded habitat candidates. The production spawn radius is 288 blocks
 and retention radius is 384 blocks, with no mesh distance cutoff; camera zoom
-neither increases population nor removes existing animals. Fish require clear
-submerged space, herons require
-shallow water or wet banks, and all species reject unsuitable profiles and placed
-obstructions. Animals retain global transforms across walking replacement and
+neither increases population nor removes existing animals. Fish require clear submerged space across all atlas regions, including deep
+ocean water. They have no southern latitude, marsh profile or maximum bed-depth
+restriction. Herons and butterflies retain southern wetland profile restrictions;
+herons require shallow water or wet banks. All species reject placed obstructions. Animals retain global transforms across walking replacement and
 are culled after distant travel. Their materials use the shared character light,
 cloud and mirror clipping path, with one sRGB conversion. No legacy inventory,
 fishing, pet or settlement assembly is activated.

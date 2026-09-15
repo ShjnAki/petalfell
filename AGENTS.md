@@ -8,6 +8,7 @@ Read this file before editing. Then read the owning document for the change:
 | Subject | Owner |
 |---|---|
 | Product and visual intent | [`plan.md`](plan.md) |
+| Weather lifecycle, visuals and audio | [`docs/WEATHER.md`](docs/WEATHER.md) |
 | Runtime boundaries | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
 | Implemented facts | [`CURRENT_STATE.md`](CURRENT_STATE.md) |
 | Story geography | [`docs/WORLD.md`](docs/WORLD.md) |
@@ -108,7 +109,8 @@ Do not confuse “old origin” with “unused.”
 
 The September 10 mushroom-marsh reference supersedes the tree-heavy southern
 pass: low broken islets, shallow marsh water and large pale-stemmed pink/purple
-mushrooms are the target. Wildlife is sparse (six total, at most two herons) with
+mushrooms are the target. Fish have a separate 24-animal budget in navigable water across all regions;
+other wildlife stays sparse (at most two herons and one butterfly), with
 288/384-block spawn/retention ranges. The southern revision uses a smooth
 geographic/region mask; Shore also occurs in the north, so biome identity alone
 must not scope southern edits.
@@ -156,6 +158,7 @@ Core headless checks:
 ./tools/world-authoring.sh audit-production-terrain
 ./tools/world-authoring.sh verify-atlas-walking-handoff
 ./tools/world-authoring.sh verify-camera-auto-zoom
+./tools/world-authoring.sh verify-rain-weather
 ./tools/world-authoring.sh verify-camera-obstruction
 ./tools/world-authoring.sh verify-sculpture
 ./tools/world-authoring.sh verify-reference-sites
