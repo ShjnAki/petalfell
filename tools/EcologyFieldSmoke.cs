@@ -108,6 +108,33 @@ public partial class EcologyFieldSmoke : Node
 			field.RemovePrey(meadow, 99999f);
 			Assert(field.PreyAt(meadow) == 0f, "RemovePrey must floor at zero, never go negative");
 
+			// Empty a fertile cell completely, then let the neighbours refill it.
+			var refill = new EcologyField(atlas.Width, atlas.Depth,
+				guide.GlobalBiomeAt, map.DefaultSeed);
+			int hole = -1;
+			for (int row = 1; row < refill.Rows - 1 && hole < 0; row++)
+			for (int col = 1; col < refill.Columns - 1 && hole < 0; col++)
+			{
+				int i = row * refill.Columns + col;
+				if (refill.FertilityAt(i) >= 0.99f &&
+					refill.FertilityAt(i - 1) >= 0.99f &&
+					refill.FertilityAt(i + 1) >= 0.99f) hole = i;
+			}
+			Assert(hole >= 0, "no fertile cell with fertile neighbours was found");
+
+			refill.RemovePrey(hole, 99999f);
+			Assert(refill.PreyAt(hole) == 0f, "the cell must start empty");
+			for (int step = 0; step < 1800; step++) refill.Advance(1f);
+			Assert(refill.PreyAt(hole) > 0.05f,
+				$"an emptied valley did not refill from its neighbours: {refill.PreyAt(hole)}");
+
+			// Diffusion must spread, not amplify.
+			Assert(refill.Totals().Prey < before.Prey * 20f,
+				"diffusion is amplifying rather than spreading");
+
+			GD.Print($"[ecology-field-smoke] emptied cell {hole} refilled to " +
+			         $"{refill.PreyAt(hole):0.00} prey in thirty minutes");
+
 			GD.Print($"[ecology-field-smoke] ten minutes: grass {before.Grass:0}->{after.Grass:0} " +
 			         $"prey {before.Prey:0}->{after.Prey:0} " +
 			         $"predators {before.Predator:0}->{after.Predator:0}");

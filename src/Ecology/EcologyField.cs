@@ -104,6 +104,7 @@ public sealed class EcologyField
 	{
 		if (dtSeconds <= 0f) return;
 		StepLocal(dtSeconds);
+		Diffuse(dtSeconds);
 		ElapsedSeconds += dtSeconds;
 	}
 
@@ -151,5 +152,40 @@ public sealed class EcologyField
 			_prey[i] = Math.Max(0f, prey);
 			_predator[i] = Math.Max(0f, predator);
 		}
+	}
+
+	/// <summary>
+	/// Level each cell a little towards its neighbours' average. Double
+	/// buffered, so every cell reads the same state and the sweep direction
+	/// cannot smear populations east.
+	///
+	/// Grass does not diffuse. A meadow does not spread into a mountain because
+	/// the mountain is short of grass; its fertility is what it is.
+	/// </summary>
+	private void Diffuse(float dt)
+	{
+		float k = EcologyTuning.Diffusion * dt;
+		if (k <= 0f) return;
+		Array.Copy(_prey, _preyScratch, _prey.Length);
+		Array.Copy(_predator, _predatorScratch, _predator.Length);
+		for (int row = 0; row < Rows; row++)
+		for (int col = 0; col < Columns; col++)
+		{
+			int i = row * Columns + col;
+			_prey[i] = Levelled(_preyScratch, i, row, col, k);
+			_predator[i] = Levelled(_predatorScratch, i, row, col, k);
+		}
+	}
+
+	private float Levelled(float[] source, int i, int row, int col, float k)
+	{
+		float sum = 0f;
+		int neighbours = 0;
+		if (col > 0) { sum += source[i - 1]; neighbours++; }
+		if (col < Columns - 1) { sum += source[i + 1]; neighbours++; }
+		if (row > 0) { sum += source[i - Columns]; neighbours++; }
+		if (row < Rows - 1) { sum += source[i + Columns]; neighbours++; }
+		if (neighbours == 0) return source[i];
+		return source[i] + k * (sum / neighbours - source[i]);
 	}
 }
