@@ -173,6 +173,21 @@ public sealed class ProductionTerrainGuide
 			Rng.ClampI(OriginZ + z, 0, _atlas.Depth - 1));
 	}
 
+	/// <summary>
+	/// The authored biome at a global atlas address, independent of this guide's
+	/// window. Window-local callers want <see cref="BiomeAt"/>; callers that
+	/// describe the whole continent — the ecology field builds one fertility
+	/// value per 128-block cell across all 12,288 x 9,216 — need to ask outside
+	/// the local allocation without building a guide per region.
+	///
+	/// This is the same answer <see cref="BiomeAt"/> gives for an address beyond
+	/// its window, so the coarse description of a valley cannot disagree with
+	/// the terrain that is eventually built there.
+	/// </summary>
+	public Biome GlobalBiomeAt(int globalX, int globalZ) =>
+		BiomeAtGlobal(Rng.ClampI(globalX, 0, _atlas.Width - 1),
+			Rng.ClampI(globalZ, 0, _atlas.Depth - 1));
+
 	private Biome BiomeAtGlobal(int globalX, int globalZ)
 	{
 		Biome fallback = RawBiomeAt(globalX, globalZ);
