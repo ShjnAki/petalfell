@@ -12,13 +12,24 @@ Status: proposed, not implemented. Nothing here is author-accepted.
 This work comes from a finished simulation in another project of mine —
 [`fable_sim`](https://github.com/ShjnAki/fable_sim). It is a Lotka–Volterra
 ecosystem: herbivores, wolves, a grass field, needs, herds, endurance hunting.
-It reaches a stable, self-regulating equilibrium and holds it over hours of
-simulated time. Clone it, run `pnpm dev`, and leave it running — the populations
-cycle, crash, recover and never flatline. That is the part worth judging, and it
-is easier to watch than to argue about.
+It regulates itself: herds grow until wolves catch up with them, wolves thin out
+until the herds recover, and the whole thing holds a plateau for tens of minutes
+with nobody touching it. Clone it, run `pnpm dev`, and leave it running. That is
+the part worth judging, and it is easier to watch than to argue about.
 
-It works. It had nowhere to live. Petalfell is a world large and quiet enough
-that a living ecology would mean something inside it.
+Being precise about what it does and does not do, because the distinction
+matters here: the coexistence is **metastable, not permanent**. Its own tuning
+log calls it "a slowly unstable fixed point". Measured over two simulated hours
+on three seeds, two hold a plateau — roughly 150 herbivores to 30 carnivores —
+and one loses its herbivores after an hour. The port described below does better
+on that specific point, because a coarse field with a rarity refuge and
+neighbour diffusion cannot lose a species the way a few hundred agents on one
+island can; ten simulated hours of it converge rather than collapse. But the
+behaviour worth having came from the agent simulation, not from the field.
+
+So: a thing that works, with its limits known, and nowhere to live. Petalfell is
+a world large and quiet enough that a living ecology would mean something inside
+it.
 
 This cuts against what the documents say. `plan.md` asks for a calm, lonely,
 mostly abandoned continent, and `CLAUDE.md` keeps wildlife deliberately sparse.
@@ -154,8 +165,10 @@ default behaviour is refused on principle before anyone looks at the wolves.
 ## 2. The ecology field
 
 Cells of 128 blocks give **96 × 72 = 6,912 cells** over the atlas. Each carries
-`Grass`, `Prey` and `Predator` as `float`. Allocated once at startup, about
-81 KiB, never grown. This satisfies the standing rule that runtime allocations
+`Grass`, `Prey`, `Predator` and a fixed `Fertility`, plus two scratch buffers
+that let the diffusion sweep read one consistent state instead of smearing
+populations in the direction it happens to run. Six `float` arrays,
+allocated once at startup, about 162 KiB, never grown. This satisfies the standing rule that runtime allocations
 stay bounded and no continent-sized voxel or height array is ever built.
 
 Per cell, per field tick (dt ≈ 1 s of game time):
@@ -309,16 +322,28 @@ parameters: `sprintRange`, `staminaDrainPerSec`, herd escape chance,
 `a`, `b`, `mN`, `mP`, `r`, `c`, `e` — and those appear nowhere in `species.ts`.
 
 They are therefore **fitted against the source simulation**, which is the
-reference and not merely the inspiration:
+reference and not merely the inspiration. Raw population counts do not transfer
+— the field's units are densities per 128-block cell, the source's are
+individuals on a 512 m island — so the fit targets two properties that are
+unit-free: the prey-to-predator ratio at plateau, and how much of the available
+grass is left standing.
 
-1. run the source harness and record predator kill rate against prey density → `a`;
-2. record energy-to-birth conversion → `b` and `e`;
-3. record natural mortality → `mN`, `mP`;
-4. run `EcologyHarness` and compare its curves to the source harness's curves.
+Measured in the source harness across three seeds: roughly **5 prey per
+predator**, with **grass at 0.985**, meaning its prey are limited by wolves and
+not by forage. Solving the field's equilibrium conditions for those two targets
+gives the coefficients in `EcologyTuning.cs` in a single pass.
+
+The result, over ten simulated hours: a damped oscillation. Prey swing
+26,000 → 9,000, then 22,000 → 12,000, then 20,000 → 14,000, settling near
+15,800 prey to 2,100 predators with grass at 94% of capacity. The predator peak
+lags the prey peak by half a cycle, as it should. Continental totals settle;
+individual cells do not, and player hunting will keep them from doing so.
 
 The agent behaviour near the player keeps the original values verbatim; it is
 what the player actually sees. The field is fitted so that the two layers tell
-the same story instead of drifting apart.
+the same story instead of drifting apart. The method and its two failed first
+attempts are recorded in
+[`building-knowledge/ecology/field-calibration-2026-09.md`](../building-knowledge/ecology/field-calibration-2026-09.md).
 
 ---
 

@@ -31,12 +31,12 @@ public static class EcologyTuning
 	public const float GrassRegrowth = 0.12f;
 
 	/// <summary>Grass eaten per prey unit per second, at full grass cover.</summary>
-	public const float GrazingRate = 0.00035f;
+	public const float GrazingRate = 0.0020f;
 
 	// --- Prey ---------------------------------------------------------------
 
 	/// <summary>Prey growth per unit of grass eaten.</summary>
-	public const float PreyBirth = 0.9f;
+	public const float PreyBirth = 0.51f;
 
 	/// <summary>Kills per predator per prey unit per second.</summary>
 	public const float PreyPredation = 0.0016f;
@@ -51,14 +51,14 @@ public static class EcologyTuning
 	/// raises another wolf, and that gap is what makes the cycle lag behind the
 	/// prey rather than track them.
 	/// </summary>
-	public const float PredatorConversion = 0.06f;
+	public const float PredatorConversion = 0.20f;
 
 	/// <summary>
 	/// Predator loss per second. Deliberately slow — the source simulation found
 	/// that a long-lived predator is what crosses the trough of the cycle
 	/// without the species dying before the prey recover.
 	/// </summary>
-	public const float PredatorMortality = 0.0009f;
+	public const float PredatorMortality = 0.0008f;
 
 	// --- Space --------------------------------------------------------------
 

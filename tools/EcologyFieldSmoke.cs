@@ -17,6 +17,19 @@ public partial class EcologyFieldSmoke : Node
 	{
 		try
 		{
+			// The harness command wants the rows alone, so they can be piped
+			// straight into a plot next to the source simulation's curves.
+			string[] userArgs = OS.GetCmdlineUserArgs();
+			bool csvOnly = Array.IndexOf(userArgs, "--csv-only") >= 0;
+			// A longer run is how a genuine cycle is told apart from a damped
+			// spiral that simply has not reached zero inside two hours.
+			float harnessHours = 2f;
+			foreach (string arg in userArgs)
+				if (arg.StartsWith("--hours=") &&
+					float.TryParse(arg[8..], System.Globalization.NumberStyles.Float,
+						System.Globalization.CultureInfo.InvariantCulture, out float parsed))
+					harnessHours = parsed;
+
 			var map = MapDefinition.Load("res://content/chapter_01/map.json");
 			var atlas = map.CanonicalAtlas;
 			var guide = ProductionTerrainGuide.CreateAtOrigin(atlas, 64, 0, 0, map.DefaultSeed);
@@ -132,17 +145,32 @@ public partial class EcologyFieldSmoke : Node
 			Assert(refill.Totals().Prey < before.Prey * 20f,
 				"diffusion is amplifying rather than spreading");
 
-			GD.Print($"[ecology-field-smoke] emptied cell {hole} refilled to " +
+			var run = EcologyHarness.Run(
+				new EcologyField(atlas.Width, atlas.Depth, guide.GlobalBiomeAt, map.DefaultSeed),
+				hours: harnessHours, sampleMinutes: 5f);
+
+			int expectedRows = (int)MathF.Round(harnessHours * 60f / 5f) + 1;
+			Assert(run.Samples.Count == expectedRows,
+				$"{harnessHours} h at five-minute samples is {expectedRows} rows, got {run.Samples.Count}");
+			foreach (var sample in run.Samples)
+			{
+				Assert(sample.Prey > 0f, $"prey reached zero at {sample.Hours:0.00} h");
+				Assert(sample.Predator > 0f, $"predators reached zero at {sample.Hours:0.00} h");
+			}
+			Assert(run.Verdict == "stable", $"{harnessHours} simulated hours ended {run.Verdict}");
+
+			if (!csvOnly) GD.Print($"[ecology-field-smoke] emptied cell {hole} refilled to " +
 			         $"{refill.PreyAt(hole):0.00} prey in thirty minutes");
 
-			GD.Print($"[ecology-field-smoke] ten minutes: grass {before.Grass:0}->{after.Grass:0} " +
+			if (!csvOnly) GD.Print($"[ecology-field-smoke] ten minutes: grass {before.Grass:0}->{after.Grass:0} " +
 			         $"prey {before.Prey:0}->{after.Prey:0} " +
 			         $"predators {before.Predator:0}->{after.Predator:0}");
 
-			GD.Print($"[ecology-field-smoke] atlas {atlas.Width}x{atlas.Depth}; " +
+			if (!csvOnly) GD.Print($"[ecology-field-smoke] atlas {atlas.Width}x{atlas.Depth}; " +
 			         $"biome at 6400,7360 {far}; at 4500,1900 {north}");
-			GD.Print($"[ecology-field-smoke] {field.CellCount} cells; start " +
+			if (!csvOnly) GD.Print($"[ecology-field-smoke] {field.CellCount} cells; start " +
 			         $"grass {totals.Grass:0} prey {totals.Prey:0} predators {totals.Predator:0}");
+			if (csvOnly) GD.Print(run.ToCsv());
 			GetTree().Quit();
 		}
 		catch (Exception ex)

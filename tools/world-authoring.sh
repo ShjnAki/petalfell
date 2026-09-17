@@ -123,6 +123,11 @@ case "$command_name" in
 	exec godot-mono --headless --path "$project_dir" \
 	  --script res://tools/ecology-field-smoke.gd
 	;;
+	ecology-harness)
+	harness_hours="${2:-2}"
+	exec godot-mono --headless --path "$project_dir" \
+	  --script res://tools/ecology-field-smoke.gd -- --csv-only "--hours=$harness_hours"
+	;;
 	verify-player-motion)
 	exec godot-mono --path "$project_dir" --display-driver x11 --disable-vsync --fixed-fps 144 \
 	  --script res://tools/stair-walk-smoke.gd -- --motion-check
@@ -147,7 +152,7 @@ case "$command_name" in
 		exec godot-mono --path "$project_dir" --fullscreen -- "${args[@]}"
 		;;
   *)
-echo "usage: $0 audit | atlas-preview [output] | atlas-topology-preview [output] | atlas-map-preview [output] | preview-atlas-domain <domain-id> [output] | preview-site-plan <site-id> [output] [--runtime-facing] | reference-top-grid [output] [source-pixel-x,y ...] | reference-plan-overlay [output] | verify-production-terrain <global-x,z> | audit-production-terrain | verify-production-playability <global-x,z> [land|water] | review-production-terrain <global-x,z> | capture-production-terrain <global-x,z> [output] [shot-names] | verify-atlas-walking-handoff | verify-camera-obstruction | verify-atlas-map-transport | verify-camera-auto-zoom | verify-water-jump | verify-ecology-field | verify-stair-walk | verify-player-motion | verify-rain-weather | verify-look-rendering | verify-sculpture | verify-worldbuilding | survey-terrain <global-x,z> <output-directory> | review-site <site-id> | capture-site <site-id> [output] [shot-names]" >&2
+echo "usage: $0 audit | atlas-preview [output] | atlas-topology-preview [output] | atlas-map-preview [output] | preview-atlas-domain <domain-id> [output] | preview-site-plan <site-id> [output] [--runtime-facing] | reference-top-grid [output] [source-pixel-x,y ...] | reference-plan-overlay [output] | verify-production-terrain <global-x,z> | audit-production-terrain | verify-production-playability <global-x,z> [land|water] | review-production-terrain <global-x,z> | capture-production-terrain <global-x,z> [output] [shot-names] | verify-atlas-walking-handoff | verify-camera-obstruction | verify-atlas-map-transport | verify-camera-auto-zoom | verify-water-jump | verify-ecology-field | ecology-harness [hours] | verify-stair-walk | verify-player-motion | verify-rain-weather | verify-look-rendering | verify-sculpture | verify-worldbuilding | survey-terrain <global-x,z> <output-directory> | review-site <site-id> | capture-site <site-id> [output] [shot-names]" >&2
     exit 64
     ;;
 esac
