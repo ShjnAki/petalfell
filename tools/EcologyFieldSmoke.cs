@@ -78,6 +78,40 @@ public partial class EcologyFieldSmoke : Node
 			Assert(totals.Prey > totals.Predator * 5f,
 				$"prey {totals.Prey:0} must far outnumber predators {totals.Predator:0}");
 
+			// Grass must regrow towards its cell's fertility and never past it.
+			int meadow = -1;
+			for (int i = 0; i < field.CellCount && meadow < 0; i++)
+				if (field.FertilityAt(i) >= 0.99f) meadow = i;
+			Assert(meadow >= 0, "the continent must contain at least one meadow cell");
+
+			var before = field.Totals();
+			for (int step = 0; step < 600; step++) field.Advance(1f);
+			var after = field.Totals();
+
+			Assert(field.ElapsedSeconds == 600f,
+				$"elapsed {field.ElapsedSeconds}, expected 600");
+			for (int i = 0; i < field.CellCount; i++)
+			{
+				Assert(field.GrassAt(i) >= 0f && field.GrassAt(i) <= field.FertilityAt(i) + 0.001f,
+					$"cell {i} grass {field.GrassAt(i)} outside 0..{field.FertilityAt(i)}");
+				Assert(field.PreyAt(i) >= 0f, $"cell {i} prey went negative");
+				Assert(field.PredatorAt(i) >= 0f, $"cell {i} predators went negative");
+			}
+			Assert(after.Prey > 0f && after.Predator > 0f,
+				$"ten minutes wiped the continent: prey {after.Prey:0}, predators {after.Predator:0}");
+
+			// An event removes animals; nothing else may.
+			float preyBefore = field.PreyAt(meadow);
+			field.RemovePrey(meadow, 1f);
+			Assert(Math.Abs(field.PreyAt(meadow) - (preyBefore - 1f)) < 0.001f,
+				"RemovePrey must subtract exactly what it was given");
+			field.RemovePrey(meadow, 99999f);
+			Assert(field.PreyAt(meadow) == 0f, "RemovePrey must floor at zero, never go negative");
+
+			GD.Print($"[ecology-field-smoke] ten minutes: grass {before.Grass:0}->{after.Grass:0} " +
+			         $"prey {before.Prey:0}->{after.Prey:0} " +
+			         $"predators {before.Predator:0}->{after.Predator:0}");
+
 			GD.Print($"[ecology-field-smoke] atlas {atlas.Width}x{atlas.Depth}; " +
 			         $"biome at 6400,7360 {far}; at 4500,1900 {north}");
 			GD.Print($"[ecology-field-smoke] {field.CellCount} cells; start " +

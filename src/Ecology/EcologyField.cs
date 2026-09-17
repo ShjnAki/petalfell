@@ -95,4 +95,61 @@ public sealed class EcologyField
 		}
 		return new EcologyTotals(grass, prey, predator);
 	}
+
+	/// <summary>
+	/// Carry every cell forward. Called at about 1 Hz: the dynamics are measured
+	/// in minutes, so a finer step would burn work to compute the same curve.
+	/// </summary>
+	public void Advance(float dtSeconds)
+	{
+		if (dtSeconds <= 0f) return;
+		StepLocal(dtSeconds);
+		ElapsedSeconds += dtSeconds;
+	}
+
+	/// <summary>
+	/// Remove prey from a cell. Only events write to the field — a kill, a hunt.
+	/// Unloading a creature because the traveller walked away is not a death,
+	/// and must never come through here, or the continent empties behind them.
+	/// </summary>
+	public void RemovePrey(int index, float count) =>
+		_prey[index] = Math.Max(0f, _prey[index] - count);
+
+	/// <summary>The same, for a predator. See <see cref="RemovePrey"/>.</summary>
+	public void RemovePredator(int index, float count) =>
+		_predator[index] = Math.Max(0f, _predator[index] - count);
+
+	/// <summary>
+	/// Logistic grass, Lotka-Volterra prey and predators, per cell.
+	///
+	/// The rarity refuge on each birth term is not decoration: without it the
+	/// trough of the cycle reaches zero and the species never comes back. The
+	/// source simulation found this the hard way.
+	/// </summary>
+	private void StepLocal(float dt)
+	{
+		for (int i = 0; i < _grass.Length; i++)
+		{
+			float fertility = _fertility[i];
+			float grass = _grass[i], prey = _prey[i], predator = _predator[i];
+
+			float grazed = EcologyTuning.GrazingRate * prey * grass;
+			float predation = EcologyTuning.PreyPredation * prey * predator;
+
+			float preyBirth = EcologyTuning.PreyBirth * grazed;
+			if (prey < EcologyTuning.PreyRarityFloor)
+				preyBirth *= EcologyTuning.RarityBirthBoost;
+			float predatorBirth = EcologyTuning.PredatorConversion * predation;
+			if (predator < EcologyTuning.PredatorRarityFloor)
+				predatorBirth *= EcologyTuning.RarityBirthBoost;
+
+			grass += (EcologyTuning.GrassRegrowth * grass * (fertility - grass) - grazed) * dt;
+			prey += (preyBirth - predation - EcologyTuning.PreyMortality * prey) * dt;
+			predator += (predatorBirth - EcologyTuning.PredatorMortality * predator) * dt;
+
+			_grass[i] = Math.Clamp(grass, 0f, fertility);
+			_prey[i] = Math.Max(0f, prey);
+			_predator[i] = Math.Max(0f, predator);
+		}
+	}
 }
