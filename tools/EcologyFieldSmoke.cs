@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using Petalfell.Ecology;
 using Petalfell.World;
 
 namespace Petalfell.Tools;
@@ -31,6 +32,23 @@ public partial class EcologyFieldSmoke : Node
 			Assert(Enum.IsDefined(far), $"southern sample returned {far}");
 			Assert(Enum.IsDefined(north), $"northern sample returned {north}");
 			Assert(far != north, "southern marsh and northern highland returned the same biome");
+
+			// Fertility must be ordered by how much a biome can feed, and water
+			// or bare rock must feed nothing at all.
+			Assert(EcologyTuning.FertilityForBiome(Biome.Meadow) >
+				EcologyTuning.FertilityForBiome(Biome.Forest),
+				"meadow must out-feed forest");
+			Assert(EcologyTuning.FertilityForBiome(Biome.Forest) >
+				EcologyTuning.FertilityForBiome(Biome.Highland),
+				"forest must out-feed highland");
+			Assert(EcologyTuning.FertilityForBiome(Biome.SnowyHills) <= 0.15f,
+				"snowy hills must be near barren");
+			foreach (Biome biome in Enum.GetValues<Biome>())
+			{
+				float f = EcologyTuning.FertilityForBiome(biome);
+				Assert(f >= 0f && f <= 1f, $"fertility for {biome} out of range: {f}");
+			}
+			Assert(EcologyTuning.CellBlocks == 128, "cell size must be 128 blocks");
 
 			GD.Print($"[ecology-field-smoke] atlas {atlas.Width}x{atlas.Depth}; " +
 			         $"biome at 6400,7360 {far}; at 4500,1900 {north}");
