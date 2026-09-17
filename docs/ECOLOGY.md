@@ -51,6 +51,19 @@ in spite of it. Hunger is what makes a long quiet walk feel like a journey rathe
 than a camera move. That may be a register this world already wants; it may not.
 It is the author's call.
 
+One more thing, which only became clear late. The two projects are exact
+inverses. In mine the world lives and the player is a guest who arrived late;
+in Petalfell the traveller is the subject and the world is arranged around
+their gaze. Put together they make something neither has alone: a beautiful
+world that does not care you are in it.
+
+That may matter more than the mechanics do. `plan.md` asks for a world that is
+calm, lonely and enormous. An empty valley is not lonely — it is only empty. A
+valley where a wolf runs down a deer whether or not anyone is watching is
+lonely, because it tells you the place was here before you and will carry on
+after. Indifference is what loneliness is made of, and it is the one thing a
+staged world cannot fake.
+
 What is on offer is a trade: this uses the author's assets, terrain, streaming
 and creature system as they stand, and hands back a tuned ecology the author
 would otherwise have to build and balance. If the answer is no, the branch
