@@ -55,6 +55,16 @@ public static class PackBehaviour
 	/// <summary>Breath below this ends the chase, whatever is in front of you.</summary>
 	public const float RecoverStamina = 0.15f;
 
+	/// <summary>
+	/// Breath a winded wolf must get back before it will commit again.
+	///
+	/// Without this gap it re-engages the instant it crosses the lower mark,
+	/// drains straight back to it, and spends the whole hunt hovering at the
+	/// threshold in sprint-long twitches — visible in the census as a stamina
+	/// reading pinned at exactly 0.15. A chase is a decision, not a flicker.
+	/// </summary>
+	public const float RecoveredStamina = 0.6f;
+
 	/// <summary>Fraction of maximum breath spent per second of sprinting.</summary>
 	public const float StaminaDrainPerSecond = 1f / 25f;
 
@@ -65,11 +75,15 @@ public static class PackBehaviour
 	private const float SprintSpeed = 2.6f;
 	private const float RecoverSpeed = 0.55f;
 
+	/// <param name="wasRecovering">
+	/// Whether this wolf broke off last frame. Carried by the caller rather than
+	/// stored here, so the decision stays a function of its inputs.
+	/// </param>
 	public static PackDecision Decide(Vector3 position, Vector3 heading, Vector3 den,
-		float stamina, IReadOnlyList<HuntTarget> prey)
+		float stamina, IReadOnlyList<HuntTarget> prey, bool wasRecovering = false)
 	{
 		var nearest = Nearest(prey);
-		bool winded = stamina <= RecoverStamina;
+		bool winded = wasRecovering ? stamina < RecoveredStamina : stamina <= RecoverStamina;
 
 		if (nearest.HasValue && !winded)
 		{

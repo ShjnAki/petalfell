@@ -662,6 +662,7 @@ public partial class AtlasSectorReview : Node3D
 				AddChild(_ecosystem);
 				_ecosystem.Setup(_mapDefinition.CanonicalAtlas, _worldSeed);
 				_fauna.SetEcologyEnabled(true);
+				_fauna.SetEcosystem(_ecosystem);
 				GD.Print($"[ecology] field {_ecosystem.Field.Columns}x{_ecosystem.Field.Rows} cells; " +
 				         $"start prey {_ecosystem.Field.Totals().Prey:0} " +
 				         $"predators {_ecosystem.Field.Totals().Predator:0}");

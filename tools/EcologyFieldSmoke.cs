@@ -249,6 +249,17 @@ public partial class EcologyFieldSmoke : Node
 			var spent = PackBehaviour.Decide(Vector3.Zero, Vector3.Forward, Vector3.Zero, 0f, close);
 			Assert(spent.Intent == PackIntent.Recover, $"an exhausted wolf breaks off, got {spent.Intent}");
 
+			// Hysteresis: a wolf that broke off stays broken off until it has
+			// real breath back, not merely a sliver above the lower mark.
+			var halfRested = PackBehaviour.Decide(Vector3.Zero, Vector3.Forward, Vector3.Zero,
+				0.3f, close, wasRecovering: true);
+			Assert(halfRested.Intent == PackIntent.Recover,
+				$"a winded wolf must not re-engage at 0.30 breath, got {halfRested.Intent}");
+			var rested = PackBehaviour.Decide(Vector3.Zero, Vector3.Forward, Vector3.Zero,
+				0.8f, close, wasRecovering: true);
+			Assert(rested.Intent == PackIntent.Sprint,
+				$"a recovered wolf commits again, got {rested.Intent}");
+
 			// Prey beyond perception is not prey.
 			var unseen = new System.Collections.Generic.List<HuntTarget>
 				{ new(new Vector3(0f, 0f, 400f), 400f) };

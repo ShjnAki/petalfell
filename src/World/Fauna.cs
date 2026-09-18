@@ -35,7 +35,14 @@ public partial class Fauna : Node3D
 	public const int MarshPopulation = FishPopulation + 3;
 	public const float MarshSpawnRadius = 288f;
 	public const float MarshRetentionRadius = 384f;
-	private int PopulationLimit => _window == null ? Population : MarshPopulation;
+	/// <summary>
+	/// Bodies alive at once. The marsh budget was sized for water and shore
+	/// animals in one wetland; a herd and the pack hunting it need their own
+	/// room, and only exist when the ecology is switched on.
+	/// </summary>
+	public const int EcologyPopulation = MarshPopulation + 12;
+	private int PopulationLimit => _window == null ? Population
+		: _ecology ? EcologyPopulation : MarshPopulation;
 	private const int BirdPopulation = 3;
 	private const float SpawnNear = 26f;
 	private const float SpawnFar = 74f;
@@ -134,7 +141,60 @@ public partial class Fauna : Node3D
 				_quarry.Add(new Ecology.HuntTarget(other.GlobalPosition, distance));
 		}
 		return Ecology.PackBehaviour.Decide(wolf.GlobalPosition, wolf.Heading, wolf.Den,
-			wolf.Stamina, _quarry);
+			wolf.Stamina, _quarry, wolf.Recovering);
+	}
+
+	private double _census;
+
+	/// <summary>Prey taken by wolves since this window opened.</summary>
+	public int Kills { get; private set; }
+
+	/// <summary>
+	/// What is alive around the traveller right now. A diagnostic, not a
+	/// mechanism: the field is the population, and this only says how much of
+	/// it currently has a body.
+	/// </summary>
+	private void Census(Vector3 player, double delta)
+	{
+		_census -= delta;
+		if (_census > 0.0) return;
+		_census = 5.0;
+		int deer = 0, rabbit = 0, goat = 0, wolf = 0, other = 0;
+		foreach (var animal in _live)
+		{
+			if (!IsInstanceValid(animal)) continue;
+			switch (animal.Kind)
+			{
+				case Species.Deer: deer++; break;
+				case Species.Rabbit: rabbit++; break;
+				case Species.Goat: goat++; break;
+				case Species.Wolf: wolf++; break;
+				default: other++; break;
+			}
+		}
+		int cell = _ecosystem?.Field?.IndexAt(Mathf.FloorToInt(player.X),
+			Mathf.FloorToInt(player.Z)) ?? -1;
+		string here = cell < 0 ? "no field" :
+			$"cell prey {_ecosystem.Field.PreyAt(cell):0.00} " +
+			$"predators {_ecosystem.Field.PredatorAt(cell):0.00} " +
+			$"grass {_ecosystem.Field.GrassAt(cell):0.00}";
+		// What the wolves are actually doing, which is the only way to tell a
+		// hunt that never starts from one that never concludes.
+		var packState = new System.Text.StringBuilder();
+		foreach (var animal in _live)
+		{
+			if (!IsInstanceValid(animal) || animal.Kind != Species.Wolf) continue;
+			float nearest = float.MaxValue;
+			foreach (var quarry in _live)
+				if (IsInstanceValid(quarry) && IsHerdSpecies(quarry.Kind))
+					nearest = Mathf.Min(nearest,
+						animal.GlobalPosition.DistanceTo(quarry.GlobalPosition));
+			var decision = HuntFor(animal);
+			packState.Append($" [{decision.Intent} prey@{(nearest == float.MaxValue ? -1f : nearest):0} " +
+			                 $"breath {animal.Stamina:0.00}]");
+		}
+		GD.Print($"[ecology-census] bodies deer {deer} rabbit {rabbit} goat {goat} " +
+		         $"wolf {wolf} other {other}; kills {Kills}; {here};{packState}");
 	}
 
 	/// <summary>
@@ -162,6 +222,7 @@ public partial class Fauna : Node3D
 		}
 		if (taken == null) return;
 		_ecosystem?.ReportKill(taken.GlobalPosition);
+		Kills++;
 		_habitats.Remove(taken.HabitatKey);
 		_live.Remove(taken);
 		taken.QueueFree();
@@ -192,7 +253,11 @@ public partial class Fauna : Node3D
 		// can invalidate half the population at once, and at one animal per
 		// quarter second the meadow the player is walking into stays empty for the
 		// four seconds they are looking at it.
-		if (_ecology) ResolveKills();
+		if (_ecology)
+		{
+			ResolveKills();
+			Census(player, delta);
+		}
 
 		_retry -= delta;
 		if (_live.Count >= PopulationLimit || _retry > 0.0) return;
@@ -246,10 +311,71 @@ public partial class Fauna : Node3D
 		}
 	}
 
+	/// <summary>
+	/// Place a grazing animal or a wolf on open ground, at a density the field
+	/// decides.
+	///
+	/// Deliberately separate from the marsh spawn below, which encodes the
+	/// southern wetland's own rules and must keep working untouched when the
+	/// ecology is off.
+	/// </summary>
+	private bool TrySpawnEcologyLand(Vector3 player, AtlasSectorWindow window)
+	{
+		if (_ecosystem?.Field == null) return false;
+		const int spacing = 24;
+		int cx = Mathf.FloorToInt(player.X / spacing), cz = Mathf.FloorToInt(player.Z / spacing);
+		for (int ring = 1; ring <= (int)(MarshSpawnRadius / spacing); ring++)
+		for (int dz = -ring; dz <= ring; dz++)
+		for (int dx = -ring; dx <= ring; dx++)
+		{
+			if (Math.Abs(dx) != ring && Math.Abs(dz) != ring) continue;
+			int cellX = cx + dx, cellZ = cz + dz;
+			long key = ((long)cellX << 32) | (uint)cellZ | 1L << 63;
+			if (_habitats.Contains(key)) continue;
+			int seed = unchecked(_seed ^ cellX * 374761393 ^ cellZ * 668265263 ^ 0x1EC0);
+			var rng = new Rng(seed);
+			float admission = rng.Next();
+			var point = new Vector3((cellX + rng.Range(.2f, .8f)) * spacing, 0f,
+				(cellZ + rng.Range(.2f, .8f)) * spacing);
+			float distance = new Vector2(point.X - player.X, point.Z - player.Z).Length();
+			if (distance < 18f || distance > MarshSpawnRadius) continue;
+
+			// The field decides how crowded this ground is. A valley that has
+			// been hunted out stays quiet until the equation refills it.
+			var field = _ecosystem.Field;
+			int cell = field.IndexAt(Mathf.FloorToInt(point.X), Mathf.FloorToInt(point.Z));
+			if (field.FertilityAt(cell) <= 0.01f) continue;
+			float preyChance = Mathf.Clamp(field.PreyAt(cell) / 6f, 0f, .5f);
+			float wolfChance = Mathf.Clamp(field.PredatorAt(cell) / 3f, 0f, .16f);
+			Species species;
+			if (admission < wolfChance) species = Species.Wolf;
+			else if (admission < wolfChance + preyChance)
+				species = rng.Chance(.5f) ? Species.Deer : rng.Chance(.6f) ? Species.Rabbit : Species.Goat;
+			else continue;
+			if (!EcologySpeciesAllowed(species, _ecology)) continue;
+
+			int alive = 0;
+			foreach (var animal in _live) if (animal.Kind == species) alive++;
+			if (alive >= (species == Species.Wolf ? 4 : 8)) continue;
+			if (!TryEcologyLandHabitat(window, point, out float ground)) continue;
+
+			point.Y = ground;
+			var born = new Critter { HabitatKey = key };
+			AddChild(born);
+			born.GlobalPosition = point;
+			born.Setup(species, _window, _inkLight, _inkDark, seed);
+			_live.Add(born);
+			_habitats.Add(key);
+			return true;
+		}
+		return false;
+	}
+
 	private void TrySpawnAtlas(Vector3 player)
 	{
 		var window = _window();
 		if (window == null) return;
+		if (_ecology && TrySpawnEcologyLand(player, window)) return;
 		const int spacing = 24;
 		int cx = Mathf.FloorToInt(player.X / spacing), cz = Mathf.FloorToInt(player.Z / spacing);
 		for (int ring = 1; ring <= (int)(MarshSpawnRadius / spacing); ring++)
@@ -288,6 +414,87 @@ public partial class Fauna : Node3D
 			_habitats.Add(key);
 			return;
 		}
+	}
+
+	/// <summary>
+	/// Dry, level, unobstructed ground for a grazing animal or a wolf.
+	///
+	/// Separate from <see cref="TryAtlasHabitat"/> on purpose. That one answers
+	/// for the southern marsh and encodes the marsh's own requirements — reed
+	/// ground, southern latitude, standing water. Land animals want the
+	/// opposite of most of that, and folding both into one function would mean
+	/// a chain of species exceptions inside a habitat rule.
+	/// </summary>
+	internal static bool TryEcologyLandHabitat(AtlasSectorWindow window, Vector3 at,
+		out float ground)
+	{
+		ground = 0f;
+		if (window == null) return false;
+		var data = window.Data;
+		var grid = window.Grid;
+		int x = Mathf.FloorToInt(at.X) - data.OriginX, z = Mathf.FloorToInt(at.Z) - data.OriginZ;
+		if (x < 2 || z < 2 || x >= data.Width - 2 || z >= data.Depth - 2) return false;
+
+		int i = z * data.Width + x;
+		if (data.WaterSurface[i] > 0) return false;
+
+		int bed = grid.Top[i];
+		byte cap = grid.Cap[i];
+		if (cap is not (Palette.MOSS or Palette.MUD or Palette.SAND) &&
+			!Palette.IsGrassSurface(cap)) return false;
+		if (grid.MeshHeightAt(x, z) > bed) return false;
+
+		// Level enough to stand on, and clear enough overhead to walk through.
+		// A creature spawned in a crevice spends its life jittering against it.
+		for (int dz = -1; dz <= 1; dz++)
+		for (int dx = -1; dx <= 1; dx++)
+		{
+			int n = (z + dz) * data.Width + x + dx;
+			if (data.WaterSurface[n] > 0) return false;
+			if (Math.Abs(grid.Top[n] - bed) > 1) return false;
+			for (int y = bed + 1; y <= bed + 3; y++)
+				if (grid.SolidAt(x + dx, y, z + dz)) return false;
+		}
+		ground = bed;
+		return true;
+	}
+
+	/// <summary>
+	/// Can a land animal stand on this block right now?
+	///
+	/// Deliberately looser than <see cref="TryEcologyLandHabitat"/>. That one
+	/// picks a birthplace and wants flat open ground; this one asks whether a
+	/// walking creature may take one more step, and a walking creature crosses
+	/// slopes, shoulders and terraces all day. Using the spawn rule for movement
+	/// refused every step off perfectly level ground, which pinned wolves at
+	/// eighteen units from prey they could see and never reach.
+	/// </summary>
+	internal static bool TryEcologyLandStep(AtlasSectorWindow window, Vector3 at,
+		float fromGround, out float ground)
+	{
+		ground = 0f;
+		if (window == null) return false;
+		var data = window.Data;
+		var grid = window.Grid;
+		int x = Mathf.FloorToInt(at.X) - data.OriginX, z = Mathf.FloorToInt(at.Z) - data.OriginZ;
+		if (x < 2 || z < 2 || x >= data.Width - 2 || z >= data.Depth - 2) return false;
+
+		int i = z * data.Width + x;
+		if (data.WaterSurface[i] > 0) return false;
+
+		int bed = grid.Top[i];
+		byte cap = grid.Cap[i];
+		if (cap is not (Palette.MOSS or Palette.MUD or Palette.SAND) &&
+			!Palette.IsGrassSurface(cap)) return false;
+		if (grid.MeshHeightAt(x, z) > bed) return false;
+		// One terrace at a time, measured against the ground being walked on
+		// rather than the live height: mid-hop those differ by most of a step.
+		if (MathF.Abs(bed - fromGround) > Terrain.Step + 0.5f) return false;
+		for (int y = bed + 1; y <= bed + 2; y++)
+			if (grid.SolidAt(x, y, z)) return false;
+
+		ground = bed;
+		return true;
 	}
 
 	internal static bool TryAtlasHabitat(AtlasSectorWindow window, Species species, Vector3 at,
@@ -426,8 +633,17 @@ public partial class Critter : Node3D
 	/// <summary>Breath, 0 to 1. Only sprinting spends it.</summary>
 	public float Stamina { get; private set; } = 1f;
 
-	public bool HabitatValid() => _window == null ||
-		Fauna.TryAtlasHabitat(_window(), _kind, GlobalPosition, out _, out _);
+	/// <summary>Broke off last frame, and will not commit again until recovered.</summary>
+	public bool Recovering { get; private set; }
+
+	public bool HabitatValid()
+	{
+		if (_window == null) return true;
+		// Land animals answer to the land rule; the marsh animals to the marsh's.
+		return Fauna.IsHerdSpecies(_kind) || Fauna.IsPredatorSpecies(_kind)
+			? Fauna.TryEcologyLandStep(_window(), GlobalPosition, _groundY, out _)
+			: Fauna.TryAtlasHabitat(_window(), _kind, GlobalPosition, out _, out _);
+	}
 
 	public void Setup(Species kind, Func<AtlasSectorWindow> window, ShaderMaterial inkLight,
 		ShaderMaterial inkDark, int seed)
@@ -439,7 +655,11 @@ public partial class Critter : Node3D
 		_rng = new Rng(seed);
 		_phase = _rng.Next() * 6f;
 		_yaw = _rng.Next() * Mathf.Tau;
-		if (!Fauna.TryAtlasHabitat(window(), kind, GlobalPosition, out _groundY, out _waterSurface))
+		bool land = Fauna.IsHerdSpecies(kind) || Fauna.IsPredatorSpecies(kind);
+		bool placed = land
+			? Fauna.TryEcologyLandHabitat(window(), GlobalPosition, out _groundY)
+			: Fauna.TryAtlasHabitat(window(), kind, GlobalPosition, out _groundY, out _waterSurface);
+		if (!placed)
 			throw new InvalidOperationException("Wildlife spawn has no matching habitat");
 		Den = GlobalPosition;
 		Build();
@@ -697,6 +917,7 @@ public partial class Critter : Node3D
 			Stamina = Mathf.Clamp(Stamina + dt * (sprinting
 				? -Ecology.PackBehaviour.StaminaDrainPerSecond
 				: Ecology.PackBehaviour.StaminaRegenPerSecond), 0f, 1f);
+			Recovering = decision.Intent == Ecology.PackIntent.Recover;
 			if (decision.Intent != Ecology.PackIntent.Wander) _speed = Cruise;
 		}
 
@@ -902,6 +1123,12 @@ public partial class Critter : Node3D
 	{
 		if (_window != null)
 		{
+			// Land animals answer to the land rule. Sending them through the
+			// marsh rule refuses every step outside the southern wetland, and a
+			// creature whose every step is refused does not stand still — it
+			// turns on the spot forever, which looks like a frozen world.
+			if (Fauna.IsHerdSpecies(_kind) || Fauna.IsPredatorSpecies(_kind))
+				return Fauna.TryEcologyLandStep(_window(), at, _groundY, out ground);
 			if (!Fauna.TryAtlasHabitat(_window(), _kind, at, out ground, out float surface)) return false;
 			if (_kind == Species.Heron && Math.Abs(ground - _groundY) > .35f) return false;
 			_waterSurface = surface;
