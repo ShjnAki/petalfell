@@ -69,6 +69,38 @@ public partial class Fauna : Node3D
 
 	public int LiveCount => _live.Count;
 
+	/// <summary>
+	/// Which creatures read as a group. Birds already flock in their own way and
+	/// the water and marsh animals are deliberately solitary, so the herd is the
+	/// grazing land animals and nothing else.
+	/// </summary>
+	public static bool IsHerdSpecies(Species species) =>
+		species is Species.Deer or Species.Rabbit or Species.Goat;
+
+	private bool _ecology;
+	private readonly List<Ecology.HerdNeighbour> _neighbours = new();
+
+	/// <summary>
+	/// Turn the ecology on. Off — the ordinary case — no creature is given a
+	/// steering delegate and Advance runs exactly the code it ran before.
+	/// </summary>
+	public void SetEcologyEnabled(bool enabled) => _ecology = enabled;
+
+	/// <summary>
+	/// Herd-mates of one creature. A linear scan: there are at most 27 bodies
+	/// alive at once, so any index would cost more to maintain than to skip.
+	/// </summary>
+	private Vector3 SteerHerd(Critter self)
+	{
+		_neighbours.Clear();
+		foreach (var other in _live)
+		{
+			if (other == self || !IsInstanceValid(other) || other.Kind != self.Kind) continue;
+			_neighbours.Add(new Ecology.HerdNeighbour(other.GlobalPosition, other.Heading));
+		}
+		return Ecology.HerdBehaviour.Steer(self.GlobalPosition, self.Heading, _neighbours);
+	}
+
 	public void Advance(Vector3 player, double delta)
 	{
 		if (_terrain == null && _window == null) return;
@@ -85,6 +117,7 @@ public partial class Fauna : Node3D
 				c.QueueFree();
 				continue;
 			}
+			c.Steering = _ecology && IsHerdSpecies(c.Kind) ? SteerHerd : null;
 			c.Advance(player, delta);
 		}
 
@@ -300,6 +333,14 @@ public partial class Critter : Node3D
 	private Func<AtlasSectorWindow> _window;
 	private float _waterSurface = Palette.WaterLevel;
 	public long HabitatKey { get; set; }
+
+	/// <summary>
+	/// Optional steering, supplied by the ecology. Null in ordinary play, which
+	/// is what keeps the flag honest: no delegate, no behaviour change.
+	/// </summary>
+	public Func<Critter, Vector3> Steering { get; set; }
+
+	public Vector3 Heading => _heading;
 
 	public bool HabitatValid() => _window == null ||
 		Fauna.TryAtlasHabitat(_window(), _kind, GlobalPosition, out _, out _);
@@ -541,6 +582,15 @@ public partial class Critter : Node3D
 			_speed = rest ? 0f : Cruise * _rng.Range(0.55f, 1.05f);
 			float turn = _rng.Bell() * 1.5f;
 			_heading = _heading.Rotated(Vector3.Up, turn);
+		}
+
+		// The herd bends the wander rather than replacing it, and never while
+		// startled — a bolting animal is not thinking about its neighbours.
+		if (Steering != null && _startle <= 0.01f && _speed > 0.01f)
+		{
+			var steered = Steering(this);
+			if (steered.LengthSquared() > 0.0001f)
+				_heading = _heading.Lerp(steered, 1f - Mathf.Exp(-2.5f * dt)).Normalized();
 		}
 
 		float speed = _speed + _startle * Cruise * 1.4f;

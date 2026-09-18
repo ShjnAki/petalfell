@@ -154,6 +154,7 @@ public partial class AtlasSectorReview : Node3D
 	private Character _character;
 	private AmbientDrift _ambientDrift;
 	private Fauna _fauna;
+	private Ecology.Ecosystem _ecosystem;
 	private PlanarReflection _reflection;
 	private ShaderMaterial _inkLight;
 	private ShaderMaterial _inkDark;
@@ -318,6 +319,7 @@ public partial class AtlasSectorReview : Node3D
 			else if (args[i].StartsWith("--review-focus=")) focus = args[i][15..];
 			else if (args[i] == "--terrain-focus" && i + 1 < args.Length) focus = args[++i];
 			else if (args[i].StartsWith("--terrain-focus=")) focus = args[i][16..];
+			else if (args[i] == "--ecology") Ecology.Ecosystem.Enabled = true;
 			else if (args[i] == "--map-definition" && i + 1 < args.Length) mapPath = args[++i];
 			else if (args[i].StartsWith("--map-definition=")) mapPath = args[i][17..];
 		}
@@ -654,6 +656,16 @@ public partial class AtlasSectorReview : Node3D
 			_fauna = new Fauna { Name = "SouthernWildlife" };
 			AddChild(_fauna);
 			_fauna.Setup(() => _window, _inkLight, _inkDark, _worldSeed);
+			if (Ecology.Ecosystem.Enabled)
+			{
+				_ecosystem = new Ecology.Ecosystem { Name = "Ecosystem" };
+				AddChild(_ecosystem);
+				_ecosystem.Setup(_mapDefinition.CanonicalAtlas, _worldSeed);
+				_fauna.SetEcologyEnabled(true);
+				GD.Print($"[ecology] field {_ecosystem.Field.Columns}x{_ecosystem.Field.Rows} cells; " +
+				         $"start prey {_ecosystem.Field.Totals().Prey:0} " +
+				         $"predators {_ecosystem.Field.Totals().Predator:0}");
+			}
 			_started = true;
 
 			if (_playabilitySmoke != null) await RunPlayabilitySmoke(_playabilitySmoke);
@@ -1686,6 +1698,7 @@ public partial class AtlasSectorReview : Node3D
 		Vector3 presentation = _player.AdvancePresentation(delta);
 		_character.GlobalPosition = presentation;
 		_ambientDrift?.Advance(_player.GlobalPosition, delta, _day.NightAmount);
+		_ecosystem?.Advance(delta);
 		_fauna?.Advance(_player.GlobalPosition, delta);
 		if (_playable)
 		{

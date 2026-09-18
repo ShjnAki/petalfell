@@ -159,6 +159,61 @@ public partial class EcologyFieldSmoke : Node
 			}
 			Assert(run.Verdict == "stable", $"{harnessHours} simulated hours ended {run.Verdict}");
 
+			// The node must tick the field at its own rate, not once per frame.
+			var ecosystem = new Ecosystem();
+			ecosystem.Setup(atlas, map.DefaultSeed);
+			float startPrey = ecosystem.Field.Totals().Prey;
+			for (int frame = 0; frame < 600; frame++) ecosystem.Advance(1.0 / 60.0);
+			Assert(MathF.Abs(ecosystem.Field.ElapsedSeconds - 10f) < 1.1f,
+				$"600 frames at 60 fps is ten seconds of field time, got {ecosystem.Field.ElapsedSeconds}");
+			Assert(ecosystem.Field.Totals().Prey != startPrey, "the field did not advance at all");
+			Assert(!Ecosystem.Enabled, "the ecology must be off unless the flag asks for it");
+			ecosystem.QueueFree();
+
+			// Alone, a creature keeps its own heading: no neighbours, no herd.
+			var alone = new System.Collections.Generic.List<HerdNeighbour>();
+			var kept = HerdBehaviour.Steer(Vector3.Zero, Vector3.Forward, alone);
+			Assert(kept.IsEqualApprox(Vector3.Forward),
+				$"a lone creature must keep its heading, got {kept}");
+
+			// A group off to one side pulls a creature towards it.
+			var group = new System.Collections.Generic.List<HerdNeighbour>
+			{
+				new(new Vector3(6f, 0f, 0f), Vector3.Forward),
+				new(new Vector3(7f, 0f, 1f), Vector3.Forward),
+			};
+			var pulled = HerdBehaviour.Steer(Vector3.Zero, Vector3.Forward, group);
+			Assert(pulled.X > 0.1f, $"cohesion must pull towards the group, got {pulled}");
+
+			// A neighbour pressed against it pushes it away, harder than cohesion pulls.
+			var touching = new System.Collections.Generic.List<HerdNeighbour>
+			{
+				new(new Vector3(0.8f, 0f, 0f), Vector3.Forward),
+			};
+			var pushed = HerdBehaviour.Steer(Vector3.Zero, Vector3.Forward, touching);
+			Assert(pushed.X < -0.1f, $"separation must win at touching distance, got {pushed}");
+
+			// Beyond the herd radius a creature is scenery, not company.
+			var distant = new System.Collections.Generic.List<HerdNeighbour>
+			{
+				new(new Vector3(40f, 0f, 0f), Vector3.Right),
+			};
+			var ignored = HerdBehaviour.Steer(Vector3.Zero, Vector3.Forward, distant);
+			Assert(ignored.IsEqualApprox(Vector3.Forward),
+				$"a creature 40 units away is not in the herd, got {ignored}");
+
+			// The result is a heading, never a velocity.
+			Assert(MathF.Abs(pulled.Length() - 1f) < 0.001f,
+				$"steer must return a unit vector, got {pulled.Length()}");
+
+			// Species that read as a group, and those that do not.
+			Assert(Fauna.IsHerdSpecies(Species.Deer), "deer herd");
+			Assert(Fauna.IsHerdSpecies(Species.Rabbit), "rabbits herd");
+			Assert(Fauna.IsHerdSpecies(Species.Goat), "goats herd");
+			Assert(!Fauna.IsHerdSpecies(Species.Fish), "fish are not a land herd");
+			Assert(!Fauna.IsHerdSpecies(Species.Heron), "herons are solitary");
+			Assert(!Fauna.IsHerdSpecies(Species.Butterfly), "butterflies are not a herd");
+
 			if (!csvOnly) GD.Print($"[ecology-field-smoke] emptied cell {hole} refilled to " +
 			         $"{refill.PreyAt(hole):0.00} prey in thirty minutes");
 
