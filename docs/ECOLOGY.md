@@ -36,15 +36,94 @@ quarry and stops where the ground refuses it, so hunts conclude on open ground
 and stall against broken ground. Evidence and the rest of the detail are in
 [`building-knowledge/ecology/land-fauna-and-the-hunt-2026-09.md`](../building-knowledge/ecology/land-fauna-and-the-hunt-2026-09.md).
 
-Run it with:
+---
+
+## Trying it
+
+Five checks, cheapest first. Nothing here needs a GPU except the last two.
+
+### 1. The rules — about twenty seconds
 
 ```bash
-godot-mono --path . -- --terrain-focus=2692,2164 --ecology
+./tools/world-authoring.sh verify-ecology-field
 ```
 
-`C` strikes at what is in front of the traveller: four blows take an animal
-down. Striking a grazing animal feeds you. Striking a wolf makes that valley a
-place you are hunted in.
+Asserts the herd steering, the hunting decisions, the stamina hysteresis, the
+traveller's vitality and breath, the grudge, and that a kill touches exactly
+one field cell. It also refuses to run at all if a third caller has been added
+to `ReportKill`, because the unload path must never reach the field.
+
+Expect exit 0 and four `[ecology-field-smoke]` lines.
+
+### 2. The population curves
+
+```bash
+./tools/world-authoring.sh ecology-harness 10
+```
+
+The argument is simulated hours; ten of them take a few seconds. CSV on stdout.
+Prey should swing roughly 8,000 to 23,000 and keep swinging, predators 1,400 to
+4,400, grass steady near 4,500, and the predator peak should lag the prey peak.
+Neither species may reach zero.
+
+### 3. The living world, in numbers — no window needed
+
+```bash
+godot-mono --headless --path . -- --terrain-focus 2692,2164 --ecology
+```
+
+An `[ecology-census]` line every five seconds:
+
+```
+[ecology-census] bodies deer 3 rabbit 2 goat 0 wolf 2 other 20; kills 2;
+                 traveller vitality 1.00 breath 1.00 hunger 0.98
+                 bitten 0 ate 0 grudge no;
+                 cell prey 0.23 predators 0.02 grass 0.07;
+                 [Stalk prey@46 breath 0.32] [Stalk prey@117 breath 1.00]
+```
+
+Live bodies by species, prey taken, the traveller's condition, the field values
+under their feet, and what each wolf is doing with its distance to the nearest
+quarry and its breath. That last part is the only thing that distinguishes a
+hunt that never starts from one that never concludes. `Ctrl-C` to stop.
+
+### 4. In a window
+
+```bash
+godot-mono --path . -- --terrain-focus 2692,2164 --ecology
+```
+
+W/A/S/D to walk, Shift to slow-walk, Q/E to turn the camera, wheel to zoom, M
+for the map. **`C` strikes at what is in front of you**: four blows take an
+animal down. Striking a grazing animal feeds you. Striking a wolf makes that
+valley a place you are hunted in — and only that valley.
+
+Look for grazing animals drifting together instead of scattering, and wolves
+leaving for them.
+
+### 5. The negative control — the one that matters for review
+
+```bash
+godot-mono --path . -- --terrain-focus 2692,2164
+```
+
+Without the flag: no wolf, no `[ecology]` line, and wildlife behaving exactly
+as it does on `main`. Any difference at all is a bug.
+
+Mechanically, the same claim:
+
+```bash
+./tools/world-authoring.sh verify-production-playability 2692,2164 land
+./tools/world-authoring.sh audit
+```
+
+Both must pass and print nothing about the ecology.
+
+### If a check fails to load its script
+
+`Invalid call. Nonexistent function 'new' in base 'CSharpScript'` is not a
+missing script — it is a stale C# assembly, which a `godot-mono --headless
+--import` leaves behind. Run `dotnet build` and try again.
 
 ---
 
