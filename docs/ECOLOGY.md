@@ -20,10 +20,16 @@ Implemented and mechanically verified:
   in it;
 - `--ecology` gating all of it, with the default world provably untouched.
 
-Not implemented: the player's vitality, breath and hunger; death and the
-campfire; the grudge and any hostility toward the traveller. Wolves currently
-ignore the traveller completely, which is the intended end state for an
-un-provoked player but is presently the *only* state.
+Also implemented: the traveller's vitality, breath and hunger; bites, striking
+back, hunting for food, going down and waking; and the grudge, with peace as
+the default.
+
+Not implemented: sprinting. This world has no sprint — the traveller walks or
+slow-walks — so breath is carried and tested but nothing spends it. Escaping a
+grudging pack is done by leaving its valley, which is the designed counterplay
+anyway. Wiring a sprint means changing the author's movement code.
+
+Not reachable: waking at a campfire, and carrying meat. See section 5.
 
 Known limitation: a wolf cannot path around terrain. It steers straight at its
 quarry and stops where the ground refuses it, so hunts conclude on open ground
@@ -35,6 +41,10 @@ Run it with:
 ```bash
 godot-mono --path . -- --terrain-focus=2692,2164 --ecology
 ```
+
+`C` strikes at what is in front of the traveller: four blows take an animal
+down. Striking a grazing animal feeds you. Striking a wolf makes that valley a
+place you are hunted in.
 
 ---
 
@@ -124,7 +134,7 @@ consequences.
 | Player's relation to the ecology | Both **prey and predator** and **living resource**: the player hunts, can be hunted, and the ecology feeds the existing fishing/inventory/campfire loop |
 | Player survival depth | **Vitality, breath, hunger.** No thirst, no temperature |
 | Trophic chain | **Wolf ported from the source project** — deer/rabbit/goat ↑ wolf, with packs, dens, endurance hunting, water refuge |
-| Death | **Wake at the last lit campfire**, carried food lost, low vitality. Progression and discovered places are kept |
+| Death | **Wake at the last lit campfire**, carried food lost, low vitality — *not reachable, see below*. The traveller currently wakes where they fell |
 | Simulation architecture | **Persistent coarse field + streamed bodies as its projection** |
 | Hostility | **Wolves ignore the player until they kill one.** Then the wronged pack engages the player, inside its territory only |
 | Grudge scope | **The wronged pack**, durably. Other packs stay indifferent. Tunable to witnesses-only or to decay |
@@ -315,14 +325,25 @@ player at 11, so the wolf gains 1 m/s — but the wolf's wind lasts 25 s and the
 player's 30. **You do not escape by speed, you escape by breath.** Caught at
 10 m it is a different matter: three bites kill.
 
-Hunger consumes meat; meat comes from hunting and from the fishing system that
-already exists; cooking comes from the campfire that already exists. Nothing new
-is needed on the item side — `FishingSystem`, `GlobalInventory` and
-`CampfireSystem` are there and plug in.
+**A correction to this section, found while implementing it.**
+`FishingSystem`, `GlobalInventory`, `CampfireSystem` and `SkillSystem` all exist
+in `src/` and **none of them is constructed by the production scene** — nothing
+anywhere calls their constructors. This document previously claimed they "are
+there and plug in". They are there, and they are switched off.
 
-Death wakes the player at the last lit campfire, carried food lost, vitality
-low. Lighting a fire stops being decorative and becomes the act of setting a
-waypoint.
+That removes two things this design assumed. There is no inventory to carry
+meat in, and there are no fires to wake at. Wiring four dormant subsystems of
+the author's is well outside what an ecology contribution should be doing, so:
+
+- **Hunger is fed where the animal falls.** Striking a grazing animal kills it,
+  feeds the traveller, and tells the field. No inventory, no cooking, nothing
+  switched on — and it is the source project's own eat-from-the-kill behaviour
+  rather than an invention.
+- **Death wakes the traveller where they fell**, badly weakened. That is the
+  gentler of the two sanctions that were considered, taken as an honest
+  fallback rather than a pretend campfire. The campfire path is written and
+  `CampfireSystem` now remembers its last lit fire, so the intended behaviour
+  needs only for fires to reach the scene.
 
 ---
 
