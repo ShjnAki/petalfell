@@ -6,6 +6,12 @@ namespace Petalfell.Ecology;
 /// <summary>Something worth chasing, as the hunt sees it.</summary>
 public readonly record struct HuntTarget(Vector3 Position, float Distance);
 
+/// <summary>
+/// The traveller, and everything that decides whether a wolf will touch them.
+/// </summary>
+public readonly record struct TravellerThreat(Vector3 Position, float Distance,
+	bool Grudge, int PackNearby);
+
 /// <summary>What a wolf has decided to do this moment.</summary>
 public enum PackIntent
 {
@@ -71,6 +77,12 @@ public static class PackBehaviour
 	/// <summary>Fraction recovered per second when not sprinting.</summary>
 	public const float StaminaRegenPerSecond = 1f / 15f;
 
+	/// <summary>
+	/// Wolves needed around a wolf before it dares take on the traveller. One
+	/// alone does not, whatever it remembers.
+	/// </summary>
+	public const int PackMinForTraveller = 2;
+
 	private const float StalkSpeed = 1.15f;
 	private const float SprintSpeed = 2.6f;
 	private const float RecoverSpeed = 0.55f;
@@ -80,9 +92,13 @@ public static class PackBehaviour
 	/// stored here, so the decision stays a function of its inputs.
 	/// </param>
 	public static PackDecision Decide(Vector3 position, Vector3 heading, Vector3 den,
-		float stamina, IReadOnlyList<HuntTarget> prey, bool wasRecovering = false)
+		float stamina, IReadOnlyList<HuntTarget> prey, bool wasRecovering = false,
+		TravellerThreat? traveller = null)
 	{
 		var nearest = Nearest(prey);
+		if (traveller.HasValue && WillEngageTraveller(position, den, traveller.Value) &&
+			(!nearest.HasValue || traveller.Value.Distance < nearest.Value.Distance))
+			nearest = new HuntTarget(traveller.Value.Position, traveller.Value.Distance);
 		bool winded = wasRecovering ? stamina < RecoveredStamina : stamina <= RecoverStamina;
 
 		if (nearest.HasValue && !winded)
@@ -104,6 +120,25 @@ public static class PackBehaviour
 			? new PackDecision(PackIntent.Recover, wandering, RecoverSpeed)
 			: new PackDecision(PackIntent.Wander, wandering, 1f);
 	}
+
+	/// <summary>
+	/// Whether this wolf will take on the traveller at all.
+	///
+	/// Three conditions, all of them required, and the default is peace. A
+	/// traveller who has never killed a wolf can cross the whole continent,
+	/// walk past packs and watch them run down deer without being touched
+	/// once — the quiet world is the ordinary state, not a difficulty setting.
+	///
+	/// Killing a wolf changes that, but only for the valley it happened in, and
+	/// only while you are inside it. They never leave their range to come after
+	/// you, which means a grudging pack can be escaped simply by walking out of
+	/// its valley. That is how wolves behave, and it puts the geography back in
+	/// charge of the danger.
+	/// </summary>
+	public static bool WillEngageTraveller(Vector3 position, Vector3 den, TravellerThreat t) =>
+		t.Grudge
+		&& t.PackNearby >= PackMinForTraveller
+		&& Flat(position - den).Length() <= HomeRange;
 
 	/// <summary>
 	/// The recall to the den. Inside the range it does nothing; past the edge it

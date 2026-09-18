@@ -377,6 +377,58 @@ public partial class EcologyFieldSmoke : Node
 			Assert(!revived.Dead && revived.Vitality < 0.5f,
 				$"waking at a fire is alive but weak, got {revived.Vitality:0.00}");
 
+			// THE DEFAULT IS PEACE. A traveller who has never killed a wolf is not
+			// prey, however close they stand and however many wolves are there.
+			var atYourHeels = new TravellerThreat(new Vector3(0f, 0f, 5f), 5f,
+				Grudge: false, PackNearby: 4);
+			var peaceful = PackBehaviour.Decide(Vector3.Zero, Vector3.Forward, Vector3.Zero,
+				1f, noPrey, wasRecovering: false, traveller: atYourHeels);
+			Assert(peaceful.Intent == PackIntent.Wander,
+				$"an unprovoked traveller must be ignored, got {peaceful.Intent}");
+			Assert(!PackBehaviour.WillEngageTraveller(Vector3.Zero, Vector3.Zero, atYourHeels),
+				"no grudge, no engagement");
+
+			// A lone wolf does not dare, whatever it remembers.
+			var alone1 = new TravellerThreat(new Vector3(0f, 0f, 5f), 5f, Grudge: true, PackNearby: 1);
+			Assert(!PackBehaviour.WillEngageTraveller(Vector3.Zero, Vector3.Zero, alone1),
+				"one wolf does not take on a person");
+
+			// Grudge, a pack, and inside its own valley: now you are quarry.
+			var hunted = new TravellerThreat(new Vector3(0f, 0f, 5f), 5f, Grudge: true, PackNearby: 2);
+			Assert(PackBehaviour.WillEngageTraveller(Vector3.Zero, Vector3.Zero, hunted),
+				"a grudging pack in its own valley engages");
+			var engaged = PackBehaviour.Decide(Vector3.Zero, Vector3.Forward, Vector3.Zero,
+				1f, noPrey, wasRecovering: false, traveller: hunted);
+			Assert(engaged.Intent == PackIntent.Sprint,
+				$"an engaged pack commits, got {engaged.Intent}");
+
+			// Step outside the valley and it is over. They do not follow.
+			var outsideItsRange = new Vector3(900f, 0f, 0f);
+			Assert(!PackBehaviour.WillEngageTraveller(outsideItsRange, Vector3.Zero, hunted),
+				"a wolf beyond its own range does not pursue the traveller");
+
+			// A wolf prefers the nearer quarry, and a deer underfoot beats a
+			// person across the valley.
+			var deerUnderfoot = new System.Collections.Generic.List<HuntTarget>
+				{ new(new Vector3(0f, 0f, 3f), 3f) };
+			var farTraveller = new TravellerThreat(new Vector3(0f, 0f, 40f), 40f, true, 3);
+			var chose = PackBehaviour.Decide(Vector3.Zero, Vector3.Forward, Vector3.Zero,
+				1f, deerUnderfoot, wasRecovering: false, traveller: farTraveller);
+			Assert(chose.Heading.Z > 0.9f && chose.Intent == PackIntent.Sprint,
+				"the nearer quarry wins");
+
+			// The grudge belongs to the ground, and to the valley around it.
+			var remembering = new EcologyField(atlas.Width, atlas.Depth,
+				guide.GlobalBiomeAt, map.DefaultSeed);
+			int wronged = remembering.IndexAt(4500, 1900);
+			Assert(!remembering.GrudgeAt(wronged), "the world starts without a grudge");
+			remembering.RaiseGrudge(wronged);
+			Assert(remembering.GrudgeAt(wronged), "the valley remembers");
+			Assert(remembering.GrudgeAt(wronged + 1) && remembering.GrudgeAt(wronged - 1),
+				"a pack ranges wider than one cell");
+			Assert(!remembering.GrudgeAt(remembering.IndexAt(6400, 7360)),
+				"a valley on the far side of the continent has no reason to care");
+
 			if (!csvOnly) GD.Print($"[ecology-field-smoke] emptied cell {hole} refilled to " +
 			         $"{refill.PreyAt(hole):0.00} prey in thirty minutes");
 

@@ -34,6 +34,7 @@ public sealed class EcologyField
 	public float ElapsedSeconds { get; private set; }
 
 	private readonly float[] _grass, _prey, _predator, _fertility;
+	private readonly bool[] _grudge;
 	private readonly float[] _preyScratch, _predatorScratch;
 
 	/// <summary>
@@ -53,6 +54,7 @@ public sealed class EcologyField
 		_prey = new float[count];
 		_predator = new float[count];
 		_fertility = new float[count];
+		_grudge = new bool[count];
 		_preyScratch = new float[count];
 		_predatorScratch = new float[count];
 
@@ -125,6 +127,33 @@ public sealed class EcologyField
 	/// <summary>The same, for a predator. See <see cref="RemovePrey"/>.</summary>
 	public void RemovePredator(int index, float count) =>
 		_predator[index] = Math.Max(0f, _predator[index] - count);
+
+	/// <summary>
+	/// Do the wolves of this valley hold the traveller responsible for
+	/// something?
+	///
+	/// Grudge is carried by the ground rather than by individual animals,
+	/// because a pack is not a list of bodies — the bodies come and go with the
+	/// streaming, and the thing that persists is that this is a valley where
+	/// you are not welcome. It is also what gives the danger an address: the
+	/// traveller can decide never to go back.
+	/// </summary>
+	public bool GrudgeAt(int index) => _grudge[index];
+
+	/// <summary>
+	/// The traveller killed a wolf here. The valley remembers, and so do the
+	/// cells immediately around it, because a pack ranges wider than one
+	/// 128-block square.
+	/// </summary>
+	public void RaiseGrudge(int index)
+	{
+		_grudge[index] = true;
+		int row = index / Columns, col = index % Columns;
+		if (col > 0) _grudge[index - 1] = true;
+		if (col < Columns - 1) _grudge[index + 1] = true;
+		if (row > 0) _grudge[index - Columns] = true;
+		if (row < Rows - 1) _grudge[index + Columns] = true;
+	}
 
 	/// <summary>
 	/// Logistic grass, Lotka-Volterra prey and predators, per cell.
