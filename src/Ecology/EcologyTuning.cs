@@ -64,11 +64,23 @@ public static class EcologyTuning
 
 	/// <summary>
 	/// Share of the gap to the neighbouring average that levels out per second.
-	/// Animals walk. Without this an emptied valley could only refill by
-	/// spontaneous generation, and population waves would never cross the
-	/// continent. Must stay well below 1 for the stencil to remain stable.
+	///
+	/// Animals walk, so a valley emptied to nothing can be recolonised from the
+	/// valleys around it rather than by spontaneous generation. But this is also
+	/// the rate at which the world FORGETS what was done to it, and at the first
+	/// value tried — 0.015, a time constant of about a minute — a cell hunted
+	/// down to zero was statistically indistinguishable from an untouched one
+	/// ten minutes later. Over-hunting cost nothing, which removes the only
+	/// reason to care where you hunt.
+	///
+	/// At 0.0004 the time constant is roughly forty minutes: a place you emptied
+	/// is still poorer when you come back through it, and recovery comes mostly
+	/// from its own survivors breeding, with immigration as a slow floor. That
+	/// is both the better mechanic and the better ecology.
+	///
+	/// Must stay well below 1 for the stencil to remain stable.
 	/// </summary>
-	public const float Diffusion = 0.015f;
+	public const float Diffusion = 0.0004f;
 
 	// --- Rarity refuge ------------------------------------------------------
 

@@ -120,6 +120,17 @@ case "$command_name" in
 	  --script res://tools/water-jump-smoke.gd
 	;;
 	verify-ecology-field)
+	# The field may only be told about a death by a kill. A creature unloaded
+	# because the traveller walked away is not dead, and a second caller here
+	# would empty the continent behind them one valley per walk. Guarded
+	# structurally because it cannot be caught by watching a short run.
+	kill_callers=$(grep -rn "ReportKill" "$project_dir/src" --include="*.cs" \
+	  | grep -v "public void ReportKill" | wc -l)
+	if [[ "$kill_callers" != "1" ]]; then
+	  echo "[ecology] ReportKill has $kill_callers callers; exactly one is allowed" >&2
+	  grep -rn "ReportKill" "$project_dir/src" --include="*.cs" >&2
+	  exit 65
+	fi
 	exec godot-mono --headless --path "$project_dir" \
 	  --script res://tools/ecology-field-smoke.gd
 	;;

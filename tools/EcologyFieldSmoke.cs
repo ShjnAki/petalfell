@@ -135,9 +135,25 @@ public partial class EcologyFieldSmoke : Node
 			}
 			Assert(hole >= 0, "no fertile cell with fertile neighbours was found");
 
+			// A comparable untouched cell, to measure the emptied one against.
+			int control = -1;
+			for (int i = 0; i < refill.CellCount && control < 0; i++)
+				if (i != hole && MathF.Abs(refill.FertilityAt(i) - refill.FertilityAt(hole)) < 0.01f)
+					control = i;
+			Assert(control >= 0, "no comparable cell to measure recovery against");
+
 			refill.RemovePrey(hole, 99999f);
 			Assert(refill.PreyAt(hole) == 0f, "the cell must start empty");
-			for (int step = 0; step < 1800; step++) refill.Advance(1f);
+
+			// Emptying a valley has to COST something. Ten minutes later it must
+			// still be visibly poorer than its untouched twin, or hunting a place
+			// out means nothing and the whole point of the field is lost.
+			for (int step = 0; step < 600; step++) refill.Advance(1f);
+			Assert(refill.PreyAt(hole) < refill.PreyAt(control) * 0.6f,
+				$"ten minutes after being emptied the valley already matches an " +
+				$"untouched one: {refill.PreyAt(hole):0.00} against {refill.PreyAt(control):0.00}");
+
+			for (int step = 0; step < 1200; step++) refill.Advance(1f);
 			Assert(refill.PreyAt(hole) > 0.05f,
 				$"an emptied valley did not refill from its neighbours: {refill.PreyAt(hole)}");
 

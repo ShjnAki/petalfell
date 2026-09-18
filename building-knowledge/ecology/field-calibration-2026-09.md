@@ -16,16 +16,21 @@ A coarse Lotka–Volterra field over the whole atlas can be made to agree with a
 fine agent simulation by fitting its coefficients to two measured properties of
 that simulation — the prey-to-predator ratio and the standing grass level — and
 never to its raw population counts, which are in different units. Doing so
-produces a damped oscillation that converges on a stable interior equilibrium
-over ten simulated hours. It does not reproduce the agent simulation's
-trajectory, and it is not a substitute for it.
+produces a sustained coexistence cycle over ten simulated hours. It does not
+reproduce the agent simulation's trajectory, and it is not a substitute for it.
+
+The spatial diffusion rate turned out to govern something the ratio and grass
+targets say nothing about: how long the world remembers being hunted. Fitting
+only to the equilibrium leaves that free, and the value that looked right for
+smoothing made over-hunting consequence-free.
 
 ## Evidence
 
 | Claim | State | Scope | Evidence | Remaining uncertainty |
 |---|---|---|---|---|
 | The field sustains both species for ten simulated hours | `mechanical` | tool-specific | `./tools/world-authoring.sh ecology-harness 10` — prey settle near 15,800, predators near 2,100, neither reaches an extinction or explosion bound | Untested beyond ten hours, and untested against player hunting pressure |
-| Oscillation is damped, not sustained or growing | `mechanical` | tool-specific | Successive prey amplitudes 17,000 → 11,000 → 6,000 → 3,000 in the same run | Whether local per-cell variation stays lively once the continental total settles is not yet measured |
+| The cycle is sustained, neither damping to a fixed point nor growing | `mechanical` | tool-specific | Ten-hour run: prey swing 8,400–23,400 and keep swinging; predators 1,400–4,400 | Untested beyond ten hours |
+| Over-hunting a valley has a durable cost | `mechanical` | tool-specific | `verify-ecology-field` empties one cell and requires it to still hold under 60% of a comparable untouched cell ten minutes later, while recovering above zero within thirty | The figures are chosen, not derived from anything; no play evidence that the duration feels right |
 | Equilibrium ratio is close to the source simulation's | `mechanical` | tool-specific | Field settles near 7.5 prey per predator; source harness holds ~150 herbivores to ~30 carnivores, i.e. 5.0 | The gap is unexplained; 7.5 was accepted rather than fitted further |
 | Grass stays near saturation, as in the source | `mechanical` | tool-specific | Field grass holds ~94% of total fertility; source harness reports biomass 0.985 | — |
 | The source simulation is metastable, not stable | `mechanical` | external | `pnpm harness hours=2` in `fable_sim`: seed `fable-1` loses all herbivores at t=3780 s; seeds `fable-2` and `fable-3` return STABLE over two hours | Unknown how many seeds collapse; only three were run |
@@ -88,6 +93,13 @@ failing and the verdict said nothing. Replaced by an additional `collapse`
 state: a species whose final sample is both its own minimum and below 40% of
 its start has not coexisted, it has merely not finished dying. Any verdict that
 only looks at bounds will make this mistake.
+
+**Fitting only the equilibrium leaves the world without a memory.** The ratio
+and grass targets are both satisfied by a diffusion rate of 0.015 per second,
+and that rate refills a valley hunted to zero inside ten minutes — the test
+that caught it found the emptied cell at 3.26 against an untouched 3.22. Every
+number the calibration targeted was correct and the mechanic they exist to
+serve was dead. **Test the consequence, not only the equilibrium.**
 
 **Fitting grazing pressure by intuition.** The first attempt raised
 `GrazingRate` sharply on the assumption that prey should be grass-limited. The

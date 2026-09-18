@@ -364,11 +364,19 @@ predator**, with **grass at 0.985**, meaning its prey are limited by wolves and
 not by forage. Solving the field's equilibrium conditions for those two targets
 gives the coefficients in `EcologyTuning.cs` in a single pass.
 
-The result, over ten simulated hours: a damped oscillation. Prey swing
-26,000 → 9,000, then 22,000 → 12,000, then 20,000 → 14,000, settling near
-15,800 prey to 2,100 predators with grass at 94% of capacity. The predator peak
-lags the prey peak by half a cycle, as it should. Continental totals settle;
-individual cells do not, and player hunting will keep them from doing so.
+The result, over ten simulated hours: a sustained cycle. Prey swing between
+roughly 8,000 and 23,000 and keep swinging, predators between 1,400 and 4,400,
+with grass holding near 94% of capacity throughout. The predator peak lags the
+prey peak, as it should. Nothing settles, which is the point: a continent that
+reached a fixed number would stop having anything to notice.
+
+Diffusion turned out to set that, and to set something more important. At the
+first value tried a valley hunted down to nothing was indistinguishable from an
+untouched one ten minutes later — over-hunting cost nothing at all, which
+removes the only reason to care where you hunt. Slowed by a factor of forty it
+gives the world a memory: a place you emptied is still poorer when you come
+back through it, recovery comes mostly from its own survivors breeding, and the
+continental cycle stops damping out as a side effect.
 
 The agent behaviour near the player keeps the original values verbatim; it is
 what the player actually sees. The field is fitted so that the two layers tell
