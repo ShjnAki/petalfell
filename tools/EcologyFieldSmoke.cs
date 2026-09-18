@@ -214,6 +214,17 @@ public partial class EcologyFieldSmoke : Node
 			Assert(!Fauna.IsHerdSpecies(Species.Heron), "herons are solitary");
 			Assert(!Fauna.IsHerdSpecies(Species.Butterfly), "butterflies are not a herd");
 
+			Assert(Fauna.IsPredatorSpecies(Species.Wolf), "the wolf hunts");
+			Assert(!Fauna.IsPredatorSpecies(Species.Deer), "deer do not hunt");
+			Assert(!Fauna.IsHerdSpecies(Species.Wolf), "a pack is not a herd");
+			// A wolf must never appear in a world that did not ask for one.
+			Assert(!Fauna.EcologySpeciesAllowed(Species.Wolf, ecologyEnabled: false),
+				"no wolf without the flag");
+			Assert(Fauna.EcologySpeciesAllowed(Species.Wolf, ecologyEnabled: true),
+				"the flag admits the wolf");
+			Assert(Fauna.EcologySpeciesAllowed(Species.Deer, ecologyEnabled: false),
+				"deer are not gated on the flag");
+
 			if (!csvOnly) GD.Print($"[ecology-field-smoke] emptied cell {hole} refilled to " +
 			         $"{refill.PreyAt(hole):0.00} prey in thirty minutes");
 

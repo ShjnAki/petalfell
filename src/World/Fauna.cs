@@ -5,7 +5,7 @@ using Petalfell.Core;
 
 namespace Petalfell.World;
 
-public enum Species : byte { Deer, Rabbit, Goat, Bird, Butterfly, Fish, Heron }
+public enum Species : byte { Deer, Rabbit, Goat, Bird, Butterfly, Fish, Heron, Wolf }
 
 /// <summary>
 /// Ambient wildlife.
@@ -76,6 +76,18 @@ public partial class Fauna : Node3D
 	/// </summary>
 	public static bool IsHerdSpecies(Species species) =>
 		species is Species.Deer or Species.Rabbit or Species.Goat;
+
+	/// <summary>The one creature that eats the others.</summary>
+	public static bool IsPredatorSpecies(Species species) => species is Species.Wolf;
+
+	/// <summary>
+	/// A species the ecology introduces cannot appear in a world that did not
+	/// ask for the ecology. Everything that existed before the flag ignores it.
+	/// This is a gate, not a low probability: with the flag off there is no
+	/// path by which a wolf can be constructed at all.
+	/// </summary>
+	public static bool EcologySpeciesAllowed(Species species, bool ecologyEnabled) =>
+		ecologyEnabled || !IsPredatorSpecies(species);
 
 	private bool _ecology;
 	private readonly List<Ecology.HerdNeighbour> _neighbours = new();
@@ -405,6 +417,10 @@ public partial class Critter : Node3D
 			case Species.Bird: Flyer(new Tone(0xdfe6f2), new Tone(0xb9c2d8), 0.55f); break;
 			case Species.Butterfly: Flyer(new Tone(0xf8ccda), new Tone(0xdccef1), 0.34f); break;
 			case Species.Fish: Swimmer(new Tone(0xa9c2d8)); break;
+			// Longer, lower and narrower than the deer it hunts, with a pale
+			// underside. At thirty pixels tall the silhouette is the whole of the
+			// recognition, so the proportions carry it rather than the colour.
+			case Species.Wolf: Quadruped(new Tone(0x6d6b78), new Tone(0xc8c3cc), 2.6f, 2.4f, 5.8f, 2.4f, 1.05f); break;
 			case Species.Heron: Wader(); break;
 		}
 	}
@@ -539,6 +555,7 @@ public partial class Critter : Node3D
 		Species.Butterfly => 1.8f,
 		Species.Fish => 2.6f,
 		Species.Heron => .85f,
+		Species.Wolf => 3.8f,
 		_ => 2f,
 	};
 
