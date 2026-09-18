@@ -322,6 +322,61 @@ public partial class EcologyFieldSmoke : Node
 				$"an emptied cell must floor at zero, got {kills.Field.PreyAt(killCell)}");
 			kills.QueueFree();
 
+			// The escape equation: the traveller's breath must outlast the wolf's,
+			// because that margin is the whole of being able to get away.
+			Assert(PlayerVitals.BreathSeconds > 1f / PackBehaviour.StaminaDrainPerSecond,
+				$"the traveller's {PlayerVitals.BreathSeconds}s of breath must outlast " +
+				$"the wolf's {1f / PackBehaviour.StaminaDrainPerSecond}s, or no one ever escapes");
+
+			var vitals = new PlayerVitals();
+			Assert(vitals.Vitality == 1f && vitals.Breath == 1f && vitals.Hunger == 1f,
+				"the traveller starts whole");
+
+			// Sprinting spends breath; standing still gets it back faster.
+			for (int second = 0; second < 10; second++) vitals.Advance(1f, sprinting: true);
+			float breathSpent = vitals.Breath;
+			Assert(breathSpent < 1f, "sprinting must cost breath");
+			for (int second = 0; second < 10; second++) vitals.Advance(1f, sprinting: false);
+			Assert(vitals.Breath > breathSpent, "standing still must give breath back");
+
+			// Three bites kill, and wounds do not close while they are landing.
+			var bitten = new PlayerVitals();
+			bitten.Wound(0.34f); bitten.Wound(0.34f);
+			Assert(!bitten.Dead, $"two bites must not kill, vitality {bitten.Vitality:0.00}");
+			bitten.Wound(0.34f);
+			Assert(bitten.Dead, "three bites kill");
+			bitten.Advance(1f, sprinting: false);
+			Assert(bitten.Dead, "the dead do not heal");
+
+			// Healing waits out the fight rather than starting between blows.
+			var hurt = new PlayerVitals();
+			hurt.Wound(0.5f);
+			float wounded = hurt.Vitality;
+			for (int second = 0; second < 5; second++) hurt.Advance(1f, sprinting: false);
+			Assert(hurt.Vitality <= wounded + 0.001f,
+				"healing must not begin five seconds after a wound");
+			for (int second = 0; second < 20; second++) hurt.Advance(1f, sprinting: false);
+			Assert(hurt.Vitality > wounded, "healing must begin once the fighting stops");
+
+			// An empty stomach stops healing and then starts costing vitality.
+			var starving = new PlayerVitals();
+			starving.Wound(0.5f);
+			while (starving.Hunger > 0f) starving.Advance(10f, sprinting: false);
+			float atEmpty = starving.Vitality;
+			for (int second = 0; second < 30; second++) starving.Advance(1f, sprinting: false);
+			Assert(starving.Vitality < atEmpty,
+				$"an empty stomach must cost vitality, stayed at {starving.Vitality:0.00}");
+			starving.Eat(0.6f);
+			Assert(starving.Hunger > StarvingFloorProbe(), "eating must fill the stomach");
+
+			// Waking at a fire keeps the journey and costs the condition.
+			var revived = new PlayerVitals();
+			revived.Wound(1f);
+			Assert(revived.Dead, "the probe must be dead before it is revived");
+			revived.ReviveAtCampfire();
+			Assert(!revived.Dead && revived.Vitality < 0.5f,
+				$"waking at a fire is alive but weak, got {revived.Vitality:0.00}");
+
 			if (!csvOnly) GD.Print($"[ecology-field-smoke] emptied cell {hole} refilled to " +
 			         $"{refill.PreyAt(hole):0.00} prey in thirty minutes");
 
@@ -342,6 +397,8 @@ public partial class EcologyFieldSmoke : Node
 			GetTree().Quit(1);
 		}
 	}
+
+	private static float StarvingFloorProbe() => PlayerVitals.StarvingBelow;
 
 	private static void Assert(bool condition, string message)
 	{
