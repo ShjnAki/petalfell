@@ -91,6 +91,11 @@ public partial class Fauna : Node3D
 
 	private bool _ecology;
 	private readonly List<Ecology.HerdNeighbour> _neighbours = new();
+	private readonly List<Ecology.HuntTarget> _quarry = new();
+	private Ecology.Ecosystem _ecosystem;
+
+	/// <summary>The field that kills are reported to. Null means nothing is recorded.</summary>
+	public void SetEcosystem(Ecology.Ecosystem ecosystem) => _ecosystem = ecosystem;
 
 	/// <summary>
 	/// Turn the ecology on. Off — the ordinary case — no creature is given a
@@ -113,6 +118,55 @@ public partial class Fauna : Node3D
 		return Ecology.HerdBehaviour.Steer(self.GlobalPosition, self.Heading, _neighbours);
 	}
 
+	/// <summary>
+	/// What one wolf can see worth chasing. The same linear scan as the herd,
+	/// for the same reason: the live population is small enough that an index
+	/// would cost more to maintain than to skip.
+	/// </summary>
+	private Ecology.PackDecision HuntFor(Critter wolf)
+	{
+		_quarry.Clear();
+		foreach (var other in _live)
+		{
+			if (!IsInstanceValid(other) || !IsHerdSpecies(other.Kind)) continue;
+			float distance = wolf.GlobalPosition.DistanceTo(other.GlobalPosition);
+			if (distance <= Ecology.PackBehaviour.PerceptionRadius)
+				_quarry.Add(new Ecology.HuntTarget(other.GlobalPosition, distance));
+		}
+		return Ecology.PackBehaviour.Decide(wolf.GlobalPosition, wolf.Heading, wolf.Den,
+			wolf.Stamina, _quarry);
+	}
+
+	/// <summary>
+	/// Resolve any wolf standing on top of a grazing animal.
+	///
+	/// Collected first and applied afterwards, so the list is never mutated
+	/// while it is being walked, and so one wolf cannot take two deer in one
+	/// frame by shifting the indices under itself.
+	/// </summary>
+	private void ResolveKills()
+	{
+		Critter taken = null;
+		foreach (var wolf in _live)
+		{
+			if (!IsInstanceValid(wolf) || wolf.Kind != Species.Wolf) continue;
+			foreach (var prey in _live)
+			{
+				if (!IsInstanceValid(prey) || !IsHerdSpecies(prey.Kind)) continue;
+				if (wolf.GlobalPosition.DistanceTo(prey.GlobalPosition)
+					> Ecology.PackBehaviour.KillDistance) continue;
+				taken = prey;
+				break;
+			}
+			if (taken != null) break;
+		}
+		if (taken == null) return;
+		_ecosystem?.ReportKill(taken.GlobalPosition);
+		_habitats.Remove(taken.HabitatKey);
+		_live.Remove(taken);
+		taken.QueueFree();
+	}
+
 	public void Advance(Vector3 player, double delta)
 	{
 		if (_terrain == null && _window == null) return;
@@ -130,6 +184,7 @@ public partial class Fauna : Node3D
 				continue;
 			}
 			c.Steering = _ecology && IsHerdSpecies(c.Kind) ? SteerHerd : null;
+			c.Hunting = _ecology && IsPredatorSpecies(c.Kind) ? HuntFor : null;
 			c.Advance(player, delta);
 		}
 
@@ -137,6 +192,8 @@ public partial class Fauna : Node3D
 		// can invalidate half the population at once, and at one animal per
 		// quarter second the meadow the player is walking into stays empty for the
 		// four seconds they are looking at it.
+		if (_ecology) ResolveKills();
+
 		_retry -= delta;
 		if (_live.Count >= PopulationLimit || _retry > 0.0) return;
 		_retry = 0.12;
@@ -354,6 +411,21 @@ public partial class Critter : Node3D
 
 	public Vector3 Heading => _heading;
 
+	/// <summary>
+	/// Optional hunting, supplied by the ecology. Null in ordinary play and for
+	/// every creature that is not a predator.
+	/// </summary>
+	public Func<Critter, Ecology.PackDecision> Hunting { get; set; }
+
+	/// <summary>
+	/// Where this creature was born, and where a predator returns when it has
+	/// ranged too far. Set once at spawn; a den does not move.
+	/// </summary>
+	public Vector3 Den { get; private set; }
+
+	/// <summary>Breath, 0 to 1. Only sprinting spends it.</summary>
+	public float Stamina { get; private set; } = 1f;
+
 	public bool HabitatValid() => _window == null ||
 		Fauna.TryAtlasHabitat(_window(), _kind, GlobalPosition, out _, out _);
 
@@ -369,6 +441,7 @@ public partial class Critter : Node3D
 		_yaw = _rng.Next() * Mathf.Tau;
 		if (!Fauna.TryAtlasHabitat(window(), kind, GlobalPosition, out _groundY, out _waterSurface))
 			throw new InvalidOperationException("Wildlife spawn has no matching habitat");
+		Den = GlobalPosition;
 		Build();
 	}
 
@@ -398,6 +471,7 @@ public partial class Critter : Node3D
 		int gz = Mathf.Clamp((int)GlobalPosition.Z, 0, S - 1);
 		_groundY = terrain.Level[gz * S + gx];
 
+		Den = GlobalPosition;
 		Build();
 	}
 
@@ -610,7 +684,23 @@ public partial class Critter : Node3D
 				_heading = _heading.Lerp(steered, 1f - Mathf.Exp(-2.5f * dt)).Normalized();
 		}
 
-		float speed = _speed + _startle * Cruise * 1.4f;
+		// A hunt overrides the wander outright. A wolf on a deer is not idling
+		// in its general direction, and a resting wolf that sees one gets up.
+		float pace = 1f;
+		if (Hunting != null && _startle <= 0.01f)
+		{
+			var decision = Hunting(this);
+			if (decision.Heading.LengthSquared() > 0.0001f)
+				_heading = _heading.Lerp(decision.Heading, 1f - Mathf.Exp(-6f * dt)).Normalized();
+			pace = decision.SpeedMultiplier;
+			bool sprinting = decision.Intent == Ecology.PackIntent.Sprint;
+			Stamina = Mathf.Clamp(Stamina + dt * (sprinting
+				? -Ecology.PackBehaviour.StaminaDrainPerSecond
+				: Ecology.PackBehaviour.StaminaRegenPerSecond), 0f, 1f);
+			if (decision.Intent != Ecology.PackIntent.Wander) _speed = Cruise;
+		}
+
+		float speed = (_speed + _startle * Cruise * 1.4f) * pace;
 		if (speed > 0.01f)
 		{
 			var step = _heading * speed * dt;

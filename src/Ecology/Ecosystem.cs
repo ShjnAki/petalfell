@@ -52,4 +52,18 @@ public partial class Ecosystem : Node
 			_pending -= TickSeconds;
 		}
 	}
+
+	/// <summary>
+	/// A creature was killed here.
+	///
+	/// This is the ONLY path from a body's death to the field. Unloading a
+	/// creature because the traveller walked beyond the retention radius must
+	/// never come through here: that is not a death, and counting it as one
+	/// would empty the continent behind their footsteps, one valley per walk.
+	/// </summary>
+	public void ReportKill(Vector3 where)
+	{
+		Field?.RemovePrey(
+			Field.IndexAt(Mathf.FloorToInt(where.X), Mathf.FloorToInt(where.Z)), 1f);
+	}
 }

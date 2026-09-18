@@ -267,6 +267,34 @@ public partial class EcologyFieldSmoke : Node
 			Assert(ranging.Heading.IsEqualApprox(Vector3.Right),
 				$"inside its range a wolf keeps its heading, got {ranging.Heading}");
 
+			// A kill is the ONLY path from a body's death to the field.
+			var kills = new Ecosystem();
+			kills.Setup(atlas, map.DefaultSeed);
+			// A field unit is one animal, so a kill removes exactly one. Pick a
+			// cell rich enough to have one to lose — a poor cell would floor at
+			// zero and prove nothing about the arithmetic.
+			int killCell = -1;
+			for (int i = 0; i < kills.Field.CellCount && killCell < 0; i++)
+				if (kills.Field.PreyAt(i) > 1.5f) killCell = i;
+			Assert(killCell >= 0, "no cell on the continent holds more than one prey");
+			int otherCell = killCell == 0 ? 1 : 0;
+			float preyThere = kills.Field.PreyAt(killCell);
+			float preyElsewhere = kills.Field.PreyAt(otherCell);
+			int killX = (killCell % kills.Field.Columns) * EcologyTuning.CellBlocks + 4;
+			int killZ = (killCell / kills.Field.Columns) * EcologyTuning.CellBlocks + 4;
+			kills.ReportKill(new Vector3(killX, 24f, killZ));
+			Assert(MathF.Abs(kills.Field.PreyAt(killCell) - (preyThere - 1f)) < 0.001f,
+				$"a kill must remove exactly one prey from its own cell, got {kills.Field.PreyAt(killCell)}");
+			Assert(kills.Field.PreyAt(otherCell) == preyElsewhere,
+				"a kill must touch one cell and no other");
+
+			// Taking the last animal empties the valley; it never goes negative.
+			for (int repeat = 0; repeat < 20; repeat++)
+				kills.ReportKill(new Vector3(killX, 24f, killZ));
+			Assert(kills.Field.PreyAt(killCell) == 0f,
+				$"an emptied cell must floor at zero, got {kills.Field.PreyAt(killCell)}");
+			kills.QueueFree();
+
 			if (!csvOnly) GD.Print($"[ecology-field-smoke] emptied cell {hole} refilled to " +
 			         $"{refill.PreyAt(hole):0.00} prey in thirty minutes");
 

@@ -19,6 +19,12 @@ public readonly record struct EcologyTotals(float Grass, float Prey, float Preda
 ///
 /// Deliberately free of Godot: the equilibrium has to be provable without
 /// starting an engine.
+///
+/// **One unit of prey or predator is one animal.** A 128-block cell holds
+/// around two and a half prey at equilibrium, so a single kill is a real bite
+/// out of a valley rather than a rounding error — which is exactly what makes
+/// over-hunting a place a decision the traveller has to live with. Grass is
+/// not an animal count; it is a fraction of the cell's own fertility.
 /// </summary>
 public sealed class EcologyField
 {
