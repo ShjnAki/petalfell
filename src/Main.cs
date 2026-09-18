@@ -52,6 +52,7 @@ public partial class Main : Node3D
 		Bind("throw_left", Key.F);
 		Bind("throw_right", Key.G);
 		Bind("interact", Key.R);
+		Bind("strike", Key.C);
 		Bind("dog_fetch", Key.U);
 		Bind("world_map", Key.M);
 		Bind("inventory", Key.Tab);

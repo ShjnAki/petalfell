@@ -1687,6 +1687,24 @@ public partial class AtlasSectorReview : Node3D
 			AtlasRuntimeHandoff.DryBridgeSurface(_window, index) ?? _window.Data.Height[index];
 	}
 
+	/// <summary>
+	/// The traveller went down.
+	///
+	/// The design puts them back at the last fire they lit, which turns
+	/// lighting one into setting a waypoint. That is not reachable yet:
+	/// CampfireSystem exists in this repository but nothing in the production
+	/// scene constructs it, so there is no fire to wake at. Until one is wired
+	/// they wake where they fell, badly weakened — the gentler of the two
+	/// sanctions that were considered, and the honest fallback rather than a
+	/// pretend campfire.
+	/// </summary>
+	private void WakeAfterDeath()
+	{
+		_ecosystem.Vitals.ReviveAtCampfire();
+		GD.Print($"[ecology] the traveller went down at " +
+		         $"{_player.GlobalPosition.X:0},{_player.GlobalPosition.Z:0} and woke where they fell");
+	}
+
 	public override void _Process(double delta)
 	{
 		if (!_started || _player == null || _character == null) return;
@@ -1699,7 +1717,13 @@ public partial class AtlasSectorReview : Node3D
 		Vector3 presentation = _player.AdvancePresentation(delta);
 		_character.GlobalPosition = presentation;
 		_ambientDrift?.Advance(_player.GlobalPosition, delta, _day.NightAmount);
-		_ecosystem?.Advance(delta);
+		if (_ecosystem != null)
+		{
+			_ecosystem.Advance(delta);
+			if (Input.IsActionJustPressed("strike"))
+				_fauna?.TryStrike(_player.GlobalPosition, _player.Facing);
+			if (_ecosystem.Vitals.Dead) WakeAfterDeath();
+		}
 		_fauna?.Advance(_player.GlobalPosition, delta);
 		if (_playable)
 		{

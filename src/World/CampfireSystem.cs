@@ -20,6 +20,15 @@ public partial class CampfireSystem : Node3D
 	private ShaderMaterial _inkDark;
 	private int _sequence;
 
+	/// <summary>
+	/// Where the last fire was lit. The ecology uses it as the place the
+	/// traveller wakes after being killed, which is the only reason this system
+	/// needs to remember anything beyond the fires themselves — and it is what
+	/// turns lighting one from a decoration into setting a waypoint.
+	/// </summary>
+	public Vector3 LastLit { get; private set; }
+	public bool HasLastLit { get; private set; }
+
 	public IReadOnlyList<Campfire> Fires
 	{
 		get
@@ -137,6 +146,8 @@ public partial class CampfireSystem : Node3D
 		AddChild(fire);
 		fire.GlobalPosition = position;
 		_fires.Add(fire);
+		LastLit = position;
+		HasLastLit = true;
 		return fire;
 	}
 

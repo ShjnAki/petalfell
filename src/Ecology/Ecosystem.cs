@@ -26,6 +26,28 @@ public partial class Ecosystem : Node
 
 	public EcologyField Field { get; private set; }
 
+	/// <summary>
+	/// The traveller's condition. Owned here rather than on the player because
+	/// it only exists when the ecology does, and because the flag must be able
+	/// to take the whole thing away without leaving a gauge behind.
+	/// </summary>
+	public PlayerVitals Vitals { get; } = new();
+
+	/// <summary>Damage one wolf bite does. Three kill.</summary>
+	public const float BiteDamage = 0.34f;
+
+	/// <summary>Seconds between bites from the same wolf.</summary>
+	public const float BiteCooldownSeconds = 1.5f;
+
+	/// <summary>Vitality taken off an animal by one blow. Four bare-handed.</summary>
+	public const float StrikeDamage = 0.25f;
+
+	/// <summary>
+	/// How much of the stomach one animal fills. Rather less than all of it, so
+	/// a long crossing needs more than a single lucky deer.
+	/// </summary>
+	public const float MealFromKill = 0.45f;
+
 	private double _pending;
 
 	/// <summary>
@@ -45,6 +67,16 @@ public partial class Ecosystem : Node
 	public void Advance(double delta)
 	{
 		if (Field == null) return;
+		// Vitality, breath and hunger move at frame rate; the continent does not.
+		//
+		// Sprinting is passed as false because this world has no sprint: the
+		// traveller walks or slow-walks. Breath is therefore carried and tested
+		// but nothing yet spends it, and escaping a pack is done by leaving its
+		// valley rather than by outrunning it — which is the designed counterplay
+		// in any case. Wiring a sprint means changing the author's movement code
+		// and is deliberately left out of this contribution.
+		Vitals.Advance((float)delta, sprinting: false);
+
 		_pending += delta;
 		while (_pending >= TickSeconds)
 		{
@@ -66,4 +98,20 @@ public partial class Ecosystem : Node
 		Field?.RemovePrey(
 			Field.IndexAt(Mathf.FloorToInt(where.X), Mathf.FloorToInt(where.Z)), 1f);
 	}
+
+	/// <summary>
+	/// The traveller killed a wolf here. The valley's predators lose one, and
+	/// the valley remembers who did it.
+	/// </summary>
+	public void ReportWolfKilledByTraveller(Vector3 where)
+	{
+		if (Field == null) return;
+		int cell = Field.IndexAt(Mathf.FloorToInt(where.X), Mathf.FloorToInt(where.Z));
+		Field.RemovePredator(cell, 1f);
+		Field.RaiseGrudge(cell);
+	}
+
+	/// <summary>Does the ground here hold anything against the traveller?</summary>
+	public bool GrudgeAt(Vector3 where) => Field != null &&
+		Field.GrudgeAt(Field.IndexAt(Mathf.FloorToInt(where.X), Mathf.FloorToInt(where.Z)));
 }

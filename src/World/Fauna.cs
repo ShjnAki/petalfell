@@ -141,10 +141,108 @@ public partial class Fauna : Node3D
 				_quarry.Add(new Ecology.HuntTarget(other.GlobalPosition, distance));
 		}
 		return Ecology.PackBehaviour.Decide(wolf.GlobalPosition, wolf.Heading, wolf.Den,
-			wolf.Stamina, _quarry, wolf.Recovering);
+			wolf.Stamina, _quarry, wolf.Recovering, TravellerFor(wolf));
+	}
+
+	/// <summary>
+	/// The traveller as this wolf sees them, or nothing at all when the ecology
+	/// is absent. Peace is the default and it is expressed here: without a
+	/// grudge on this ground the threat is still handed over, and
+	/// <c>PackBehaviour</c> declines it.
+	/// </summary>
+	private Ecology.TravellerThreat? TravellerFor(Critter wolf)
+	{
+		if (_ecosystem == null || _ecosystem.Vitals.Dead) return null;
+		float distance = wolf.GlobalPosition.DistanceTo(_travellerAt);
+		if (distance > Ecology.PackBehaviour.PerceptionRadius) return null;
+		int pack = 0;
+		foreach (var other in _live)
+			if (other != wolf && IsInstanceValid(other) && other.Kind == Species.Wolf &&
+				other.GlobalPosition.DistanceTo(wolf.GlobalPosition) <= 35f) pack++;
+		return new Ecology.TravellerThreat(_travellerAt, distance,
+			_ecosystem.GrudgeAt(wolf.GlobalPosition), pack);
 	}
 
 	private double _census;
+	private Vector3 _travellerAt;
+	private double _biteCooldown;
+
+	/// <summary>Bites the traveller has taken since this window opened.</summary>
+	public int Bites { get; private set; }
+
+	/// <summary>Animals the traveller has taken for food.</summary>
+	public int Meals { get; private set; }
+
+	/// <summary>
+	/// A wolf that has closed on the traveller takes a piece out of them.
+	/// Only a wolf that <c>PackBehaviour</c> would engage gets here, so an
+	/// unprovoked traveller can stand in the middle of a pack untouched.
+	/// </summary>
+	private void ResolveBites(double delta)
+	{
+		_biteCooldown -= delta;
+		if (_biteCooldown > 0.0 || _ecosystem == null || _ecosystem.Vitals.Dead) return;
+		foreach (var wolf in _live)
+		{
+			if (!IsInstanceValid(wolf) || wolf.Kind != Species.Wolf) continue;
+			if (wolf.GlobalPosition.DistanceTo(_travellerAt) > Ecology.PackBehaviour.KillDistance + 1f)
+				continue;
+			var threat = TravellerFor(wolf);
+			if (!threat.HasValue ||
+				!Ecology.PackBehaviour.WillEngageTraveller(wolf.GlobalPosition, wolf.Den, threat.Value))
+				continue;
+			_ecosystem.Vitals.Wound(Ecology.Ecosystem.BiteDamage);
+			Bites++;
+			_biteCooldown = Ecology.Ecosystem.BiteCooldownSeconds;
+			GD.Print($"[ecology] bitten; vitality {_ecosystem.Vitals.Vitality:0.00}");
+			return;
+		}
+	}
+
+	/// <summary>
+	/// The traveller strikes at whatever is in front of them. Four blows put a
+	/// wolf down bare-handed, and the first one that lands makes this valley a
+	/// place they are hunted in.
+	/// </summary>
+	public bool TryStrike(Vector3 from, Vector3 facing, float range = 2.5f)
+	{
+		if (!_ecology) return false;
+		foreach (var target in _live)
+		{
+			if (!IsInstanceValid(target)) continue;
+			bool wolf = target.Kind == Species.Wolf;
+			if (!wolf && !IsHerdSpecies(target.Kind)) continue;
+			var toTarget = target.GlobalPosition - from;
+			toTarget.Y = 0f;
+			if (toTarget.Length() > range) continue;
+			if (facing.LengthSquared() > 0.0001f &&
+				toTarget.Normalized().Dot(facing.Normalized()) < 0.3f) continue;
+			if (!target.TakeStrike(Ecology.Ecosystem.StrikeDamage)) return true;
+			if (wolf)
+			{
+				// Killing a wolf is the whole of how the world turns on you.
+				_ecosystem?.ReportWolfKilledByTraveller(target.GlobalPosition);
+				GD.Print("[ecology] a wolf is down; this valley will remember it");
+			}
+			else
+			{
+				// Hunting for the pot. Eaten where it fell rather than carried:
+				// the inventory and campfire systems exist in this repository but
+				// are not part of the production scene, so the ecology feeds the
+				// traveller without reaching into systems nobody has switched on.
+				_ecosystem?.ReportKill(target.GlobalPosition);
+				_ecosystem?.Vitals.Eat(Ecology.Ecosystem.MealFromKill);
+				Meals++;
+				GD.Print($"[ecology] eaten where it fell; hunger " +
+				         $"{_ecosystem?.Vitals.Hunger:0.00}");
+			}
+			_habitats.Remove(target.HabitatKey);
+			_live.Remove(target);
+			target.QueueFree();
+			return true;
+		}
+		return false;
+	}
 
 	/// <summary>Prey taken by wolves since this window opened.</summary>
 	public int Kills { get; private set; }
@@ -193,8 +291,13 @@ public partial class Fauna : Node3D
 			packState.Append($" [{decision.Intent} prey@{(nearest == float.MaxValue ? -1f : nearest):0} " +
 			                 $"breath {animal.Stamina:0.00}]");
 		}
+		string traveller = _ecosystem == null ? "" :
+			$" traveller vitality {_ecosystem.Vitals.Vitality:0.00} " +
+			$"breath {_ecosystem.Vitals.Breath:0.00} hunger {_ecosystem.Vitals.Hunger:0.00} " +
+			$"bitten {Bites} ate {Meals} " +
+			$"grudge {(_ecosystem.GrudgeAt(player) ? "yes" : "no")};";
 		GD.Print($"[ecology-census] bodies deer {deer} rabbit {rabbit} goat {goat} " +
-		         $"wolf {wolf} other {other}; kills {Kills}; {here};{packState}");
+		         $"wolf {wolf} other {other}; kills {Kills};{traveller} {here};{packState}");
 	}
 
 	/// <summary>
@@ -255,7 +358,9 @@ public partial class Fauna : Node3D
 		// four seconds they are looking at it.
 		if (_ecology)
 		{
+			_travellerAt = player;
 			ResolveKills();
+			ResolveBites(delta);
 			Census(player, delta);
 		}
 
@@ -635,6 +740,17 @@ public partial class Critter : Node3D
 
 	/// <summary>Broke off last frame, and will not commit again until recovered.</summary>
 	public bool Recovering { get; private set; }
+
+	private float _vitality = 1f;
+
+	/// <summary>Take a blow. False once it has taken the last one.</summary>
+	public bool TakeStrike(float amount)
+	{
+		_vitality -= amount;
+		// A struck animal bolts whether or not it survives the blow.
+		_startle = 1f;
+		return _vitality > 0f;
+	}
 
 	public bool HabitatValid()
 	{
