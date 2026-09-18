@@ -3,7 +3,38 @@
 A persistent Lotka–Volterra ecosystem for the production continent, ported from
 a working simulation in another project, offered behind a flag.
 
-Status: proposed, not implemented. Nothing here is author-accepted.
+Status: the field, the herd and the wolf are implemented behind `--ecology`;
+the player layer is not. Nothing here is author-accepted, and nothing here has
+been seen at the locked isometric view.
+
+## Current state
+
+Implemented and mechanically verified:
+
+- the continental population field, its equations, and a harness that carries
+  it ten simulated hours without extinction or explosion;
+- coefficients fitted to the source simulation's measured ratio and grass level;
+- herd steering on the grazing animals;
+- the wolf: body, pack decisions, endurance, the chase, and the kill;
+- spawning that reads the field, so a valley's population decides what appears
+  in it;
+- `--ecology` gating all of it, with the default world provably untouched.
+
+Not implemented: the player's vitality, breath and hunger; death and the
+campfire; the grudge and any hostility toward the traveller. Wolves currently
+ignore the traveller completely, which is the intended end state for an
+un-provoked player but is presently the *only* state.
+
+Known limitation: a wolf cannot path around terrain. It steers straight at its
+quarry and stops where the ground refuses it, so hunts conclude on open ground
+and stall against broken ground. Evidence and the rest of the detail are in
+[`building-knowledge/ecology/land-fauna-and-the-hunt-2026-09.md`](../building-knowledge/ecology/land-fauna-and-the-hunt-2026-09.md).
+
+Run it with:
+
+```bash
+godot-mono --path . -- --terrain-focus=2692,2164 --ecology
+```
 
 ---
 
