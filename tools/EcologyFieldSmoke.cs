@@ -225,6 +225,48 @@ public partial class EcologyFieldSmoke : Node
 			Assert(Fauna.EcologySpeciesAllowed(Species.Deer, ecologyEnabled: false),
 				"deer are not gated on the flag");
 
+			var noPrey = new System.Collections.Generic.List<HuntTarget>();
+			var idle = PackBehaviour.Decide(Vector3.Zero, Vector3.Forward, Vector3.Zero, 1f, noPrey);
+			Assert(idle.Intent == PackIntent.Wander, $"no prey means no hunt, got {idle.Intent}");
+
+			// Prey inside perception but beyond sprint range: approach at a trot.
+			// Sprinting from a hundred units away empties the lungs before the chase.
+			var faraway = new System.Collections.Generic.List<HuntTarget>
+				{ new(new Vector3(0f, 0f, 100f), 100f) };
+			var stalking = PackBehaviour.Decide(Vector3.Zero, Vector3.Forward, Vector3.Zero, 1f, faraway);
+			Assert(stalking.Intent == PackIntent.Stalk, $"distant prey is stalked, got {stalking.Intent}");
+			Assert(stalking.SpeedMultiplier < 2f, "a stalk is not a sprint");
+
+			// Inside sprint range with breath left: commit.
+			var close = new System.Collections.Generic.List<HuntTarget>
+				{ new(new Vector3(0f, 0f, 20f), 20f) };
+			var sprinting = PackBehaviour.Decide(Vector3.Zero, Vector3.Forward, Vector3.Zero, 1f, close);
+			Assert(sprinting.Intent == PackIntent.Sprint, $"close prey is sprinted at, got {sprinting.Intent}");
+			Assert(sprinting.SpeedMultiplier > stalking.SpeedMultiplier, "a sprint outruns a stalk");
+			Assert(sprinting.Heading.Z > 0.9f, $"the sprint must aim at the prey, got {sprinting.Heading}");
+
+			// Out of breath: break off, whatever is in front of you.
+			var spent = PackBehaviour.Decide(Vector3.Zero, Vector3.Forward, Vector3.Zero, 0f, close);
+			Assert(spent.Intent == PackIntent.Recover, $"an exhausted wolf breaks off, got {spent.Intent}");
+
+			// Prey beyond perception is not prey.
+			var unseen = new System.Collections.Generic.List<HuntTarget>
+				{ new(new Vector3(0f, 0f, 400f), 400f) };
+			Assert(PackBehaviour.Decide(Vector3.Zero, Vector3.Forward, Vector3.Zero, 1f, unseen).Intent
+				== PackIntent.Wander, "a deer 400 units away has not been noticed");
+
+			// Far from the den with nothing to chase: go home. This is also what
+			// will let the traveller escape a pack by leaving its valley.
+			var home = PackBehaviour.Decide(new Vector3(900f, 0f, 0f), Vector3.Right,
+				Vector3.Zero, 1f, noPrey);
+			Assert(home.Heading.X < -0.5f, $"beyond its range a wolf turns home, got {home.Heading}");
+
+			// Inside the territory the recall does nothing at all.
+			var ranging = PackBehaviour.Decide(new Vector3(100f, 0f, 0f), Vector3.Right,
+				Vector3.Zero, 1f, noPrey);
+			Assert(ranging.Heading.IsEqualApprox(Vector3.Right),
+				$"inside its range a wolf keeps its heading, got {ranging.Heading}");
+
 			if (!csvOnly) GD.Print($"[ecology-field-smoke] emptied cell {hole} refilled to " +
 			         $"{refill.PreyAt(hole):0.00} prey in thirty minutes");
 
